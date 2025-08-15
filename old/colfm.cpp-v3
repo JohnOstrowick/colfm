@@ -1,0 +1,95 @@
+#include <QApplication>
+#include <QColumnView>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QShortcut>
+#include <QToolBar>
+#include <QMainWindow>
+#include <QDir>
+#include <QAction>
+#include <QPalette>
+#include <QFont>
+
+class ColFM : public QMainWindow {
+public:
+    ColFM() {
+        auto *iconProv = new QFileIconProvider();
+        model = new QFileSystemModel(this);
+        model->setIconProvider(iconProv);
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+
+        QModelIndex rootIdx = model->setRootPath(QDir::homePath());
+
+        view = new QColumnView(this);
+        view->setModel(model);
+        view->setAlternatingRowColors(true);
+        view->setIconSize(QSize(32, 32));
+        setCentralWidget(view);
+
+        if (rootIdx.isValid()) {
+            view->setRootIndex(rootIdx);
+            view->setCurrentIndex(rootIdx);
+        }
+
+        auto *tb = addToolBar("nav");
+        auto upAct = tb->addAction("⬆ Up");
+        connect(upAct, &QAction::triggered, this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+
+        auto darkAct = tb->addAction("🌙 Dark Mode");
+        connect(darkAct, &QAction::triggered, this, &ColFM::toggleDarkMode);
+
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Up), this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_L), this, [this]{
+            QModelIndex homeIdx = model->index(QDir::homePath());
+            if (homeIdx.isValid()) view->setCurrentIndex(homeIdx);
+        });
+
+        setWindowTitle("ColFM — Column File Manager");
+        resize(1200, 700);
+    }
+
+private:
+    QFileSystemModel *model;
+    QColumnView *view;
+    bool darkMode = false;
+
+    void toggleDarkMode() {
+        QPalette pal = qApp->palette();
+        if (!darkMode) {
+            pal.setColor(QPalette::Base, QColor(20, 20, 20));
+            pal.setColor(QPalette::AlternateBase, QColor(40, 40, 40));
+            pal.setColor(QPalette::Text, Qt::white);
+        } else {
+            pal.setColor(QPalette::Base, QColor(245, 245, 245));
+            pal.setColor(QPalette::AlternateBase, QColor(230, 230, 230));
+            pal.setColor(QPalette::Text, Qt::black);
+        }
+        qApp->setPalette(pal);
+        darkMode = !darkMode;
+    }
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle("Fusion");
+
+    QFont font = app.font();
+    font.setPointSize(11);
+    app.setFont(font);
+
+    QPalette pal = app.palette();
+    pal.setColor(QPalette::Base, QColor(245, 245, 245));
+    pal.setColor(QPalette::AlternateBase, QColor(230, 230, 230));
+    pal.setColor(QPalette::Text, Qt::black);
+    app.setPalette(pal);
+
+    ColFM w;
+    w.show();
+    return app.exec();
+}

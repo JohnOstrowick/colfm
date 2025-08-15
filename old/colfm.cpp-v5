@@ -1,0 +1,74 @@
+#include <QApplication>
+#include <QTreeView>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QSplitter>
+#include <QMainWindow>
+#include <QDir>
+#include <QHeaderView>
+#include <QToolBar>
+
+class FinderClone : public QMainWindow {
+public:
+    FinderClone(QWidget *parent = nullptr) : QMainWindow(parent) {
+        model = new QFileSystemModel(this);
+        model->setIconProvider(new QFileIconProvider());
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+        model->setRootPath(QDir::homePath());
+
+        // Toolbar (empty for now)
+        QToolBar *toolbar = new QToolBar("Main Toolbar", this);
+        toolbar->setMovable(false);
+        addToolBar(Qt::TopToolBarArea, toolbar);
+
+        splitter = new QSplitter(this);
+        splitter->setChildrenCollapsible(false);
+        setCentralWidget(splitter);
+
+        addColumn(model->index(QDir::homePath())); // first column at home
+
+        setWindowTitle("Finder-Style File Manager");
+        resize(1400, 800);
+    }
+
+private:
+    QFileSystemModel *model;
+    QSplitter *splitter;
+
+    void addColumn(const QModelIndex &rootIndex) {
+        QTreeView *view = new QTreeView(splitter);
+        view->setModel(model);
+        view->setRootIndex(rootIndex);
+        view->setIconSize(QSize(32, 32));
+        view->setAlternatingRowColors(true);
+        view->setHeaderHidden(true);
+        view->setSelectionBehavior(QAbstractItemView::SelectRows);
+        view->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+        connect(view, &QTreeView::clicked, this, [this, view](const QModelIndex &idx) {
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                // Remove columns to the right of this view
+                int colIndex = splitter->indexOf(view);
+                while (splitter->count() > colIndex + 1) {
+                    QWidget *w = splitter->widget(splitter->count() - 1);
+                    splitter->widget(splitter->count() - 1)->deleteLater();
+                }
+                // Add new column for the clicked folder
+                addColumn(idx);
+            } else {
+                // File clicked — placeholder preview
+                qDebug() << "Preview placeholder for:" << model->filePath(idx);
+            }
+        });
+    }
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle("Fusion");
+
+    FinderClone w;
+    w.show();
+    return app.exec();
+}

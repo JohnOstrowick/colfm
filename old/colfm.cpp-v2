@@ -1,0 +1,70 @@
+#include <QApplication>
+#include <QColumnView>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QShortcut>
+#include <QToolBar>
+#include <QMainWindow>
+#include <QDir>
+#include <QAction>
+#include <QPalette>
+#include <QFont>
+
+class ColFM : public QMainWindow {
+public:
+    ColFM() {
+        model = new QFileSystemModel(this);
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+        model->setRootPath(QDir::homePath());
+        model->setIconProvider(new QFileIconProvider);
+
+        view = new QColumnView(this);
+        view->setModel(model);
+        view->setAlternatingRowColors(true);
+        view->setStyleSheet("QColumnView { font-size: 14px; }");
+        view->setIconSize(QSize(20, 20));
+        setCentralWidget(view);
+
+        auto *tb = addToolBar("nav");
+        auto upAct = tb->addAction("⬆ Up");
+        connect(upAct, &QAction::triggered, this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Up), this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_L), this, [this]{
+            view->setCurrentIndex(model->index(QDir::homePath()));
+        });
+
+        setWindowTitle("ColFM — Column File Manager");
+        resize(1200, 700);
+        view->setCurrentIndex(model->index(QDir::homePath()));
+    }
+private:
+    QFileSystemModel *model;
+    QColumnView *view;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle("Fusion");
+
+    // Slightly larger default font
+    QFont font = app.font();
+    font.setPointSize(11);
+    app.setFont(font);
+
+    // Optional: tweak palette for a flatter look
+    QPalette pal = app.palette();
+    pal.setColor(QPalette::Base, QColor(245, 245, 245));
+    pal.setColor(QPalette::AlternateBase, QColor(230, 230, 230));
+    app.setPalette(pal);
+
+    ColFM w;
+    w.show();
+    return app.exec();
+}

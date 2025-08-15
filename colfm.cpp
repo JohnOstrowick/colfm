@@ -1,0 +1,189 @@
+#include <QApplication>
+#include <QMainWindow>
+#include <QToolBar>
+#include <QAction>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QTreeView>
+#include <QListView>
+#include <QSplitter>
+#include <QDir>
+#include <QVector>
+#include <QIcon>
+#include <QDebug>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QTimer>
+
+enum class ViewMode { Tree, Column, Icon };
+
+class ColFM : public QMainWindow {
+public:
+    ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
+        model = new QFileSystemModel(this);
+        model->setIconProvider(new QFileIconProvider());
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+        currentRoot = model->setRootPath(QDir::homePath());
+
+        QToolBar *tb = new QToolBar("Main Toolbar", this);
+        tb->setMovable(false);
+        addToolBar(Qt::TopToolBarArea, tb);
+        tb->addAction(QIcon("icons/move_to_trash.png"), "Move to Trash");
+        tb->addAction(QIcon("icons/refresh.png"),       "Refresh Folder");
+        tb->addAction(QIcon("icons/open_trash.png"),    "Open Trash");
+        QAction *upBtn = tb->addAction(QIcon("icons/up_level.png"), "Go Up a Level");
+        tb->addAction(QIcon("icons/open.png"),          "Open");
+        tb->addAction(QIcon("icons/close.png"),         "Close");
+        tb->addAction(QIcon("icons/info.png"),          "File Info & Preview");
+        tb->addAction(QIcon("icons/rename.png"),        "Rename");
+        tb->addAction(QIcon("icons/move.png"),          "Move");
+        tb->addAction(QIcon("icons/duplicate.png"),     "Copy / Duplicate");
+        tb->addAction(QIcon("icons/softlink.png"),      "Create Softlink");
+        tb->addSeparator();
+        QAction *treeBtn   = tb->addAction(QIcon("icons/view_tree.png"),   "Tree/List View");
+        QAction *columnBtn = tb->addAction(QIcon("icons/view_columns.png"),"Column View");
+        QAction *iconBtn   = tb->addAction(QIcon("icons/view_icons.png"),  "Icon View");
+
+        connect(treeBtn,   &QAction::triggered, this, [this]{ setViewMode(ViewMode::Tree);   });
+        connect(columnBtn, &QAction::triggered, this, [this]{ setViewMode(ViewMode::Column); });
+        connect(iconBtn,   &QAction::triggered, this, [this]{ setViewMode(ViewMode::Icon);   });
+
+        connect(upBtn, &QAction::triggered, this, [this] {
+            if (!currentRoot.isValid()) return;
+            QModelIndex parent = model->parent(currentRoot);
+            if (parent.isValid()) {
+                currentRoot = parent;
+                setViewMode(mode);
+            }
+        });
+
+        setViewMode(ViewMode::Tree);
+        setWindowTitle("ColFM — Multi-View File Manager");
+        resize(1400, 800);
+    }
+
+private:
+    QFileSystemModel *model{};
+    ViewMode mode = ViewMode::Tree;
+    QModelIndex currentRoot;
+    QVector<QListView*> columns;
+    QLabel *previewLabel{};
+
+    QWidget* buildTreeWidget(const QModelIndex &root) {
+        auto *view = new QTreeView();
+        view->setModel(model);
+        view->setRootIndex(root);
+        view->setHeaderHidden(true);
+        view->setSelectionBehavior(QAbstractItemView::SelectRows);
+        view->setAlternatingRowColors(true);
+        view->setIconSize(QSize(32,32));
+        connect(view, &QTreeView::clicked, this, [this, view](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                view->setRootIndex(idx);
+                currentRoot = idx;
+            } else {
+                qDebug() << "Preview placeholder for:" << model->filePath(idx);
+            }
+        });
+        return view;
+    }
+
+    QWidget* buildColumnWidget(const QModelIndex &root) {
+        auto *splitter = new QSplitter(Qt::Horizontal);
+        splitter->setChildrenCollapsible(false);
+        columns.clear();
+        addColumn(splitter, root);
+
+        QWidget *previewPane = new QWidget();
+        QPalette pal = previewPane->palette();
+        pal.setColor(QPalette::Window, QColor(30, 30, 30));
+        previewPane->setAutoFillBackground(true);
+        previewPane->setPalette(pal);
+        previewLabel = new QLabel("Preview");
+        previewLabel->setStyleSheet("QLabel { color: white; }");
+        auto *previewLayout = new QVBoxLayout(previewPane);
+        previewLayout->addWidget(previewLabel);
+        splitter->addWidget(previewPane);
+
+        return splitter;
+    }
+
+    QWidget* buildIconWidget(const QModelIndex &root) {
+        auto *view = new QListView();
+        view->setModel(model);
+        view->setRootIndex(root);
+        view->setViewMode(QListView::IconMode);
+        view->setIconSize(QSize(64,64));
+        view->setGridSize(QSize(100,100));
+        view->setSpacing(8);
+        view->setResizeMode(QListView::Adjust);
+        view->setMovement(QListView::Static);
+        view->setUniformItemSizes(true);
+        connect(view, &QListView::clicked, this, [this, view](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                view->setRootIndex(idx);
+                currentRoot = idx;
+            } else {
+                qDebug() << "Preview placeholder for:" << model->filePath(idx);
+            }
+        });
+        return view;
+    }
+
+    void addColumn(QSplitter *splitter, const QModelIndex &root) {
+    if (model->rowCount(root) == 0) return;
+
+	    auto *lv = new QListView(splitter);
+	    lv->setModel(model);
+	    lv->setRootIndex(root);
+	    lv->setSelectionMode(QAbstractItemView::SingleSelection);
+	    lv->setViewMode(QListView::ListMode);
+	    lv->setUniformItemSizes(true);
+	    lv->setIconSize(QSize(32,32));
+	    lv->setAlternatingRowColors(true);
+	    lv->setSpacing(2);
+	    lv->setMinimumWidth(260);
+	    lv->setFixedWidth(300);
+	    columns.push_back(lv);
+
+	    // Connect only when there is actually something to select
+	    connect(lv, &QListView::clicked, this, [this, splitter, lv](const QModelIndex &cur) {
+		int i = splitter->indexOf(lv);
+		while (splitter->count() > i + 1) {
+		    QWidget *w = splitter->widget(splitter->count() - 1);
+		    columns.removeLast();
+		    w->deleteLater();
+		}
+		if (!cur.isValid()) return;
+		if (model->isDir(cur) && model->rowCount(cur) > 0) {
+		    addColumn(splitter, cur);
+		    currentRoot = cur;
+		} else if (previewLabel) {
+		    previewLabel->setText(model->fileName(cur));
+		}
+	    });
+	}
+
+    void setViewMode(ViewMode m) {
+        mode = m;
+        QWidget *old = centralWidget();
+        if (old) old->deleteLater();
+        QWidget *w = nullptr;
+        QModelIndex root = currentRoot.isValid() ? currentRoot : model->index(QDir::homePath());
+        switch (mode) {
+            case ViewMode::Tree:   w = buildTreeWidget(root);   break;
+            case ViewMode::Column: w = buildColumnWidget(root); break;
+            case ViewMode::Icon:   w = buildIconWidget(root);   break;
+        }
+        setCentralWidget(w);
+    }
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle("Fusion");
+    ColFM w; w.show();
+    return app.exec();
+}

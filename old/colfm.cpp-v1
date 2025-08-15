@@ -1,0 +1,50 @@
+#include <QApplication>
+#include <QColumnView>
+#include <QFileSystemModel>
+#include <QShortcut>
+#include <QToolBar>
+#include <QMainWindow>
+#include <QDir>
+#include <QAction>
+
+class ColFM : public QMainWindow {
+public:
+    ColFM() {
+        model = new QFileSystemModel(this);
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+        model->setRootPath(QDir::homePath());
+
+        view = new QColumnView(this);
+        view->setModel(model);
+        setCentralWidget(view);
+
+        auto *tb = addToolBar("nav");
+        auto upAct = tb->addAction("Up");
+        connect(upAct, &QAction::triggered, this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Up), this, [this]{
+            auto p = view->currentIndex().parent();
+            if (p.isValid()) view->setCurrentIndex(p);
+        });
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_L), this, [this]{
+            view->setCurrentIndex(model->index(QDir::homePath()));
+        });
+
+        setWindowTitle("ColFM — Column File Manager");
+        resize(1200, 700);
+        view->setCurrentIndex(model->index(QDir::homePath()));
+    }
+private:
+    QFileSystemModel *model;
+    QColumnView *view;
+};
+
+#include <QObject>
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    ColFM w; w.show();
+    return app.exec();
+}

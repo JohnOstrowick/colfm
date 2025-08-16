@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QShortcut>
 #include <QMainWindow>
 #include <QToolBar>
 #include <QAction>
@@ -22,7 +23,6 @@
 #include <QProxyStyle>
 #include <QStyle>
 #include <QStatusBar>
-#include <QCursor>
 
 #include "toolbars.h" // Breadcrumbs class
 
@@ -135,39 +135,49 @@ protected:
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
-        model = new FixedFSModel(this);
-        model->setIconProvider(new CustomIconProvider());
-        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
-        currentRoot = model->setRootPath(QDir::homePath());
-
-        // Main toolbar FIRST (fixed row)
-        tb = new QToolBar("Main Toolbar", this);
-        tb->setMovable(false);
-        addToolBar(Qt::TopToolBarArea, tb);
-        drawButtons();
-
-        // Force next toolbar onto its own row
-        addToolBarBreak(Qt::TopToolBarArea);
-
-        // Path bar SECOND row (editable current path)
-        crumbs = new Breadcrumbs("Path", this);
-        addToolBar(Qt::TopToolBarArea, crumbs);
-        crumbs->setOnPathChosen([this](const QString &p){
-            if (QDir(p).exists()) {
-                currentRoot = model->index(p);
-                setViewMode(mode);
-            } else {
-                statusBar()->showMessage("Path not found", 2000);
-            }
-        });
-        crumbs->setPath(model->filePath(currentRoot));
-
-        setViewMode(ViewMode::Tree);
-        setWindowTitle("ColFM — Multi-View File Manager");
-        resize(1400, 800);
-    }
-
+    model = new FixedFSModel(this);
+    model->setIconProvider(new CustomIconProvider());
+    model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
+    currentRoot = model->setRootPath(QDir::homePath());
     void setPreviewHtml(const QString &html, const QString &path);
+
+    // Main toolbar FIRST (fixed row)
+    tb = new QToolBar("Main Toolbar", this);
+    tb->setMovable(false);
+    addToolBar(Qt::TopToolBarArea, tb);
+    drawButtons();
+
+    // Force next toolbar onto its own row
+    addToolBarBreak(Qt::TopToolBarArea);
+
+    // Path bar SECOND row (editable current path)
+    crumbs = new Breadcrumbs("Path", this);
+    addToolBar(Qt::TopToolBarArea, crumbs);
+    crumbs->setOnPathChosen([this](const QString &p){
+        if (QDir(p).exists()) {
+            currentRoot = model->index(p);
+            setViewMode(mode);
+        } else {
+            statusBar()->showMessage("Path not found", 2000);
+        }
+    });
+    crumbs->setPath(model->filePath(currentRoot));
+
+	// Shortcuts: Space and Ctrl+I show preview of current selection
+	new QShortcut(QKeySequence(Qt::Key_Space), this, [this]{
+	    const QModelIndex idx = currentIndex();
+	    if (idx.isValid()) previewFile(idx);
+	});
+	new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_I), this, [this]{
+	    const QModelIndex idx = currentIndex();
+	    if (idx.isValid()) previewFile(idx);
+	});
+
+
+    setViewMode(ViewMode::Tree);
+    setWindowTitle("ColFM — Multi-View File Manager");
+    resize(1400, 800);
+}
 
 private:
     // Model and state
@@ -176,6 +186,7 @@ private:
     QModelIndex currentRoot;
     QLabel *previewLabel{};
     bool showHidden = false;
+    bool eventFilter(QObject *obj, QEvent *ev) override;
 
     // UI
     Breadcrumbs *crumbs{};
@@ -183,9 +194,17 @@ private:
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
-    QAbstractItemView *currentView{}; // track active view
 
-    // Button creation + wiring (declarations only; bodies in actions.h)
+	QAbstractItemView *currentView{}; // track active view
+
+	// open/preview API
+	QModelIndex currentIndex() const;
+	bool isImageFile(const QString &path) const;
+	void previewFile(const QModelIndex &idx);
+	void openFile(const QModelIndex &idx);
+	void openApp(const QString &path);
+
+    // Declarations only — defined in actions.h
     void drawButtons();
 
     void onMoveToTrash();
@@ -206,13 +225,6 @@ private:
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
-
-    // open/preview API (bodies in handleopen.h)
-    QModelIndex currentIndex() const;
-    bool isImageFile(const QString &path) const;
-    void previewFile(const QModelIndex &idx);
-    void openFile(const QModelIndex &idx);
-    void openApp(const QString &path);
 
     // View builders — declarations only; bodies in viewwidgets.h
     QWidget* buildTreeWidget(const QModelIndex &root);

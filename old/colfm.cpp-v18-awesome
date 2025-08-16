@@ -1,0 +1,469 @@
+#include <QApplication>
+#include <QMainWindow>
+#include <QToolBar>
+#include <QAction>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QTreeView>
+#include <QListView>
+#include <QColumnView>
+#include <QAbstractItemView>
+#include <QSplitter>
+#include <QDir>
+#include <QIcon>
+#include <QDebug>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHeaderView>
+#include <QPixmap>
+#include <QImage>
+#include <QColor>
+#include <QStyledItemDelegate>
+#include <QProxyStyle>
+#include <QStyle>
+#include <QStatusBar>
+#include <QLineEdit>
+#include <QWidgetAction>
+#include <QSizePolicy>
+#include <functional>
+
+// -------- Settings --------
+static const QSize kIconSize(32, 32);
+
+enum class ViewMode { Tree, Column, Icon };
+
+// Force app-wide 32 px icon metrics
+class ForceIconStyle : public QProxyStyle {
+public:
+    using QProxyStyle::QProxyStyle;
+    int pixelMetric(PixelMetric m, const QStyleOption *opt, const QWidget *wid) const override {
+        if (m == QStyle::PM_SmallIconSize ||
+            m == QStyle::PM_ListViewIconSize ||
+            m == QStyle::PM_IconViewIconSize ||
+            m == QStyle::PM_ToolBarIconSize) return 32;
+        return QProxyStyle::pixelMetric(m, opt, wid);
+    }
+};
+
+// Force the decoration (painted icon) to a fixed size
+class FixedIconDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
+        option->decorationSize = kIconSize;
+    }
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        QStyleOptionViewItem opt(option);
+        opt.decorationSize = kIconSize;
+        return QStyledItemDelegate::sizeHint(opt, index);
+    }
+};
+
+// Custom icon provider: tint symlinks teal, executables light green
+class CustomIconProvider : public QFileIconProvider {
+public:
+    QIcon icon(const QFileInfo &info) const override {
+        QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
+        QImage img = pix.toImage();
+
+        if (info.isSymLink()) {
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x) {
+                    QColor c = img.pixelColor(x, y);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
+                }
+            return QIcon(QPixmap::fromImage(img));
+        }
+
+        if (info.isExecutable() && !info.isDir()) {
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x) {
+                    QColor c = img.pixelColor(x, y);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
+                }
+            return QIcon(QPixmap::fromImage(img));
+        }
+
+        return QFileIconProvider::icon(info);
+    }
+};
+
+// QFileSystemModel that guarantees 32x32 decoration pixmaps (fixes symlink size)
+class FixedFSModel : public QFileSystemModel {
+public:
+    using QFileSystemModel::QFileSystemModel;
+    QVariant data(const QModelIndex &index, int role) const override {
+        if (role == Qt::DecorationRole) {
+            QVariant v = QFileSystemModel::data(index, role);
+            QPixmap pm;
+            if (v.canConvert<QIcon>()) {
+                pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+            } else if (v.canConvert<QPixmap>()) {
+                pm = qvariant_cast<QPixmap>(v);
+            }
+            if (!pm.isNull() && pm.size() != kIconSize) {
+                pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
+            if (!pm.isNull()) return pm;
+            return v;
+        }
+        return QFileSystemModel::data(index, role);
+    }
+};
+
+// ColumnView subclass that forces 32x32 icons and delegate for every spawned column
+class ColumnView32 : public QColumnView {
+public:
+    using QColumnView::QColumnView;
+protected:
+    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override { // note: no 'const'
+        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
+        if (v) {
+            v->setIconSize(kIconSize);
+            v->setItemDelegate(new FixedIconDelegate(v));
+        }
+        return v;
+    }
+};
+
+// ---- New: Breadcrumbs toolbar (editable) ----
+class Breadcrumbs : public QToolBar {
+public:
+    explicit Breadcrumbs(const QString &title, QWidget *parent=nullptr)
+        : QToolBar(title, parent) {
+        setMovable(true);
+
+        // Anchor where we insert segments before, and an editor on the right.
+        spacerAct = addWidget(makeSpacer());
+        edit = new QLineEdit(this);
+        edit->setPlaceholderText("Path…");
+        editAct = addWidget(edit);
+
+        QObject::connect(edit, &QLineEdit::returnPressed, this, [this]{
+            if (onPathChosen) onPathChosen(edit->text());
+        });
+    }
+
+    void setOnPathChosen(std::function<void(const QString&)> cb) { onPathChosen = std::move(cb); }
+    QLineEdit* editField() const { return edit; }
+
+    void setPath(const QString &path) {
+        // Remove old segment actions
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        const QString sep = QDir::separator();
+        QString clean = QDir::cleanPath(path);
+        edit->setText(clean);
+
+        bool absolute = clean.startsWith(sep);
+        QStringList parts = clean.split(sep, Qt::SkipEmptyParts);
+
+        // Root segment for absolute paths
+        if (absolute) {
+            addSegment("/", sep);
+        }
+
+        QString accum = absolute ? sep : QString();
+        for (int i = 0; i < parts.size(); ++i) {
+            if (accum.isEmpty() || accum == sep) accum += parts[i];
+            else accum += sep + parts[i];
+            addSegment(parts[i], accum);
+        }
+    }
+
+private:
+    QLineEdit *edit{};
+    QAction *spacerAct{};
+    QAction *editAct{};
+    QList<QAction*> segActs;
+    std::function<void(const QString&)> onPathChosen;
+
+    QWidget* makeSpacer() {
+        QWidget *sp = new QWidget(this);
+        sp->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        return sp;
+    }
+
+    void addSegment(const QString &label, const QString &fullPath) {
+        QAction *seg = new QAction(label, this);
+        insertAction(spacerAct, seg);
+        segActs.push_back(seg);
+        QObject::connect(seg, &QAction::triggered, this, [this, fullPath]{
+            if (onPathChosen) onPathChosen(fullPath);
+            if (edit) edit->setText(fullPath);
+        });
+    }
+};
+
+class ColFM : public QMainWindow {
+public:
+    ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
+        model = new FixedFSModel(this);
+        model->setIconProvider(new CustomIconProvider());
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
+        currentRoot = model->setRootPath(QDir::homePath());
+
+        // Breadcrumbs toolbar (above main toolbar)
+        crumbs = new Breadcrumbs("Path", this);
+        addToolBar(Qt::TopToolBarArea, crumbs);
+        crumbs->setOnPathChosen([this](const QString &p){
+            if (QDir(p).exists()) {
+                currentRoot = model->index(p);
+                setViewMode(mode);
+            } else {
+                statusBar()->showMessage("Path not found", 2000);
+            }
+        });
+        crumbs->setPath(model->filePath(currentRoot));
+
+        // Main toolbar
+        tb = new QToolBar("Main Toolbar", this);
+        tb->setMovable(false);
+        addToolBar(Qt::TopToolBarArea, tb);
+
+        drawButtons(); // creates actions + connects them
+
+        setViewMode(ViewMode::Tree);
+        setWindowTitle("ColFM — Multi-View File Manager");
+        resize(1400, 800);
+    }
+
+private:
+    // Model and state
+    FixedFSModel *model{};
+    ViewMode mode = ViewMode::Tree;
+    QModelIndex currentRoot;
+    QLabel *previewLabel{};
+    bool showHidden = false; // default: dotfiles hidden
+
+    // UI
+    Breadcrumbs *crumbs{};
+    QToolBar *tb{};
+    QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
+    QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
+    QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
+
+    // Button creation + wiring (ONE place)
+    void drawButtons() {
+        actTrash      = tb->addAction(QIcon("icons/move_to_trash.png"), "Move to Trash");      actTrash->setToolTip("Move selected items to Trash");
+        actRefresh    = tb->addAction(QIcon("icons/refresh.png"),       "Refresh Folder");      actRefresh->setToolTip("Reload current folder");
+        actOpenTrash  = tb->addAction(QIcon("icons/open_trash.png"),    "Open Trash");          actOpenTrash->setToolTip("Open the Trash folder");
+
+        actUp         = tb->addAction(QIcon("icons/up_level.png"),      "Go Up a Level");       actUp->setToolTip("Go to parent folder");
+        actOpen       = tb->addAction(QIcon("icons/open.png"),          "Open");                actOpen->setToolTip("Open selected item");
+        actClose      = tb->addAction(QIcon("icons/close.png"),         "Close");               actClose->setToolTip("Close selection");
+        actInfo       = tb->addAction(QIcon("icons/info.png"),          "File Info & Preview"); actInfo->setToolTip("Show file information and preview");
+        actRename     = tb->addAction(QIcon("icons/rename.png"),        "Rename");              actRename->setToolTip("Rename selected item");
+        actMove       = tb->addAction(QIcon("icons/move.png"),          "Move");                actMove->setToolTip("Move selected item");
+        actDuplicate  = tb->addAction(QIcon("icons/duplicate.png"),     "Copy / Duplicate");    actDuplicate->setToolTip("Copy or duplicate selected item");
+        actLink       = tb->addAction(QIcon("icons/softlink.png"),      "Create Softlink");     actLink->setToolTip("Create a symbolic link to selected item");
+
+        tb->addSeparator();
+
+        treeBtn       = tb->addAction(QIcon("icons/view_tree.png"),     "Tree/List View");      treeBtn->setToolTip("Switch to Tree/List view");
+        columnBtn     = tb->addAction(QIcon("icons/view_columns.png"),  "Column View");         columnBtn->setToolTip("Switch to Column view");
+        iconBtn       = tb->addAction(QIcon("icons/view_icons.png"),    "Icon View");           iconBtn->setToolTip("Switch to Icon view");
+
+        toggleHiddenBtn = tb->addAction(QIcon("icons/eye-slash.png"),   "Show/Hide Invisibles");
+        toggleHiddenBtn->setToolTip("Toggle hidden files");
+
+        // Connect each button to its dedicated handler
+        connect(actTrash,       &QAction::triggered, this, &ColFM::onMoveToTrash);
+        connect(actRefresh,     &QAction::triggered, this, &ColFM::onRefresh);
+        connect(actOpenTrash,   &QAction::triggered, this, &ColFM::onOpenTrash);
+
+        connect(actUp,          &QAction::triggered, this, &ColFM::onUp);
+        connect(actOpen,        &QAction::triggered, this, &ColFM::onOpen);
+        connect(actClose,       &QAction::triggered, this, &ColFM::onCloseAction);
+        connect(actInfo,        &QAction::triggered, this, &ColFM::onInfo);
+        connect(actRename,      &QAction::triggered, this, &ColFM::onRename);
+        connect(actMove,        &QAction::triggered, this, &ColFM::onMove);
+        connect(actDuplicate,   &QAction::triggered, this, &ColFM::onDuplicate);
+        connect(actLink,        &QAction::triggered, this, &ColFM::onCreateSoftlink);
+
+        connect(toggleHiddenBtn,&QAction::triggered, this, &ColFM::onToggleHidden);
+
+        connect(treeBtn,        &QAction::triggered, this, &ColFM::onViewTree);
+        connect(columnBtn,      &QAction::triggered, this, &ColFM::onViewColumn);
+        connect(iconBtn,        &QAction::triggered, this, &ColFM::onViewIcon);
+    }
+
+    // Handlers (ONE task each)
+    void onMoveToTrash()            { statusBar()->showMessage("TODO: Move to Trash", 2000); }
+    void onRefresh() {
+        const QString path = model->filePath(currentRoot);
+        model->setRootPath(path);
+        setViewMode(mode);
+        statusBar()->showMessage("Folder refreshed", 1500);
+    }
+    void onOpenTrash() {
+        const QString trash = QDir::homePath() + "/.local/share/Trash/files";
+        if (!QDir(trash).exists()) {
+            statusBar()->showMessage("Trash folder not found", 2000);
+            return;
+        }
+        currentRoot = model->index(trash);
+        setViewMode(mode);
+    }
+
+    void onUp() {
+        if (!currentRoot.isValid()) return;
+        QModelIndex parentIdx = model->parent(currentRoot);
+        if (parentIdx.isValid()) {
+            currentRoot = parentIdx;
+            setViewMode(mode);
+        }
+    }
+    void onOpen()                   { statusBar()->showMessage("TODO: Open", 2000); }
+    void onCloseAction()            { statusBar()->showMessage("TODO: Close", 2000); }
+    void onInfo()                   { statusBar()->showMessage("TODO: File Info", 2000); }
+    void onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }
+    void onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+    void onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
+    void onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
+
+    void onToggleHidden() {
+        showHidden = !showHidden;
+        QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
+        if (showHidden) {
+            f |= QDir::Hidden;
+            toggleHiddenBtn->setIcon(QIcon("icons/eye.png"));
+        } else {
+            toggleHiddenBtn->setIcon(QIcon("icons/eye-slash.png"));
+        }
+        model->setFilter(f);
+        setViewMode(mode);
+    }
+
+    void onViewTree()               { setViewMode(ViewMode::Tree); }
+    void onViewColumn()             { setViewMode(ViewMode::Column); }
+    void onViewIcon()               { setViewMode(ViewMode::Icon); }
+
+    // View builders
+    QWidget* buildTreeWidget(const QModelIndex &root) {
+        auto *view = new QTreeView();
+        view->setModel(model);
+        view->setRootIndex(root);
+        view->setHeaderHidden(false);
+        view->setSelectionBehavior(QAbstractItemView::SelectRows);
+        view->setAlternatingRowColors(true);
+        view->setIconSize(kIconSize);
+        view->setItemDelegate(new FixedIconDelegate(view));
+
+        view->header()->setSectionResizeMode(QHeaderView::Interactive);
+        view->header()->setStretchLastSection(false);
+        view->setColumnWidth(0, 600);
+
+        connect(view, &QTreeView::doubleClicked, this, [this, view](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                view->setRootIndex(idx);
+                currentRoot = idx;
+            } else {
+                qDebug() << "Preview placeholder for:" << model->filePath(idx);
+            }
+        });
+        return view;
+    }
+
+    QWidget* buildColumnWidget(const QModelIndex &root) {
+        auto *splitter = new QSplitter(Qt::Horizontal);
+        splitter->setChildrenCollapsible(false);
+
+        auto *cv = new ColumnView32(splitter);
+        cv->setModel(model);
+        cv->setRootIndex(root);
+        cv->setIconSize(kIconSize);
+        cv->setResizeGripsVisible(true);
+        cv->setSelectionBehavior(QAbstractItemView::SelectRows);
+        cv->setColumnWidths({400,400,400});
+        cv->setItemDelegate(new FixedIconDelegate(cv)); // also on the columnview itself
+
+        connect(cv, &QColumnView::clicked, this, [this](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (!model->isDir(idx) && previewLabel) {
+                previewLabel->setText(model->fileName(idx));
+            }
+        });
+        connect(cv, &QColumnView::doubleClicked, this, [this, cv](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                cv->setRootIndex(idx);
+                currentRoot = idx;
+            }
+        });
+
+        QWidget *previewPane = new QWidget();
+        QPalette pal = previewPane->palette();
+        pal.setColor(QPalette::Window, QColor(30, 30, 30));
+        previewPane->setAutoFillBackground(true);
+        previewPane->setPalette(pal);
+        previewLabel = new QLabel("Preview");
+        previewLabel->setStyleSheet("QLabel { color: white; padding: 8px; }");
+        auto *previewLayout = new QVBoxLayout(previewPane);
+        previewLayout->setContentsMargins(0,0,0,0);
+        previewLayout->addWidget(previewLabel);
+
+        splitter->addWidget(cv);
+        splitter->addWidget(previewPane);
+        splitter->setStretchFactor(0, 3);
+        splitter->setStretchFactor(1, 2);
+        return splitter;
+    }
+
+    QWidget* buildIconWidget(const QModelIndex &root) {
+        auto *view = new QListView();
+        view->setModel(model);
+        view->setRootIndex(root);
+        view->setViewMode(QListView::IconMode);
+        view->setIconSize(kIconSize);
+        view->setItemDelegate(new FixedIconDelegate(view));
+        view->setGridSize(QSize(120,120));
+        view->setSpacing(8);
+        view->setResizeMode(QListView::Adjust);
+        view->setMovement(QListView::Static);
+        view->setUniformItemSizes(true);
+        connect(view, &QListView::doubleClicked, this, [this, view](const QModelIndex &idx){
+            if (!idx.isValid()) return;
+            if (model->isDir(idx)) {
+                view->setRootIndex(idx);
+                currentRoot = idx;
+            } else {
+                qDebug() << "Preview placeholder for:" << model->filePath(idx);
+            }
+        });
+        return view;
+    }
+
+    void setViewMode(ViewMode m) {
+        mode = m;
+        QWidget *old = centralWidget();
+        if (old) old->deleteLater();
+        QWidget *w = nullptr;
+        QModelIndex root = currentRoot.isValid() ? currentRoot : model->index(QDir::homePath());
+        switch (mode) {
+            case ViewMode::Tree:   w = buildTreeWidget(root);   break;
+            case ViewMode::Column: w = buildColumnWidget(root); break;
+            case ViewMode::Icon:   w = buildIconWidget(root);   break;
+        }
+        setCentralWidget(w);
+
+        if (crumbs) crumbs->setPath(model->filePath(currentRoot));
+    }
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle(new ForceIconStyle(app.style()));
+    app.setWindowIcon(QIcon("icons/app_icon.png")); // TODO: if not shown, keep as bug
+    ColFM w; w.show();
+    return app.exec();
+}

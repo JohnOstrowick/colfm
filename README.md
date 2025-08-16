@@ -28,3 +28,9 @@ g++ -std=c++17 colfm.cpp -o colfm `pkg-config --cflags --libs Qt6Widgets`
 
 # Run
 ./colfm
+
+## If you enjoy this
+
+If you like this, please consider a small donation for me at
+
+Bitcoin: 1HYvud8dJx5JMHA9FjWw6zp6NbT6DmivEF

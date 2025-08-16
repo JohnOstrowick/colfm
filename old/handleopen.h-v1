@@ -1,0 +1,90 @@
+// handleopen.h
+#pragma once
+#include <QDesktopServices>
+#include <QUrl>
+#include <QProcess>
+#include <QMimeDatabase>
+#include <QImageReader>
+#include <QPixmap>
+#include <QDateTime>
+#include <QItemSelectionModel>
+
+// ---- ColFM open/preview helpers ----
+
+inline QModelIndex ColFM::currentIndex() const {
+    if (!currentView) return QModelIndex();
+    auto *sel = currentView->selectionModel();
+    if (!sel) return QModelIndex();
+    QModelIndex idx = sel->currentIndex();
+    if (!idx.isValid()) {
+        const auto rows = sel->selectedRows();
+        if (!rows.isEmpty()) return rows.first();
+    }
+    return idx;
+}
+
+inline bool ColFM::isImageFile(const QString &path) const {
+    QMimeDatabase db;
+    auto mt = db.mimeTypeForFile(path, QMimeDatabase::MatchContent);
+    return mt.name().startsWith("image/");
+}
+
+inline void ColFM::previewFile(const QModelIndex &idx) {
+    if (!idx.isValid() || !previewLabel) return;
+    const QString path = model->filePath(idx);
+    QFileInfo fi(path);
+
+    // Image preview (if image)
+    if (fi.isFile() && isImageFile(path)) {
+        QImageReader reader(path);
+        reader.setAutoTransform(true);
+        QImage img = reader.read();
+        if (!img.isNull()) {
+            QPixmap pm = QPixmap::fromImage(img);
+            // modest scaling to keep UI snappy
+            if (pm.width() > 512) pm = pm.scaledToWidth(512, Qt::SmoothTransformation);
+            previewLabel->setPixmap(pm);
+            previewLabel->setToolTip(path);
+            return;
+        }
+    }
+
+    // Fallback: text info
+    const QString info =
+        QString("Name: %1\nType: %2\nSize: %3 bytes\nModified: %4\nPath: %5")
+            .arg(fi.fileName())
+            .arg(fi.isDir() ? "Folder" : "File")
+            .arg(fi.isDir() ? "-" : QString::number(fi.size()))
+	    .arg(fi.lastModified().toString(Qt::ISODate))
+            .arg(path);
+    previewLabel->setPixmap(QPixmap()); // clear any previous image
+    previewLabel->setText(info);
+    previewLabel->setToolTip(path);
+}
+
+inline void ColFM::openApp(const QString &path) {
+    // Run executable directly
+    QProcess::startDetached(path);
+}
+
+inline void ColFM::openFile(const QModelIndex &idx) {
+    if (!idx.isValid()) return;
+    const QString path = model->filePath(idx);
+    QFileInfo fi(path);
+
+    if (fi.isDir()) {
+        currentRoot = idx;
+        if (crumbs) crumbs->setPath(path);
+        setViewMode(mode);
+        return;
+    }
+
+    if (fi.isExecutable()) {
+        openApp(path);
+        return;
+    }
+
+    // Open with system default application (xdg-open via Qt)
+    const bool ok = QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    if (!ok) statusBar()->showMessage("Could not open", 2000);
+}

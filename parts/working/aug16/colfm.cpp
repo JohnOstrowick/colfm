@@ -25,7 +25,6 @@
 #include <QLineEdit>
 #include <QWidgetAction>
 #include <QSizePolicy>
-#include <QEvent>
 #include <functional>
 
 // -------- Settings --------
@@ -124,7 +123,7 @@ class ColumnView32 : public QColumnView {
 public:
     using QColumnView::QColumnView;
 protected:
-    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
+    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override { // note: no 'const'
         QAbstractItemView *v = QColumnView::createColumn(rootIndex);
         if (v) {
             v->setIconSize(kIconSize);
@@ -134,7 +133,75 @@ protected:
     }
 };
 
-#include "breadcrumbs.h"
+// ---- New: Breadcrumbs toolbar (editable) ----
+class Breadcrumbs : public QToolBar {
+public:
+    explicit Breadcrumbs(const QString &title, QWidget *parent=nullptr)
+        : QToolBar(title, parent) {
+        setMovable(true);
+
+        // Anchor where we insert segments before, and an editor on the right.
+        spacerAct = addWidget(makeSpacer());
+        edit = new QLineEdit(this);
+        edit->setPlaceholderText("Path…");
+        editAct = addWidget(edit);
+
+        QObject::connect(edit, &QLineEdit::returnPressed, this, [this]{
+            if (onPathChosen) onPathChosen(edit->text());
+        });
+    }
+
+    void setOnPathChosen(std::function<void(const QString&)> cb) { onPathChosen = std::move(cb); }
+    QLineEdit* editField() const { return edit; }
+
+    void setPath(const QString &path) {
+        // Remove old segment actions
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        const QString sep = QDir::separator();
+        QString clean = QDir::cleanPath(path);
+        edit->setText(clean);
+
+        bool absolute = clean.startsWith(sep);
+        QStringList parts = clean.split(sep, Qt::SkipEmptyParts);
+
+        // Root segment for absolute paths
+        if (absolute) {
+            addSegment("/", sep);
+        }
+
+        QString accum = absolute ? sep : QString();
+        for (int i = 0; i < parts.size(); ++i) {
+            if (accum.isEmpty() || accum == sep) accum += parts[i];
+            else accum += sep + parts[i];
+            addSegment(parts[i], accum);
+        }
+    }
+
+private:
+    QLineEdit *edit{};
+    QAction *spacerAct{};
+    QAction *editAct{};
+    QList<QAction*> segActs;
+    std::function<void(const QString&)> onPathChosen;
+
+    QWidget* makeSpacer() {
+        QWidget *sp = new QWidget(this);
+        sp->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        return sp;
+    }
+
+    void addSegment(const QString &label, const QString &fullPath) {
+        QAction *seg = new QAction(label, this);
+        insertAction(spacerAct, seg);
+        segActs.push_back(seg);
+        QObject::connect(seg, &QAction::triggered, this, [this, fullPath]{
+            if (onPathChosen) onPathChosen(fullPath);
+            if (edit) edit->setText(fullPath);
+        });
+    }
+};
 
 class ColFM : public QMainWindow {
 public:
@@ -146,7 +213,7 @@ public:
 
         // Breadcrumbs toolbar (above main toolbar)
         crumbs = new Breadcrumbs("Path", this);
-        //addToolBar(Qt::TopToolBarArea, crumbs);
+        addToolBar(Qt::TopToolBarArea, crumbs);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) {
                 currentRoot = model->index(p);
@@ -163,43 +230,11 @@ public:
         addToolBar(Qt::TopToolBarArea, tb);
 
         drawButtons(); // creates actions + connects them
-	addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
         resize(1400, 800);
     }
-
-    // ---- declarations needed by toolbars.h ----
-public:
-    // toolbar build
-    void drawButtons();
-
-    // handlers
-    void onMoveToTrash();
-    void onRefresh();
-    void onOpenTrash();
-    void onRestoreFromTrash();
-    void onUp();
-    void onOpen();
-    void onCloseAction();
-    void onInfo();
-    void onRename();
-    void onMove();
-    void onDuplicate();
-    void onCreateSoftlink();
-    void onToggleHidden();
-    void onViewTree();
-    void onViewColumn();
-    void onViewIcon();
-
-    // event filter implemented inline in toolbars.h
-    bool eventFilter(QObject *obj, QEvent *ev) override;
-
-    // helpers used by toolbars.h inline code
-    QModelIndex currentIndex() const;
-    void previewFile(const QModelIndex &idx);
-    void openFile(const QModelIndex &idx);
 
 private:
     // Model and state
@@ -213,11 +248,104 @@ private:
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
-    QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
-    QAction *actEmptyTrash{};           // used by toolbars.h
-    QAbstractItemView *currentView{};   // supports currentIndex()
+
+    // Button creation + wiring (ONE place)
+    void drawButtons() {
+        actTrash      = tb->addAction(QIcon("icons/move_to_trash.png"), "Move to Trash");      actTrash->setToolTip("Move selected items to Trash");
+        actRefresh    = tb->addAction(QIcon("icons/refresh.png"),       "Refresh Folder");      actRefresh->setToolTip("Reload current folder");
+        actOpenTrash  = tb->addAction(QIcon("icons/open_trash.png"),    "Open Trash");          actOpenTrash->setToolTip("Open the Trash folder");
+
+        actUp         = tb->addAction(QIcon("icons/up_level.png"),      "Go Up a Level");       actUp->setToolTip("Go to parent folder");
+        actOpen       = tb->addAction(QIcon("icons/open.png"),          "Open");                actOpen->setToolTip("Open selected item");
+        actClose      = tb->addAction(QIcon("icons/close.png"),         "Close");               actClose->setToolTip("Close selection");
+        actInfo       = tb->addAction(QIcon("icons/info.png"),          "File Info & Preview"); actInfo->setToolTip("Show file information and preview");
+        actRename     = tb->addAction(QIcon("icons/rename.png"),        "Rename");              actRename->setToolTip("Rename selected item");
+        actMove       = tb->addAction(QIcon("icons/move.png"),          "Move");                actMove->setToolTip("Move selected item");
+        actDuplicate  = tb->addAction(QIcon("icons/duplicate.png"),     "Copy / Duplicate");    actDuplicate->setToolTip("Copy or duplicate selected item");
+        actLink       = tb->addAction(QIcon("icons/softlink.png"),      "Create Softlink");     actLink->setToolTip("Create a symbolic link to selected item");
+
+        tb->addSeparator();
+
+        treeBtn       = tb->addAction(QIcon("icons/view_tree.png"),     "Tree/List View");      treeBtn->setToolTip("Switch to Tree/List view");
+        columnBtn     = tb->addAction(QIcon("icons/view_columns.png"),  "Column View");         columnBtn->setToolTip("Switch to Column view");
+        iconBtn       = tb->addAction(QIcon("icons/view_icons.png"),    "Icon View");           iconBtn->setToolTip("Switch to Icon view");
+
+        toggleHiddenBtn = tb->addAction(QIcon("icons/eye-slash.png"),   "Show/Hide Invisibles");
+        toggleHiddenBtn->setToolTip("Toggle hidden files");
+
+        // Connect each button to its dedicated handler
+        connect(actTrash,       &QAction::triggered, this, &ColFM::onMoveToTrash);
+        connect(actRefresh,     &QAction::triggered, this, &ColFM::onRefresh);
+        connect(actOpenTrash,   &QAction::triggered, this, &ColFM::onOpenTrash);
+
+        connect(actUp,          &QAction::triggered, this, &ColFM::onUp);
+        connect(actOpen,        &QAction::triggered, this, &ColFM::onOpen);
+        connect(actClose,       &QAction::triggered, this, &ColFM::onCloseAction);
+        connect(actInfo,        &QAction::triggered, this, &ColFM::onInfo);
+        connect(actRename,      &QAction::triggered, this, &ColFM::onRename);
+        connect(actMove,        &QAction::triggered, this, &ColFM::onMove);
+        connect(actDuplicate,   &QAction::triggered, this, &ColFM::onDuplicate);
+        connect(actLink,        &QAction::triggered, this, &ColFM::onCreateSoftlink);
+
+        connect(toggleHiddenBtn,&QAction::triggered, this, &ColFM::onToggleHidden);
+
+        connect(treeBtn,        &QAction::triggered, this, &ColFM::onViewTree);
+        connect(columnBtn,      &QAction::triggered, this, &ColFM::onViewColumn);
+        connect(iconBtn,        &QAction::triggered, this, &ColFM::onViewIcon);
+    }
+
+    // Handlers (ONE task each)
+    void onMoveToTrash()            { statusBar()->showMessage("TODO: Move to Trash", 2000); }
+    void onRefresh() {
+        const QString path = model->filePath(currentRoot);
+        model->setRootPath(path);
+        setViewMode(mode);
+        statusBar()->showMessage("Folder refreshed", 1500);
+    }
+    void onOpenTrash() {
+        const QString trash = QDir::homePath() + "/.local/share/Trash/files";
+        if (!QDir(trash).exists()) {
+            statusBar()->showMessage("Trash folder not found", 2000);
+            return;
+        }
+        currentRoot = model->index(trash);
+        setViewMode(mode);
+    }
+
+    void onUp() {
+        if (!currentRoot.isValid()) return;
+        QModelIndex parentIdx = model->parent(currentRoot);
+        if (parentIdx.isValid()) {
+            currentRoot = parentIdx;
+            setViewMode(mode);
+        }
+    }
+    void onOpen()                   { statusBar()->showMessage("TODO: Open", 2000); }
+    void onCloseAction()            { statusBar()->showMessage("TODO: Close", 2000); }
+    void onInfo()                   { statusBar()->showMessage("TODO: File Info", 2000); }
+    void onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }
+    void onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+    void onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
+    void onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
+
+    void onToggleHidden() {
+        showHidden = !showHidden;
+        QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
+        if (showHidden) {
+            f |= QDir::Hidden;
+            toggleHiddenBtn->setIcon(QIcon("icons/eye.png"));
+        } else {
+            toggleHiddenBtn->setIcon(QIcon("icons/eye-slash.png"));
+        }
+        model->setFilter(f);
+        setViewMode(mode);
+    }
+
+    void onViewTree()               { setViewMode(ViewMode::Tree); }
+    void onViewColumn()             { setViewMode(ViewMode::Column); }
+    void onViewIcon()               { setViewMode(ViewMode::Icon); }
 
     // View builders
     QWidget* buildTreeWidget(const QModelIndex &root) {
@@ -229,7 +357,6 @@ private:
         view->setAlternatingRowColors(true);
         view->setIconSize(kIconSize);
         view->setItemDelegate(new FixedIconDelegate(view));
-        currentView = view;
 
         view->header()->setSectionResizeMode(QHeaderView::Interactive);
         view->header()->setStretchLastSection(false);
@@ -259,7 +386,6 @@ private:
         cv->setSelectionBehavior(QAbstractItemView::SelectRows);
         cv->setColumnWidths({400,400,400});
         cv->setItemDelegate(new FixedIconDelegate(cv)); // also on the columnview itself
-        currentView = cv;
 
         connect(cv, &QColumnView::clicked, this, [this](const QModelIndex &idx){
             if (!idx.isValid()) return;
@@ -305,8 +431,6 @@ private:
         view->setResizeMode(QListView::Adjust);
         view->setMovement(QListView::Static);
         view->setUniformItemSizes(true);
-        currentView = view;
-
         connect(view, &QListView::doubleClicked, this, [this, view](const QModelIndex &idx){
             if (!idx.isValid()) return;
             if (model->isDir(idx)) {
@@ -335,23 +459,6 @@ private:
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
     }
 };
-
-// ---- helper method DEFINITIONS (moved outside the class) ----
-QModelIndex ColFM::currentIndex() const {
-    return currentView ? currentView->currentIndex() : QModelIndex();
-}
-void ColFM::previewFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    if (!previewLabel) return;
-    previewLabel->setText(model->filePath(idx));
-}
-void ColFM::openFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    qDebug() << "Open file:" << model->filePath(idx);
-}
-
-// include inline toolbar definitions AFTER the class (and after helper defs)
-#include "toolbars.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

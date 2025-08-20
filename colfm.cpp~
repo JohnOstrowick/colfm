@@ -25,7 +25,6 @@
 #include <QLineEdit>
 #include <QWidgetAction>
 #include <QSizePolicy>
-#include <QEvent>
 #include <functional>
 
 // -------- Settings --------
@@ -146,7 +145,7 @@ public:
 
         // Breadcrumbs toolbar (above main toolbar)
         crumbs = new Breadcrumbs("Path", this);
-        //addToolBar(Qt::TopToolBarArea, crumbs);
+        addToolBar(Qt::TopToolBarArea, crumbs);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) {
                 currentRoot = model->index(p);
@@ -163,7 +162,6 @@ public:
         addToolBar(Qt::TopToolBarArea, tb);
 
         drawButtons(); // creates actions + connects them
-	addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
@@ -179,7 +177,6 @@ public:
     void onMoveToTrash();
     void onRefresh();
     void onOpenTrash();
-    void onRestoreFromTrash();
     void onUp();
     void onOpen();
     void onCloseAction();
@@ -213,11 +210,11 @@ private:
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
-    QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
-    QAction *actEmptyTrash{};           // used by toolbars.h
-    QAbstractItemView *currentView{};   // supports currentIndex()
+    QAction *actEmptyTrash{}; // <-- used by toolbars.h
+
+    QAbstractItemView *currentView{}; // <-- to support currentIndex()
 
     // View builders
     QWidget* buildTreeWidget(const QModelIndex &root) {
@@ -334,23 +331,23 @@ private:
 
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
     }
+
+    // --- helpers used by toolbars.h inline code ---
+    QModelIndex currentIndex() const {
+        return currentView ? currentView->currentIndex() : QModelIndex();
+    }
+    void previewFile(const QModelIndex &idx) {
+        if (!idx.isValid()) return;
+        if (!previewLabel) return;
+        previewLabel->setText(model->filePath(idx));
+    }
+    void openFile(const QModelIndex &idx) {
+        if (!idx.isValid()) return;
+        qDebug() << "Open file:" << model->filePath(idx);
+    }
 };
 
-// ---- helper method DEFINITIONS (moved outside the class) ----
-QModelIndex ColFM::currentIndex() const {
-    return currentView ? currentView->currentIndex() : QModelIndex();
-}
-void ColFM::previewFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    if (!previewLabel) return;
-    previewLabel->setText(model->filePath(idx));
-}
-void ColFM::openFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    qDebug() << "Open file:" << model->filePath(idx);
-}
-
-// include inline toolbar definitions AFTER the class (and after helper defs)
+// include inline toolbar definitions AFTER the class
 #include "toolbars.h"
 
 int main(int argc, char *argv[]) {

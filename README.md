@@ -20,7 +20,7 @@ ColFM is a Qt6-based file manager prototype with three switchable view modes:
 sudo apt install qt6-base-dev
 
 # Clone the repo
-git clone https://github.com/YOURUSERNAME/colfm.git
+git clone https://github.com/JohnOstrowick/colfm.git
 cd colfm
 
 # Build

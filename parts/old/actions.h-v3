@@ -1,0 +1,334 @@
+#pragma once
+#include <QDirIterator>
+#include <QMessageBox>
+#include <QDir>
+#include <QIcon>
+#include <QAction>
+#include <QStatusBar>
+#include <QKeySequence>
+#include <QShortcut>
+#include <QCursor>
+#include <QStandardPaths>
+#include <QFile>
+#include <QFileInfo>
+#include <QTextStream>
+#include <QDateTime>
+
+// ----- out-of-class definitions for ColFM -----
+
+inline void ColFM::drawButtons() {
+
+// Primary actions
+    actRefresh    = tb->addAction(QIcon("icons/refresh.png")... Folder");      actRefresh->setToolTip("Reload current folder");
+    actUp         = tb->addAction(QIcon("icons/up_level.png"...Go Up a Level");       actUp->setToolTip("Go to parent folder");
+    actInfo       = tb->addAction(QIcon("icons/info.png"),  ...iew"); actInfo->setToolTip("Show file information and preview");
+    actRename     = tb->addAction(QIcon("icons/rename.png"),...e");              actRename->setToolTip("Rename selected item");
+    actMove       = tb->addAction(QIcon("icons/move.png"),  ...ove");                actMove->setToolTip("Move selected item");
+    actDuplicate  = tb->addAction(QIcon("icons/duplicate.png...    actDuplicate->setToolTip("Copy or duplicate selected item");
+    actLink       = tb->addAction(QIcon("icons/softlink.png"... actLink->setToolTip("Create a symbolic link to selected item");
+
+    tb->addSeparator();
+
+    // Trash cluster
+    actShowTrash  = tb->addAction(QIcon("icons/show_trash.png"),  "Show Trash");          actShowTrash->setToolTip("Open the Trash folder");
+    actTrash      = tb->addAction(QIcon("icons/move_to_trash...sh");      actTrash->setToolTip("Move selected items to Trash");
+    actOpenTrash  = tb->addAction(QIcon("icons/open_trash.pn...h");          actOpenTrash->setToolTip("Move out of Trash");
+    actEmptyTrash = tb->addAction(QIcon("icons/empty_trash.png"), "Empty Trash");         actEmptyTrash->setToolTip("Permanently delete all items in Trash");
+
+    tb->addSeparator();
+
+    // View modes
+    treeBtn       = tb->addAction(QIcon("icons/view_tree.png...st View");      treeBtn->setToolTip("Switch to Tree/List view");
+    columnBtn     = tb->addAction(QIcon("icons/view_columns.... View");         columnBtn->setToolTip("Switch to Column view");
+    iconBtn       = tb->addAction(QIcon("icons/view_icons.pn...on View");           iconBtn->setToolTip("Switch to Icon view");
+
+    // Hidden toggle (kept at end)
+    toggleHiddenBtn = tb->addAction(QIcon("icons/eye-slash.png"),   "Show/Hide Invisibles");
+    toggleHiddenBtn->setToolTip("Toggle hidden files");
+
+
+    // Wire up toolbar actions
+    connect(actTrash,       &QAction::triggered, this, &ColFM::onMoveToTrash);
+    connect(actRefresh,     &QAction::triggered, this, &ColFM::onRefresh);
+
+	// trash
+    connect(actOpenTrash,   &QAction::triggered, this, &ColFM::onOpenTrash);
+    connect(actMoveOutOfTrash, &QAction::triggered, this, &ColFM::onMoveOutOfTrash);
+connect(actShowTrash,  &QAction::triggered, this, &ColFM::onShowTrash);
+connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+
+	// generic
+    connect(actUp,          &QAction::triggered, this, &ColFM::onUp);
+    connect(actOpen,        &QAction::triggered, this, &ColFM::onOpen);
+    connect(actInfo,        &QAction::triggered, this, &ColFM::onInfo);
+    connect(actRename,      &QAction::triggered, this, &ColFM::onRename);
+    connect(actMove,        &QAction::triggered, this, &ColFM::onMove);
+    connect(actDuplicate,   &QAction::triggered, this, &ColFM::onDuplicate);
+    connect(actLink,        &QAction::triggered, this, &ColFM::onCreateSoftlink);
+ 	// views
+    connect(toggleHiddenBtn,&QAction::triggered, this, &ColFM::onToggleHidden);
+
+    connect(treeBtn,        &QAction::triggered, this, &ColFM::onViewTree);
+    connect(columnBtn,      &QAction::triggered, this, &ColFM::onViewColumn);
+    connect(iconBtn,        &QAction::triggered, this, &ColFM::onViewIcon);
+
+    // Global shortcuts (no event filter)
+    actInfo->setShortcuts({ QKeySequence(Qt::CTRL | Qt::Key_I), QKeySequence(Qt::Key_Space) });
+    actInfo->setShortcutContext(Qt::ApplicationShortcut);
+
+    auto scInfo  = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_I), this);
+    scInfo->setContext(Qt::ApplicationShortcut);
+    connect(scInfo, &QShortcut::activated, this, &ColFM::onInfo);
+
+    auto scSpace = new QShortcut(QKeySequence(Qt::Key_Space), this);
+    scSpace->setContext(Qt::ApplicationShortcut);
+    connect(scSpace, &QShortcut::activated, this, &ColFM::onInfo);
+}
+
+inline void ColFM::onShowTrash() {
+    const QString trashPath = QDir::homePath() + "/.local/share/Trash/files";
+    QDir().mkpath(trashPath);
+    model->setRootPath(trashPath);
+    if (currentView) currentView->setRootIndex(model->index(trashPath));
+    statusBar()->showMessage("Trash opened", 1500);
+}
+
+inline void ColFM::removeRecursively(const QString &path) {
+    QFileInfo fi(path);
+    if (fi.isDir() && !fi.isSymLink()) {
+        QDir d(path);
+        for (const QFileInfo &entry : d.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries)) {
+            removeRecursively(entry.absoluteFilePath());
+        }
+        d.rmdir(".");
+    } else {
+        QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner |
+                                    QFileDevice::ReadGroup | QFileDevice::WriteGroup | QFileDevice::ExeGroup |
+                                    QFileDevice::ReadOther | QFileDevice::WriteOther | QFileDevice::ExeOther);
+        QFile::remove(path);
+    }
+}
+
+inline void ColFM::onEmptyTrash() {
+    const QString trashBase  = QDir::homePath() + "/.local/share/Trash";
+    const QString trashFiles = trashBase + "/files";
+    const QString trashInfo  = trashBase + "/info";
+    QDir().mkpath(trashFiles);
+    QDir().mkpath(trashInfo);
+
+    // Confirm
+    auto ret = QMessageBox::question(this, "Empty Trash",
+        "Permanently delete all items in Trash?",
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (ret != QMessageBox::Yes) return;
+
+    int removed = 0, failed = 0;
+
+    // Delete items in Trash/files
+    QDir df(trashFiles);
+    for (const QFileInfo &fi : df.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries, QDir::DirsFirst)) {
+        const QString p = fi.absoluteFilePath();
+        bool okBefore = QFile::exists(p);
+        removeRecursively(p);
+        if (okBefore && !QFile::exists(p)) ++removed; else ++failed;
+    }
+
+    // Delete sidecars in Trash/info
+    QDir di(trashInfo);
+    for (const QFileInfo &fi : di.entryInfoList(QStringList() << "*.trashinfo", QDir::Files)) {
+        QFile::remove(fi.absoluteFilePath());
+    }
+
+    // If currently viewing Trash, refresh it
+    const QString root = model->rootPath();
+    if (root.startsWith(trashFiles)) {
+        model->setRootPath(trashFiles);
+        if (currentView) currentView->setRootIndex(model->index(trashFiles));
+    }
+
+    statusBar()->showMessage(QString("Emptied Trash: %1 removed, %2 failed").arg(removed).arg(failed), 2500);
+}
+
+inline void ColFM::onMoveToTrash() {
+    // XDG Trash (Linux): ~/.local/share/Trash/{files,info}
+    const QString trashBase  = QDir::homePath() + "/.local/share/Trash";
+    const QString trashFiles = trashBase + "/files";
+    const QString trashInfo  = trashBase + "/info";
+    QDir().mkpath(trashFiles);
+    QDir().mkpath(trashInfo);
+
+    if (!currentView || !currentView->selectionModel()) {
+        statusBar()->showMessage("No selection", 2000);
+        return;
+    }
+
+    const auto rows = currentView->selectionModel()->selectedRows();
+    if (rows.isEmpty()) {
+        statusBar()->showMessage("No selection", 2000);
+        return;
+    }
+
+    int moved = 0, failed = 0;
+    const QString deletion = QDateTime::currentDateTime().toString("yyyy-MM-ddThh:mm:ss");
+
+    for (const QModelIndex &idx : rows) {
+        const QString srcPath = model->filePath(idx);
+        const QFileInfo fi(srcPath);
+        const QString base = fi.fileName();
+
+        // Unique target inside Trash/files
+        QString destPath = trashFiles + "/" + base;
+        if (QFile::exists(destPath)) {
+            QString stem = fi.completeBaseName();
+            QString ext  = fi.suffix();
+            if (!ext.isEmpty()) ext = "." + ext;
+            int n = 1;
+            while (QFile::exists(trashFiles + "/" + stem + " (" + QString::number(n) + ")" + ext)) {
+                ++n;
+            }
+            destPath = trashFiles + "/" + stem + " (" + QString::number(n) + ")" + ext;
+        }
+
+        bool ok = QFile::rename(srcPath, destPath);
+        if (!ok) {
+            // cross-device fallback: copy then remove
+            ok = QFile::copy(srcPath, destPath) && QFile::remove(srcPath);
+        }
+
+        if (ok) {
+            ++moved;
+            // Write .trashinfo sidecar for restore
+            const QString infoName = QFileInfo(destPath).fileName() + ".trashinfo";
+            QFile infoFile(trashInfo + "/" + infoName);
+            if (infoFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+                QTextStream out(&infoFile);
+                out << "[Trash Info]\n";
+                out << "Path=" << srcPath << "\n";
+                out << "DeletionDate=" << deletion << "\n";
+                infoFile.close();
+            }
+        } else {
+            ++failed;
+        }
+    }
+
+    setViewMode(mode);
+    statusBar()->showMessage(QString("Moved %1 item(s) to Trash, %2 failed").arg(moved).arg(failed), 2500);
+}
+
+inline void ColFM::onRefresh() {
+    const QString path = model->filePath(currentRoot);
+    model->setRootPath(path);
+// force refresh so removed items disappear right away
+    model->setRootPath(currentRoot.isValid() ? model->filePath(currentRoot) : QDir::homePath());
+    if (currentView) currentView->setRootIndex(model->index(model->rootPath()));
+
+    statusBar()->showMessage(QString("Moved %1 item(s) to Trash, %2 failed").arg(moved).arg(failed), 2500);
+}
+inline void ColFM::onOpenTrash() {
+    const QString trash = QDir::homePath() + "/.local/share/Trash/files";
+    if (!QDir(trash).exists()) {
+        statusBar()->showMessage("Trash folder not found", 2000);
+        return;
+    }
+    currentRoot = model->setRootPath(trash);
+    if (crumbs) crumbs->setPath(trash);
+    setViewMode(mode);
+}
+
+inline void ColFM::onMoveOutOfTrash() {
+    const QString trashPath   = QDir::homePath() + "/.local/share/Trash/files";
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    if (desktopPath.isEmpty()) desktopPath = QDir::homePath() + "/Desktop";
+
+    // Ensure we're inside Trash
+    const QString currentPath = model->filePath(currentRoot);
+    if (!currentPath.startsWith(trashPath)) {
+        statusBar()->showMessage("Open Trash first", 2000);
+        return;
+    }
+
+    if (!currentView || !currentView->selectionModel()) {
+        statusBar()->showMessage("No selection", 2000);
+        return;
+    }
+
+    const auto rows = currentView->selectionModel()->selectedRows();
+    if (rows.isEmpty()) {
+        statusBar()->showMessage("No selection", 2000);
+        return;
+    }
+
+    int moved = 0, failed = 0;
+    for (const QModelIndex &idx : rows) {
+        const QString src = model->filePath(idx);
+        const QString base = QFileInfo(src).fileName();
+        QString dst = desktopPath + "/" + base;
+
+        // Avoid overwriting: add suffix if needed
+        if (QFile::exists(dst)) {
+            QString stem = QFileInfo(base).completeBaseName();
+            QString ext  = QFileInfo(base).suffix();
+            if (!ext.isEmpty()) ext = "." + ext;
+            int n = 1;
+            while (QFile::exists(desktopPath + "/" + stem + " (restored " + QString::number(n) + ")" + ext)) {
+                ++n;
+            }
+            dst = desktopPath + "/" + stem + " (restored " + QString::number(n) + ")" + ext;
+        }
+
+        if (QFile::rename(src, dst)) {
+            ++moved;
+        } else {
+            ++failed;
+        }
+    }
+
+    // Refresh view after moves
+    setViewMode(mode);
+    statusBar()->showMessage(QString("Restored %1 item(s), %2 failed").arg(moved).arg(failed), 2500);
+}
+
+inline void ColFM::onUp() {
+    QString path = crumbs ? crumbs->editField()->text() : model->filePath(currentRoot);
+    QDir d(path);
+    if (!d.cdUp()) return;
+    const QString up = d.absolutePath();
+    currentRoot = model->index(up);
+    if (crumbs) crumbs->setPath(up);
+    setViewMode(mode);
+}
+
+inline void ColFM::onOpen()                   { const QModelIndex idx = currentIndex(); if (idx.isValid()) openFile(idx); }
+
+inline void ColFM::onInfo() {
+    QModelIndex idx = currentIndex();
+    if (!idx.isValid() && currentView) {
+        QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
+        idx = currentView->indexAt(vp);
+    }
+    if (!idx.isValid()) idx = currentRoot;
+    if (idx.isValid()) previewFile(idx);
+}
+
+inline void ColFM::onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }
+inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+inline void ColFM::onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
+inline void ColFM::onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
+
+inline void ColFM::onToggleHidden() {
+    showHidden = !showHidden;
+    QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
+    if (showHidden) {
+        f |= QDir::Hidden;
+        toggleHiddenBtn->setIcon(QIcon("icons/eye.png"));
+    } else {
+        toggleHiddenBtn->setIcon(QIcon("icons/eye-slash.png"));
+    }
+    model->setFilter(f);
+    setViewMode(mode);
+}
+
+inline void ColFM::onViewTree()   { setViewMode(ViewMode::Tree); }
+inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
+inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }

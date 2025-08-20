@@ -22,11 +22,9 @@
 #include <QProxyStyle>
 #include <QStyle>
 #include <QStatusBar>
-#include <QLineEdit>
-#include <QWidgetAction>
-#include <QSizePolicy>
-#include <QEvent>
-#include <functional>
+#include <QCursor>
+
+#include "toolbars.h" // Breadcrumbs class
 
 // -------- Settings --------
 static const QSize kIconSize(32, 32);
@@ -134,8 +132,6 @@ protected:
     }
 };
 
-#include "breadcrumbs.h"
-
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
@@ -144,9 +140,18 @@ public:
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
         currentRoot = model->setRootPath(QDir::homePath());
 
-        // Breadcrumbs toolbar (above main toolbar)
+        // Main toolbar FIRST (fixed row)
+        tb = new QToolBar("Main Toolbar", this);
+        tb->setMovable(false);
+        addToolBar(Qt::TopToolBarArea, tb);
+        drawButtons();
+
+        // Force next toolbar onto its own row
+        addToolBarBreak(Qt::TopToolBarArea);
+
+        // Path bar SECOND row (editable current path)
         crumbs = new Breadcrumbs("Path", this);
-        //addToolBar(Qt::TopToolBarArea, crumbs);
+        addToolBar(Qt::TopToolBarArea, crumbs);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) {
                 currentRoot = model->index(p);
@@ -157,49 +162,12 @@ public:
         });
         crumbs->setPath(model->filePath(currentRoot));
 
-        // Main toolbar
-        tb = new QToolBar("Main Toolbar", this);
-        tb->setMovable(false);
-        addToolBar(Qt::TopToolBarArea, tb);
-
-        drawButtons(); // creates actions + connects them
-	addToolBar(Qt::TopToolBarArea, crumbs);
-
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
         resize(1400, 800);
     }
 
-    // ---- declarations needed by toolbars.h ----
-public:
-    // toolbar build
-    void drawButtons();
-
-    // handlers
-    void onMoveToTrash();
-    void onRefresh();
-    void onOpenTrash();
-    void onRestoreFromTrash();
-    void onUp();
-    void onOpen();
-    void onCloseAction();
-    void onInfo();
-    void onRename();
-    void onMove();
-    void onDuplicate();
-    void onCreateSoftlink();
-    void onToggleHidden();
-    void onViewTree();
-    void onViewColumn();
-    void onViewIcon();
-
-    // event filter implemented inline in toolbars.h
-    bool eventFilter(QObject *obj, QEvent *ev) override;
-
-    // helpers used by toolbars.h inline code
-    QModelIndex currentIndex() const;
-    void previewFile(const QModelIndex &idx);
-    void openFile(const QModelIndex &idx);
+    void setPreviewHtml(const QString &html, const QString &path);
 
 private:
     // Model and state
@@ -207,117 +175,50 @@ private:
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
     QLabel *previewLabel{};
-    bool showHidden = false; // default: dotfiles hidden
+    bool showHidden = false;
 
     // UI
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
-    QAction *actRestoreFromTrash{};
-    QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
+    QAction *actShowTrash{}, *actEmptyTrash{};
+    QAction *actOpen{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
-    QAction *actEmptyTrash{};           // used by toolbars.h
-    QAbstractItemView *currentView{};   // supports currentIndex()
+    QAbstractItemView *currentView{}; // track active view
 
-    // View builders
-    QWidget* buildTreeWidget(const QModelIndex &root) {
-        auto *view = new QTreeView();
-        view->setModel(model);
-        view->setRootIndex(root);
-        view->setHeaderHidden(false);
-        view->setSelectionBehavior(QAbstractItemView::SelectRows);
-        view->setAlternatingRowColors(true);
-        view->setIconSize(kIconSize);
-        view->setItemDelegate(new FixedIconDelegate(view));
-        currentView = view;
+    // Button creation + wiring (declarations only; bodies in actions.h)
+    void drawButtons();
 
-        view->header()->setSectionResizeMode(QHeaderView::Interactive);
-        view->header()->setStretchLastSection(false);
-        view->setColumnWidth(0, 600);
+    void onMoveToTrash();
+    void onRefresh();
+    void onOpenTrash();
+    void onMoveOutOfTrash();
 
-        connect(view, &QTreeView::doubleClicked, this, [this, view](const QModelIndex &idx){
-            if (!idx.isValid()) return;
-            if (model->isDir(idx)) {
-                view->setRootIndex(idx);
-                currentRoot = idx;
-            } else {
-                qDebug() << "Preview placeholder for:" << model->filePath(idx);
-            }
-        });
-        return view;
-    }
+    void onUp();
+    void onOpen();
+    void onInfo();
+    void onRename();
+    void onMove();
+    void onDuplicate();
+    void onCreateSoftlink();
 
-    QWidget* buildColumnWidget(const QModelIndex &root) {
-        auto *splitter = new QSplitter(Qt::Horizontal);
-        splitter->setChildrenCollapsible(false);
+    void onToggleHidden();
 
-        auto *cv = new ColumnView32(splitter);
-        cv->setModel(model);
-        cv->setRootIndex(root);
-        cv->setIconSize(kIconSize);
-        cv->setResizeGripsVisible(true);
-        cv->setSelectionBehavior(QAbstractItemView::SelectRows);
-        cv->setColumnWidths({400,400,400});
-        cv->setItemDelegate(new FixedIconDelegate(cv)); // also on the columnview itself
-        currentView = cv;
+    void onViewTree();
+    void onViewColumn();
+    void onViewIcon();
 
-        connect(cv, &QColumnView::clicked, this, [this](const QModelIndex &idx){
-            if (!idx.isValid()) return;
-            if (!model->isDir(idx) && previewLabel) {
-                previewLabel->setText(model->fileName(idx));
-            }
-        });
-        connect(cv, &QColumnView::doubleClicked, this, [this, cv](const QModelIndex &idx){
-            if (!idx.isValid()) return;
-            if (model->isDir(idx)) {
-                cv->setRootIndex(idx);
-                currentRoot = idx;
-            }
-        });
+    // open/preview API (bodies in handleopen.h)
+    QModelIndex currentIndex() const;
+    bool isImageFile(const QString &path) const;
+    void previewFile(const QModelIndex &idx);
+    void openFile(const QModelIndex &idx);
+    void openApp(const QString &path);
 
-        QWidget *previewPane = new QWidget();
-        QPalette pal = previewPane->palette();
-        pal.setColor(QPalette::Window, QColor(30, 30, 30));
-        previewPane->setAutoFillBackground(true);
-        previewPane->setPalette(pal);
-        previewLabel = new QLabel("Preview");
-        previewLabel->setStyleSheet("QLabel { color: white; padding: 8px; }");
-        auto *previewLayout = new QVBoxLayout(previewPane);
-        previewLayout->setContentsMargins(0,0,0,0);
-        previewLayout->addWidget(previewLabel);
-
-        splitter->addWidget(cv);
-        splitter->addWidget(previewPane);
-        splitter->setStretchFactor(0, 3);
-        splitter->setStretchFactor(1, 2);
-        return splitter;
-    }
-
-    QWidget* buildIconWidget(const QModelIndex &root) {
-        auto *view = new QListView();
-        view->setModel(model);
-        view->setRootIndex(root);
-        view->setViewMode(QListView::IconMode);
-        view->setIconSize(kIconSize);
-        view->setItemDelegate(new FixedIconDelegate(view));
-        view->setGridSize(QSize(120,120));
-        view->setSpacing(8);
-        view->setResizeMode(QListView::Adjust);
-        view->setMovement(QListView::Static);
-        view->setUniformItemSizes(true);
-        currentView = view;
-
-        connect(view, &QListView::doubleClicked, this, [this, view](const QModelIndex &idx){
-            if (!idx.isValid()) return;
-            if (model->isDir(idx)) {
-                view->setRootIndex(idx);
-                currentRoot = idx;
-            } else {
-                qDebug() << "Preview placeholder for:" << model->filePath(idx);
-            }
-        });
-        return view;
-    }
+    // View builders — declarations only; bodies in viewwidgets.h
+    QWidget* buildTreeWidget(const QModelIndex &root);
+    QWidget* buildColumnWidget(const QModelIndex &root);
+    QWidget* buildIconWidget(const QModelIndex &root);
 
     void setViewMode(ViewMode m) {
         mode = m;
@@ -331,32 +232,19 @@ private:
             case ViewMode::Icon:   w = buildIconWidget(root);   break;
         }
         setCentralWidget(w);
-
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
     }
 };
 
-// ---- helper method DEFINITIONS (moved outside the class) ----
-QModelIndex ColFM::currentIndex() const {
-    return currentView ? currentView->currentIndex() : QModelIndex();
-}
-void ColFM::previewFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    if (!previewLabel) return;
-    previewLabel->setText(model->filePath(idx));
-}
-void ColFM::openFile(const QModelIndex &idx) {
-    if (!idx.isValid()) return;
-    qDebug() << "Open file:" << model->filePath(idx);
-}
-
-// include inline toolbar definitions AFTER the class (and after helper defs)
-#include "toolbars.h"
+// Out-of-class method definitions
+#include "viewwidgets.h"
+#include "actions.h"
+#include "handleopen.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
-    app.setWindowIcon(QIcon("icons/app_icon.png")); // TODO: if not shown, keep as bug
+    app.setWindowIcon(QIcon("icons/app_icon.png"));
     ColFM w; w.show();
     return app.exec();
 }

@@ -1,22 +1,27 @@
 #pragma once
-#include <QCursor>
-#include <QMessageBox>
-#include <QApplication>
-#include <QShortcut>
-#include <QKeyEvent>
-#include <QDir>
-#include <QIcon>
 #include <QAction>
-#include <QStatusBar>
-#include <QKeySequence>
-#include <QInputDialog>
-#include <QProcess>
-#include <QStringListModel>
-#include <QDialog>
-#include <QComboBox>
-#include <QFormLayout>
-#include <QDialogButtonBox>
+#include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDateTime>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
+#include <QFormLayout>
+#include <QIcon>
+#include <QInputDialog>
+#include <QKeyEvent>
+#include <QKeySequence>
+#include <QLineEdit>
+#include <QListView>
+#include <QProcess>
+#include <QRegularExpression>
+#include <QShortcut>
+#include <QStatusBar>
+#include <QStringListModel>
+#include <QVBoxLayout>
+#include <QWidget>
 
 // ----- ColFM methods (single definitions) -----
 
@@ -55,8 +60,10 @@ inline void ColFM::drawButtons() {
 
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
-    connect(actSearch, &QAction::triggered, this, &ColFM::onSearchPlocate);
 
+	connect(actSearch, &QAction::triggered, this, [this]() {
+	    onSearchPlocate();
+	});
 
     // Wire up
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
@@ -116,120 +123,6 @@ inline void ColFM::onOpenTrash() {
     // currentRoot = model->index(trash);           // alternative kept (not deleted)
     if (crumbs) crumbs->setPath(trash);
     setViewMode(mode);
-}
-
-inline void ColFM::onSearchPlocate() {
-    // --- build query dialog with scope popup and hidden checkbox ---
-    QDialog dlg(this);
-    dlg.setWindowTitle("Search with plocate");
-
-    auto *edit  = new QLineEdit(&dlg);
-    edit->setPlaceholderText("Search term…");
-    auto *scope = new QComboBox(&dlg);
-
-    const QString home = QDir::homePath();
-    scope->addItem("My Home", home);       // default
-    scope->addItem("Entire System", "/");
-    scope->addItem("/var", "/var");
-
-    // Add placeholder for USB drives
-    const QString user = qEnvironmentVariable("USER");
-    scope->addItem("USB Drives", QString("/media/%1").arg(user));
-
-    // Add mounted volumes under /media/$USER/*
-    QDir mediaDir(QString("/media/%1").arg(user));
-    if (mediaDir.exists()) {
-        for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-            const QString volPath = mediaDir.absoluteFilePath(vol);
-            scope->addItem(QString("Media: %1").arg(vol), volPath);
-        }
-    }
-
-    auto *showHidden = new QCheckBox("Show hidden files", &dlg);
-    showHidden->setChecked(false);
-
-    auto *form = new QFormLayout();
-    form->addRow("Search term:", edit);
-    form->addRow("Scope:", scope);
-    form->addRow("", showHidden);
-
-    auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
-    QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-
-    auto *layout = new QVBoxLayout(&dlg);
-    layout->addLayout(form);
-    layout->addWidget(btns);
-
-    edit->setFocus();
-    if (dlg.exec() != QDialog::Accepted) return;
-
-    const QString query = edit->text().trimmed();
-    if (query.isEmpty()) return;
-
-    // --- run plocate (basename to reduce noise) ---
-    QProcess proc;
-    proc.start("plocate", QStringList() << "-i" << "--basename" << query);
-    proc.waitForFinished();
-
-    QStringList all = QString::fromUtf8(proc.readAllStandardOutput())
-                          .split('\n', Qt::SkipEmptyParts);
-
-    // --- filter by chosen scope path ---
-    const QString selRoot = scope->currentData().toString();
-    QStringList scoped;
-    auto inScope = [&](const QString &p){
-        return (selRoot == "/") ? true : (p == selRoot || p.startsWith(selRoot + "/"));
-    };
-    for (const auto &p : all) if (inScope(p)) scoped << p;
-
-    // --- filter out hidden unless checkbox ticked ---
-	if (!showHidden->isChecked()) {
-	    QStringList filtered;
-	    for (const QString &p : scoped) {
-		// drop any path that contains '/.' anywhere (hidden dirs/files)
-		if (p.contains("/.")) continue;
-		filtered << p;
-	    }
-	    scoped = filtered;
-	}
-
-    if (scoped.isEmpty()) {
-        statusBar()->showMessage("No results found in selected scope", 2000);
-        return;
-    }
-
-    // --- show results list (acts like normal items) ---
-    auto *lv = new QListView();
-    auto *listModel = new QStringListModel(scoped, lv);
-    lv->setModel(listModel);
-    lv->setUniformItemSizes(true);
-    lv->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    currentView = lv;               // keep toolbar helpers working
-    setCentralWidget(lv);
-    statusBar()->showMessage(QString("Found %1 result(s)").arg(scoped.size()), 2000);
-
-    // Open on double-click
-    connect(lv, &QListView::doubleClicked, this, [this, listModel](const QModelIndex &i){
-        if (!i.isValid()) return;
-        const QString path = listModel->data(i, Qt::DisplayRole).toString();
-        QFileInfo fi(path);
-
-        if (fi.isDir()) {
-            currentRoot = model->index(fi.absoluteFilePath());
-            setViewMode(mode);
-            if (crumbs) crumbs->setPath(fi.absoluteFilePath());
-        } else {
-            const QString parent = fi.absolutePath();
-            currentRoot = model->index(parent);
-            setViewMode(mode);
-            if (crumbs) crumbs->setPath(parent);
-
-            const QModelIndex fileIdx = model->index(path);
-            if (fileIdx.isValid()) previewFile(fileIdx);
-        }
-    });
 }
 
 inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {
@@ -296,3 +189,169 @@ inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
 inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }
 
 
+
+// Helpers for per-volume plocate DBs (~/.cache/plocate/vol_<sanitized>.db)
+inline QString _volDbPath(const QString &volPath) {
+    QString safe = volPath; safe.replace('/', '_');
+    QDir cache(QDir::homePath() + "/.cache/plocate");
+    cache.mkpath(".");
+    return cache.filePath("vol" + safe + ".db");
+}
+
+inline bool _ensureVolDb(const QString &volPath, int maxAgeSecs = 3600) { // 1h freshness
+    const QString db = _volDbPath(volPath);
+    QFileInfo fi(db);
+    const bool stale = !fi.exists() || fi.lastModified().secsTo(QDateTime::currentDateTime()) > maxAgeSecs;
+    if (!stale) return true;
+    QProcess p;
+    p.start("updatedb", QStringList() << "-o" << db << "-U" << volPath);
+    p.waitForFinished(-1);
+    return (p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0 && QFileInfo::exists(db));
+}
+
+// Runs dialog + plocate; returns fully-filtered results.
+// Optionally returns chosen scope root and hidden toggle.
+inline QStringList runPlocateDialogAndSearch(QWidget *parent,
+                                             QString *outScopeRoot = nullptr,
+                                             bool *outShowHidden = nullptr) {
+    // --- dialog ---
+    QDialog dlg(parent);
+    dlg.setWindowTitle("Search with plocate");
+
+    auto *edit  = new QLineEdit(&dlg); edit->setPlaceholderText("Search term…");
+    auto *scope = new QComboBox(&dlg);
+    auto *showHidden = new QCheckBox("Show hidden files", &dlg); showHidden->setChecked(false);
+
+    const QString home = QDir::homePath();
+    scope->addItem("My Home", home);       // default
+    scope->addItem("Entire System", "/");
+    scope->addItem("/var", "/var");
+
+    // Placeholder + per-volume media entries
+    const QString user = qEnvironmentVariable("USER");
+    const QString mediaRoot = QString("/media/%1").arg(user);
+    scope->addItem("USB Drives", mediaRoot);
+
+    QDir mediaDir(mediaRoot);
+    if (mediaDir.exists()) {
+        for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            const QString volPath = mediaDir.absoluteFilePath(vol);
+            scope->addItem(QString("Media: %1").arg(vol), volPath);
+        }
+    }
+
+    auto *form = new QFormLayout();
+    form->addRow("Search term:", edit);
+    form->addRow("Scope:", scope);
+    form->addRow("", showHidden);
+
+    auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+    auto *layout = new QVBoxLayout(&dlg);
+    layout->addLayout(form);
+    layout->addWidget(btns);
+
+    edit->setFocus();
+    if (dlg.exec() != QDialog::Accepted) return {};
+
+    const QString query = edit->text().trimmed();
+    if (query.isEmpty()) return {};
+
+    const QString selRoot = scope->currentData().toString();
+    if (outScopeRoot) *outScopeRoot = selRoot;
+    if (outShowHidden) *outShowHidden = showHidden->isChecked();
+
+    // --- build per-volume DB(s) if scope is under /media/$USER ---
+    QStringList dbArgs;
+    if (selRoot.startsWith(mediaRoot)) {
+        QStringList volumes;
+        if (selRoot == mediaRoot) {
+            for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+                volumes << mediaDir.absoluteFilePath(vol);
+            }
+        } else {
+            volumes << selRoot; // specific volume
+        }
+        for (const QString &volPath : volumes) {
+            if (_ensureVolDb(volPath)) {
+                dbArgs << "-d" << _volDbPath(volPath);
+            }
+        }
+    }
+
+    // --- run plocate ---
+    QStringList args;
+    args << "-i" << "--basename" << query;
+    if (!dbArgs.isEmpty()) args << dbArgs;  // use per-volume DBs when available
+
+    QProcess proc;
+    proc.start("plocate", args);
+    proc.waitForFinished(-1);
+
+    QStringList all = QString::fromUtf8(proc.readAllStandardOutput())
+                          .split('\n', Qt::SkipEmptyParts);
+
+    // --- scope filter (if not using custom dbs) ---
+    QStringList scoped;
+    if (!dbArgs.isEmpty()) {
+        scoped = all; // already scoped by -d
+    } else if (selRoot == "/") {
+        scoped = all;
+    } else {
+        auto inScope = [&](const QString &p){
+            return p == selRoot || p.startsWith(selRoot + "/");
+        };
+        for (const auto &p : all) if (inScope(p)) scoped << p;
+    }
+
+    // --- hidden filter ---
+    if (!showHidden->isChecked()) {
+        QRegularExpression hiddenRe("(^|/)\\.[^/]+"); // any dot-starting path component
+        QStringList filtered;
+        for (const QString &p : scoped) {
+            if (hiddenRe.match(p).hasMatch()) continue;
+            filtered << p;
+        }
+        scoped = filtered;
+    }
+
+    return scoped;
+}
+
+// --- Wire ColFM to the helper ---
+inline void ColFM::onSearchPlocate() {
+    QString scopeRoot; bool showHidden = false;
+    const QStringList results = runPlocateDialogAndSearch(this, &scopeRoot, &showHidden);
+    if (results.isEmpty()) {
+        statusBar()->showMessage("No results found", 2000);
+        return;
+    }
+
+    auto *lv = new QListView();
+    auto *listModel = new QStringListModel(results, lv);
+    lv->setModel(listModel);
+    lv->setUniformItemSizes(true);
+    lv->setSelectionMode(QAbstractItemView::SingleSelection);
+    currentView = lv;
+    setCentralWidget(lv);
+
+    connect(lv, &QListView::doubleClicked, this, [this, listModel](const QModelIndex &i){
+        if (!i.isValid()) return;
+        const QString path = listModel->data(i, Qt::DisplayRole).toString();
+        QFileInfo fi(path);
+        if (fi.isDir()) {
+            currentRoot = model->index(fi.absoluteFilePath());
+            setViewMode(mode);
+            if (crumbs) crumbs->setPath(fi.absoluteFilePath());
+        } else {
+            const QString parent = fi.absolutePath();
+            currentRoot = model->index(parent);
+            setViewMode(mode);
+            if (crumbs) crumbs->setPath(parent);
+            const QModelIndex fileIdx = model->index(path);
+            if (fileIdx.isValid()) previewFile(fileIdx);
+        }
+    });
+}

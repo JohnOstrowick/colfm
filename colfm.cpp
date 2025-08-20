@@ -26,6 +26,7 @@
 #include <QWidgetAction>
 #include <QSizePolicy>
 #include <QEvent>
+#include <QMessageBox>
 #include <functional>
 
 // -------- Settings --------

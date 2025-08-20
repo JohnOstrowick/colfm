@@ -31,6 +31,7 @@ public:
     void setOnPathChosen(std::function<void(const QString&)> cb) { onPathChosen = std::move(cb); }
     QLineEdit* editField() const { return edit; }
 
+    /*
     void setPath(const QString &path) {
         // Clear old segments
         for (QAction *a : segActs) { removeAction(a); delete a; }
@@ -53,6 +54,17 @@ public:
             addSegment(parts[i], accum);
         }
     }
+    */
+    void setPath(const QString &path) {
+        // Clear old segments (breadcrumb buttons)
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        // Just put the cleaned path into the edit box
+        QString clean = QDir::cleanPath(path);
+            if (edit) edit->setText(clean);
+    }
+
 
 private:
     QLineEdit *edit{};

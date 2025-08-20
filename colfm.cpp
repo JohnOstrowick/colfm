@@ -224,6 +224,7 @@ private:
         auto *view = new QTreeView();
         view->setModel(model);
         view->setRootIndex(root);
+	if (crumbs) crumbs->setPath(model->filePath(root));
         view->setHeaderHidden(false);
         view->setSelectionBehavior(QAbstractItemView::SelectRows);
         view->setAlternatingRowColors(true);
@@ -240,6 +241,7 @@ private:
             if (model->isDir(idx)) {
                 view->setRootIndex(idx);
                 currentRoot = idx;
+		if (crumbs) crumbs->setPath(model->filePath(idx));
             } else {
                 qDebug() << "Preview placeholder for:" << model->filePath(idx);
             }
@@ -254,6 +256,7 @@ private:
         auto *cv = new ColumnView32(splitter);
         cv->setModel(model);
         cv->setRootIndex(root);
+	if (crumbs) crumbs->setPath(model->filePath(root));
         cv->setIconSize(kIconSize);
         cv->setResizeGripsVisible(true);
         cv->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -272,6 +275,7 @@ private:
             if (model->isDir(idx)) {
                 cv->setRootIndex(idx);
                 currentRoot = idx;
+                if (crumbs) crumbs->setPath(model->filePath(idx));
             }
         });
 
@@ -297,6 +301,7 @@ private:
         auto *view = new QListView();
         view->setModel(model);
         view->setRootIndex(root);
+	if (crumbs) crumbs->setPath(model->filePath(root));
         view->setViewMode(QListView::IconMode);
         view->setIconSize(kIconSize);
         view->setItemDelegate(new FixedIconDelegate(view));
@@ -312,6 +317,7 @@ private:
             if (model->isDir(idx)) {
                 view->setRootIndex(idx);
                 currentRoot = idx;
+                if (crumbs) crumbs->setPath(model->filePath(idx));
             } else {
                 qDebug() << "Preview placeholder for:" << model->filePath(idx);
             }

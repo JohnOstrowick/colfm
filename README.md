@@ -18,6 +18,8 @@ ColFM is a Qt6-based file manager prototype with three switchable view modes:
 ```bash
 # Install Qt6 dev tools if not already installed
 sudo apt install qt6-base-dev
+# search function uses plocate
+sudo apt install plocate
 
 # Clone the repo
 git clone https://github.com/JohnOstrowick/colfm.git

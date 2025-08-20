@@ -9,6 +9,9 @@
 #include <QAction>
 #include <QStatusBar>
 #include <QKeySequence>
+#include <QInputDialog>
+#include <QProcess>
+#include <QStringListModel>
 
 // ----- ColFM methods (single definitions) -----
 
@@ -44,6 +47,11 @@ inline void ColFM::drawButtons() {
     toggleHiddenBtn = tb->addAction(QIcon("icons/eye-slash.png"),     "Show Hidden");      toggleHiddenBtn->setToolTip("Toggle hidden files");
     // (Icon size popup — to be added later)
     tb->addSeparator();
+
+    // group 5 search
+    actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
+    connect(actSearch, &QAction::triggered, this, &ColFM::onSearchPlocate);
+
 
     // Wire up
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
@@ -103,6 +111,64 @@ inline void ColFM::onOpenTrash() {
     // currentRoot = model->index(trash);           // alternative kept (not deleted)
     if (crumbs) crumbs->setPath(trash);
     setViewMode(mode);
+}
+
+inline void ColFM::onSearchPlocate() {
+    bool ok = false;
+    const QString query = QInputDialog::getText(
+        this, "Search with plocate", "Enter search term:",
+        QLineEdit::Normal, QString(), &ok
+    );
+    if (!ok || query.trimmed().isEmpty()) return;
+
+    // Run plocate: case-insensitive, match on basename to cut noise
+    QProcess proc;
+    proc.start("plocate", QStringList() << "-i" << "--basename" << query.trimmed());
+    proc.waitForFinished();
+
+    const QString out = QString::fromUtf8(proc.readAllStandardOutput());
+    QStringList results = out.split('\n', Qt::SkipEmptyParts);
+
+    if (results.isEmpty()) {
+        statusBar()->showMessage("No results found", 2000);
+        return;
+    }
+
+    // Show results in a temporary list view (acts like a normal view)
+    auto *lv = new QListView();
+    auto *modelList = new QStringListModel(results, lv);
+    lv->setModel(modelList);
+    lv->setUniformItemSizes(true);
+    lv->setSelectionMode(QAbstractItemView::SingleSelection);
+    currentView = lv;                    // so toolbar helpers still work
+    setCentralWidget(lv);                // replace main area with results
+
+    statusBar()->showMessage(QString("Found %1 result(s)").arg(results.size()), 2000);
+
+    // Open on double-click: directories open; files preview/open
+    connect(lv, &QListView::doubleClicked, this, [this, modelList](const QModelIndex &i){
+        if (!i.isValid()) return;
+        const QString path = modelList->data(i, Qt::DisplayRole).toString();
+        QFileInfo fi(path);
+
+        if (fi.isDir()) {
+            currentRoot = model->index(fi.absoluteFilePath());
+            setViewMode(mode); // rebuilds main view in current mode
+            if (crumbs) crumbs->setPath(fi.absoluteFilePath());
+        } else {
+            // Select parent dir and preview/open the file
+            const QString parent = fi.absolutePath();
+            currentRoot = model->index(parent);
+            setViewMode(mode);
+            if (crumbs) crumbs->setPath(parent);
+
+            const QModelIndex fileIdx = model->index(path);
+            if (fileIdx.isValid()) {
+                // Your existing preview/open helpers
+                previewFile(fileIdx);    // or openFile(fileIdx) if you prefer
+            }
+        }
+    });
 }
 
 inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {

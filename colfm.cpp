@@ -192,6 +192,7 @@ public:
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
+    void onSearchPlocate();
 
     // event filter implemented inline in toolbars.h
     bool eventFilter(QObject *obj, QEvent *ev) override;
@@ -218,6 +219,7 @@ private:
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
     QAction *actEmptyTrash{};           // used by toolbars.h
     QAbstractItemView *currentView{};   // supports currentIndex()
+    QAction *actSearch{};
 
     // View builders
     QWidget* buildTreeWidget(const QModelIndex &root) {

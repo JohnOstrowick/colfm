@@ -12,6 +12,11 @@
 #include <QInputDialog>
 #include <QProcess>
 #include <QStringListModel>
+#include <QDialog>
+#include <QComboBox>
+#include <QFormLayout>
+#include <QDialogButtonBox>
+#include <QCheckBox>
 
 // ----- ColFM methods (single definitions) -----
 
@@ -114,59 +119,115 @@ inline void ColFM::onOpenTrash() {
 }
 
 inline void ColFM::onSearchPlocate() {
-    bool ok = false;
-    const QString query = QInputDialog::getText(
-        this, "Search with plocate", "Enter search term:",
-        QLineEdit::Normal, QString(), &ok
-    );
-    if (!ok || query.trimmed().isEmpty()) return;
+    // --- build query dialog with scope popup and hidden checkbox ---
+    QDialog dlg(this);
+    dlg.setWindowTitle("Search with plocate");
 
-    // Run plocate: case-insensitive, match on basename to cut noise
+    auto *edit  = new QLineEdit(&dlg);
+    edit->setPlaceholderText("Search term…");
+    auto *scope = new QComboBox(&dlg);
+
+    const QString home = QDir::homePath();
+    scope->addItem("My Home", home);       // default
+    scope->addItem("Entire System", "/");
+    scope->addItem("/var", "/var");
+
+    // Add placeholder for USB drives
+    const QString user = qEnvironmentVariable("USER");
+    scope->addItem("USB Drives", QString("/media/%1").arg(user));
+
+    // Add mounted volumes under /media/$USER/*
+    QDir mediaDir(QString("/media/%1").arg(user));
+    if (mediaDir.exists()) {
+        for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            const QString volPath = mediaDir.absoluteFilePath(vol);
+            scope->addItem(QString("Media: %1").arg(vol), volPath);
+        }
+    }
+
+    auto *showHidden = new QCheckBox("Show hidden files", &dlg);
+    showHidden->setChecked(false);
+
+    auto *form = new QFormLayout();
+    form->addRow("Search term:", edit);
+    form->addRow("Scope:", scope);
+    form->addRow("", showHidden);
+
+    auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+    auto *layout = new QVBoxLayout(&dlg);
+    layout->addLayout(form);
+    layout->addWidget(btns);
+
+    edit->setFocus();
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    const QString query = edit->text().trimmed();
+    if (query.isEmpty()) return;
+
+    // --- run plocate (basename to reduce noise) ---
     QProcess proc;
-    proc.start("plocate", QStringList() << "-i" << "--basename" << query.trimmed());
+    proc.start("plocate", QStringList() << "-i" << "--basename" << query);
     proc.waitForFinished();
 
-    const QString out = QString::fromUtf8(proc.readAllStandardOutput());
-    QStringList results = out.split('\n', Qt::SkipEmptyParts);
+    QStringList all = QString::fromUtf8(proc.readAllStandardOutput())
+                          .split('\n', Qt::SkipEmptyParts);
 
-    if (results.isEmpty()) {
-        statusBar()->showMessage("No results found", 2000);
+    // --- filter by chosen scope path ---
+    const QString selRoot = scope->currentData().toString();
+    QStringList scoped;
+    auto inScope = [&](const QString &p){
+        return (selRoot == "/") ? true : (p == selRoot || p.startsWith(selRoot + "/"));
+    };
+    for (const auto &p : all) if (inScope(p)) scoped << p;
+
+    // --- filter out hidden unless checkbox ticked ---
+	if (!showHidden->isChecked()) {
+	    QStringList filtered;
+	    for (const QString &p : scoped) {
+		// drop any path that contains '/.' anywhere (hidden dirs/files)
+		if (p.contains("/.")) continue;
+		filtered << p;
+	    }
+	    scoped = filtered;
+	}
+
+    if (scoped.isEmpty()) {
+        statusBar()->showMessage("No results found in selected scope", 2000);
         return;
     }
 
-    // Show results in a temporary list view (acts like a normal view)
+    // --- show results list (acts like normal items) ---
     auto *lv = new QListView();
-    auto *modelList = new QStringListModel(results, lv);
-    lv->setModel(modelList);
+    auto *listModel = new QStringListModel(scoped, lv);
+    lv->setModel(listModel);
     lv->setUniformItemSizes(true);
     lv->setSelectionMode(QAbstractItemView::SingleSelection);
-    currentView = lv;                    // so toolbar helpers still work
-    setCentralWidget(lv);                // replace main area with results
 
-    statusBar()->showMessage(QString("Found %1 result(s)").arg(results.size()), 2000);
+    currentView = lv;               // keep toolbar helpers working
+    setCentralWidget(lv);
+    statusBar()->showMessage(QString("Found %1 result(s)").arg(scoped.size()), 2000);
 
-    // Open on double-click: directories open; files preview/open
-    connect(lv, &QListView::doubleClicked, this, [this, modelList](const QModelIndex &i){
+    // Open on double-click
+    connect(lv, &QListView::doubleClicked, this, [this, listModel](const QModelIndex &i){
         if (!i.isValid()) return;
-        const QString path = modelList->data(i, Qt::DisplayRole).toString();
+        const QString path = listModel->data(i, Qt::DisplayRole).toString();
         QFileInfo fi(path);
 
         if (fi.isDir()) {
             currentRoot = model->index(fi.absoluteFilePath());
-            setViewMode(mode); // rebuilds main view in current mode
+            setViewMode(mode);
             if (crumbs) crumbs->setPath(fi.absoluteFilePath());
         } else {
-            // Select parent dir and preview/open the file
             const QString parent = fi.absolutePath();
             currentRoot = model->index(parent);
             setViewMode(mode);
             if (crumbs) crumbs->setPath(parent);
 
             const QModelIndex fileIdx = model->index(path);
-            if (fileIdx.isValid()) {
-                // Your existing preview/open helpers
-                previewFile(fileIdx);    // or openFile(fileIdx) if you prefer
-            }
+            if (fileIdx.isValid()) previewFile(fileIdx);
         }
     });
 }

@@ -47,36 +47,76 @@ public:
     }
 };
 
-// Fixed-size icon delegate for views
+// Force the decoration (painted icon) to a fixed size
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
-    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &idx) const override {
-        QSize s = QStyledItemDelegate::sizeHint(opt, idx);
-        if (s.width() < 32) s.setWidth(32);
-        if (s.height() < 32) s.setHeight(32);
-        return s;
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
+        option->decorationSize = kIconSize;
+    }
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        QStyleOptionViewItem opt(option);
+        opt.decorationSize = kIconSize;
+        return QStyledItemDelegate::sizeHint(opt, index);
     }
 };
 
-// Custom icon provider (placeholder)
+// Custom icon provider: tint symlinks teal, executables light green
 class CustomIconProvider : public QFileIconProvider {
 public:
-    using QFileIconProvider::QFileIconProvider;
-    QIcon icon(IconType type) const override {
-        return QFileIconProvider::icon(type);
-    }
     QIcon icon(const QFileInfo &info) const override {
+        QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
+        QImage img = pix.toImage();
+
+        if (info.isSymLink()) {
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x) {
+                    QColor c = img.pixelColor(x, y);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
+                }
+            return QIcon(QPixmap::fromImage(img));
+        }
+
+        if (info.isExecutable() && !info.isDir()) {
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x) {
+                    QColor c = img.pixelColor(x, y);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
+                }
+            return QIcon(QPixmap::fromImage(img));
+        }
+
         return QFileIconProvider::icon(info);
     }
 };
 
-// FS model with fixed roles
+// QFileSystemModel that guarantees 32x32 decoration pixmaps (fixes symlink size)
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
-    QVariant data(const QModelIndex &idx, int role) const override {
-        return QFileSystemModel::data(idx, role);
+    QVariant data(const QModelIndex &index, int role) const override {
+        if (role == Qt::DecorationRole) {
+            QVariant v = QFileSystemModel::data(index, role);
+            QPixmap pm;
+            if (v.canConvert<QIcon>()) {
+                pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+            } else if (v.canConvert<QPixmap>()) {
+                pm = qvariant_cast<QPixmap>(v);
+            }
+            if (!pm.isNull() && pm.size() != kIconSize) {
+                pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
+            if (!pm.isNull()) return pm;
+            return v;
+        }
+        return QFileSystemModel::data(index, role);
     }
 };
 
@@ -118,21 +158,25 @@ public:
         });
         crumbs->setPath(model->filePath(currentRoot));
 
+        // Main toolbar
         tb = new QToolBar("Main Toolbar", this);
         tb->setMovable(false);
         addToolBar(Qt::TopToolBarArea, tb);
 
-        drawButtons();
-        addToolBar(Qt::TopToolBarArea, crumbs);
+        drawButtons(); // creates actions + connects them
+	addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
         resize(1400, 800);
     }
 
-    // ---- toolbar slots (declared; bodies in toolbars.h) ----
+    // ---- declarations needed by toolbars.h ----
 public:
+    // toolbar build
     void drawButtons();
+
+    // handlers
     void onMoveToTrash();
     void onRefresh();
     void onOpenTrash();
@@ -151,44 +195,43 @@ public:
     void onViewIcon();
     void onSearchPlocate();
 
-    // helpers declared here; bodies provided elsewhere
-    QModelIndex currentIndex() const;
-    void previewFile(const QModelIndex &idx);
-    void openFile(const QModelIndex &idx);
-    void openApp(const QString &path);
-    void openSelected();
-    void openPath(const QString &absPath);
-
     // event filter implemented inline in toolbars.h
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
+    // helpers used by toolbars.h inline code
+    QModelIndex currentIndex() const;
+    void previewFile(const QModelIndex &idx);
+    void openFile(const QModelIndex &idx);
+
 private:
+    // Model and state
     FixedFSModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
-    QLabel *previewLabel{};   // temporary (column preview text)
-    bool showHidden = false;
+    //colfm::InfoWidget *infoPanel{};
+	 QLabel *previewLabel{};
 
+    bool showHidden = false; // default: dotfiles hidden
+
+    // UI
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
-    QAction *actEmptyTrash{};
+    QAction *actEmptyTrash{};           // used by toolbars.h
+    QAbstractItemView *currentView{};   // supports currentIndex()
     QAction *actSearch{};
-    QAbstractItemView *currentView{};
 
-#include "viewwidgets.h"
-
+    // View builders
+    #include "viewwidgets.h"
     void setViewMode(ViewMode m) {
         mode = m;
         QWidget *old = centralWidget();
         if (old) old->deleteLater();
-
         QWidget *w = nullptr;
         QModelIndex root = currentRoot.isValid() ? currentRoot : model->index(QDir::homePath());
-
         switch (mode) {
             case ViewMode::Tree:   w = buildTreeWidget(root);   break;
             case ViewMode::Column: w = buildColumnWidget(root); break;
@@ -200,24 +243,8 @@ private:
     }
 };
 
-// minimal preview hook; column view uses right-hand label for now
-// this stops LD from crashing
-void ColFM::previewFile(const QModelIndex &idx) {
-    if (!idx.isValid() || !model) return;
-    const QString path = model->filePath(idx);
-    if (mode == ViewMode::Column) {
-        if (previewLabel) {
-            previewLabel->setText(path);
-            previewLabel->setToolTip(path);
-        }
-    } else {
-        if (statusBar()) statusBar()->showMessage(path, 1500);
-    }
-}
-
-
 // ---- helper method DEFINITIONS (moved outside the class) ----
-/*QModelIndex ColFM::currentIndex() const {
+QModelIndex ColFM::currentIndex() const {
     return currentView ? currentView->currentIndex() : QModelIndex();
 }
 void ColFM::previewFile(const QModelIndex &idx) {
@@ -229,7 +256,6 @@ void ColFM::openFile(const QModelIndex &idx) {
     if (!idx.isValid()) return;
     qDebug() << "Open file:" << model->filePath(idx);
 }
-*/
 
 // include inline toolbar definitions AFTER the class (and after helper defs)
 #include "toolbars.h"

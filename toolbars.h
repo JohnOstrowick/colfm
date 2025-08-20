@@ -24,6 +24,7 @@
 #include <QWidget>
 
 // ----- ColFM methods (single definitions) -----
+#include "info.h"
 
 inline void ColFM::drawButtons() {
     tb->clear();
@@ -156,14 +157,14 @@ inline void ColFM::onOpen()                   { const QModelIndex idx = currentI
 inline void ColFM::onCloseAction()            { statusBar()->showMessage("TODO: Close", 2000); }
 
 inline void ColFM::onInfo() {
-    QMessageBox::information(this, "Debug", "Get Info triggered");
     QModelIndex idx = currentIndex();
     if (!idx.isValid() && currentView) {
         QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
         idx = currentView->indexAt(vp);
     }
-    if (!idx.isValid()) idx = currentRoot;
-    if (idx.isValid()) previewFile(idx);
+    if (!idx.isValid()) return;
+    const QString path = model->filePath(idx);
+    colfm::showInfoDialog(this, path);
 }
 
 inline void ColFM::onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }

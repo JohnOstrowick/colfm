@@ -52,8 +52,6 @@ inline void ColFM::drawButtons() {
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
 
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
-    connect(actOpen,          &QAction::triggered, this, &ColFM::onOpen);
-    connect(actClose,         &QAction::triggered, this, &ColFM::onCloseAction);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
     connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
     connect(actMove,          &QAction::triggered, this, &ColFM::onMove);
@@ -87,6 +85,7 @@ inline void ColFM::onRefresh() {
     const QString path = model->filePath(currentRoot);
     model->setRootPath(path);
     setViewMode(mode);
+    if (crumbs) crumbs->setPath(path);
     statusBar()->showMessage("Folder refreshed", 1500);
 }
 

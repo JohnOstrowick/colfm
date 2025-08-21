@@ -1,0 +1,232 @@
+colfm.cpp:17:1: error: expected unqualified-id before ‘...’ token
+   17 | ...
+      | ^~~
+colfm.cpp: In member function ‘virtual QIcon CustomIconProvider::icon(const QFileInfo&) const’:
+colfm.cpp:37:60: error: ‘kIconSize’ was not declared in this scope
+   37 |         QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
+      |                                                            ^~~~~~~~~
+colfm.cpp: In member function ‘virtual QVariant FixedFSModel::data(const QModelIndex&, int) const’:
+colfm.cpp:77:53: error: ‘kIconSize’ was not declared in this scope
+   77 |                 pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+      |                                                     ^~~~~~~~~
+colfm.cpp:81:46: error: ‘kIconSize’ was not declared in this scope
+   81 |             if (!pm.isNull() && pm.size() != kIconSize) {
+      |                                              ^~~~~~~~~
+colfm.cpp: In member function ‘virtual QAbstractItemView* ColumnView32::createColumn(const QModelIndex&)’:
+colfm.cpp:99:28: error: ‘kIconSize’ was not declared in this scope; did you mean ‘iconSize’?
+   99 |             v->setIconSize(kIconSize);
+      |                            ^~~~~~~~~
+      |                            iconSize
+colfm.cpp:100:36: error: expected type-specifier before ‘FixedIconDelegate’
+  100 |             v->setItemDelegate(new FixedIconDelegate(v));
+      |                                    ^~~~~~~~~~~~~~~~~
+colfm.cpp: At global scope:
+colfm.cpp:182:5: error: ‘ViewMode’ does not name a type
+  182 |     ViewMode mode = ViewMode::Tree;
+      |     ^~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QHeaderView:1,
+                 from viewwidgets.h:8,
+                 from colfm.cpp:198:
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qheaderview.h:226:12: error: cannot define member function ‘ColFM::QHeaderView::logicalIndexAt’ within ‘ColFM’
+  226 | inline int QHeaderView::logicalIndexAt(int ax, int ay) const
+      |            ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qheaderview.h:228:12: error: cannot define member function ‘ColFM::QHeaderView::logicalIndexAt’ within ‘ColFM’
+  228 | inline int QHeaderView::logicalIndexAt(const QPoint &apos) const
+      |            ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qheaderview.h:230:13: error: cannot define member function ‘ColFM::QHeaderView::hideSection’ within ‘ColFM’
+  230 | inline void QHeaderView::hideSection(int alogicalIndex)
+      |             ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qheaderview.h:232:13: error: cannot define member function ‘ColFM::QHeaderView::showSection’ within ‘ColFM’
+  232 | inline void QHeaderView::showSection(int alogicalIndex)
+      |             ^~~~~~~~~~~
+colfm.cpp:200:22: error: ‘ViewMode’ has not been declared
+  200 |     void setViewMode(ViewMode m) {
+      |                      ^~~~~~~~
+colfm.cpp: In lambda function:
+colfm.cpp:129:29: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  129 |                 setViewMode(mode);
+      |                             ^~~~
+      |                             model
+colfm.cpp:131:28: error: invalid use of incomplete type ‘class QStatusBar’
+  131 |                 statusBar()->showMessage("Path not found", 2000);
+      |                            ^~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow:1,
+                 from colfm.cpp:2:
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+colfm.cpp: In constructor ‘ColFM::ColFM(QWidget*)’:
+colfm.cpp:143:21: error: ‘ViewMode’ has not been declared
+  143 |         setViewMode(ViewMode::Tree);
+      |                     ^~~~~~~~
+viewwidgets.h: In member function ‘QWidget* ColFM::buildTreeWidget(const QModelIndex&)’:
+viewwidgets.h:79:23: error: ‘kIconSize’ was not declared in this scope; did you mean ‘iconSize’?
+   79 |     view->setIconSize(kIconSize);
+      |                       ^~~~~~~~~
+      |                       iconSize
+viewwidgets.h:80:31: error: expected type-specifier before ‘FixedIconDelegate’
+   80 |     view->setItemDelegate(new FixedIconDelegate(view));
+      |                               ^~~~~~~~~~~~~~~~~
+viewwidgets.h:84:19: error: invalid use of incomplete type ‘class QHeaderView’
+   84 |     view->header()->setSectionResizeMode(QHeaderView::Interactive);
+      |                   ^~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTreeView:1,
+                 from colfm.cpp:7:
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtreeview.h:17:7: note: forward declaration of ‘class QHeaderView’
+   17 | class QHeaderView;
+      |       ^~~~~~~~~~~
+viewwidgets.h:85:19: error: invalid use of incomplete type ‘class QHeaderView’
+   85 |     view->header()->setStretchLastSection(false);
+      |                   ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtreeview.h:17:7: note: forward declaration of ‘class QHeaderView’
+   17 | class QHeaderView;
+      |       ^~~~~~~~~~~
+viewwidgets.h: In member function ‘QWidget* ColFM::buildColumnWidget(const QModelIndex&)’:
+viewwidgets.h:113:21: error: ‘kIconSize’ was not declared in this scope; did you mean ‘iconSize’?
+  113 |     cv->setIconSize(kIconSize);
+      |                     ^~~~~~~~~
+      |                     iconSize
+viewwidgets.h:114:29: error: expected type-specifier before ‘FixedIconDelegate’
+  114 |     cv->setItemDelegate(new FixedIconDelegate(cv));
+      |                             ^~~~~~~~~~~~~~~~~
+viewwidgets.h: In member function ‘QWidget* ColFM::buildIconWidget(const QModelIndex&)’:
+viewwidgets.h:165:23: error: ‘kIconSize’ was not declared in this scope; did you mean ‘iconSize’?
+  165 |     view->setIconSize(kIconSize);
+      |                       ^~~~~~~~~
+      |                       iconSize
+viewwidgets.h:166:31: error: expected type-specifier before ‘FixedIconDelegate’
+  166 |     view->setItemDelegate(new FixedIconDelegate(view));
+      |                               ^~~~~~~~~~~~~~~~~
+colfm.cpp: In member function ‘void ColFM::setViewMode(int)’:
+colfm.cpp:201:9: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  201 |         mode = m;
+      |         ^~~~
+      |         model
+colfm.cpp:207:18: error: ‘ViewMode’ has not been declared
+  207 |             case ViewMode::Tree:   w = buildTreeWidget(root);   break;
+      |                  ^~~~~~~~
+colfm.cpp:208:18: error: ‘ViewMode’ has not been declared
+  208 |             case ViewMode::Column: w = buildColumnWidget(root); break;
+      |                  ^~~~~~~~
+colfm.cpp:209:18: error: ‘ViewMode’ has not been declared
+  209 |             case ViewMode::Icon:   w = buildIconWidget(root);   break;
+      |                  ^~~~~~~~
+In file included from colfm.cpp:233:
+toolbars.h: In member function ‘void ColFM::onMoveToTrash()’:
+toolbars.h:137:59: error: invalid use of incomplete type ‘class QStatusBar’
+  137 | inline void ColFM::onMoveToTrash()           { statusBar()->showMessage("TODO: Move to Trash", 2000); }
+      |                                                           ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onRefresh()’:
+toolbars.h:142:17: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  142 |     setViewMode(mode);
+      |                 ^~~~
+      |                 model
+toolbars.h: In member function ‘void ColFM::onOpenTrash()’:
+toolbars.h:152:17: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  152 |     setViewMode(mode);
+      |                 ^~~~
+      |                 model
+toolbars.h: In member function ‘void ColFM::onRestoreFromTrash()’:
+toolbars.h:155:59: error: invalid use of incomplete type ‘class QStatusBar’
+  155 | inline void ColFM::onRestoreFromTrash()      { statusBar()->showMessage("TODO: Restore from Trash", 2000); }
+      |                                                           ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onUp()’:
+toolbars.h:163:17: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  163 |     setViewMode(mode);
+      |                 ^~~~
+      |                 model
+toolbars.h: In member function ‘void ColFM::onCloseAction()’:
+toolbars.h:172:59: error: invalid use of incomplete type ‘class QStatusBar’
+  172 | inline void ColFM::onCloseAction()           { statusBar()->showMessage("TODO: Close", 2000); }
+      |                                                           ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onInfo()’:
+toolbars.h:184:9: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  184 |     if (mode == ViewMode::Column && infoPanel) {
+      |         ^~~~
+      |         model
+toolbars.h:184:17: error: ‘ViewMode’ has not been declared
+  184 |     if (mode == ViewMode::Column && infoPanel) {
+      |                 ^~~~~~~~
+toolbars.h:184:37: error: ‘infoPanel’ was not declared in this scope
+  184 |     if (mode == ViewMode::Column && infoPanel) {
+      |                                     ^~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onRename()’:
+toolbars.h:191:60: error: invalid use of incomplete type ‘class QStatusBar’
+  191 | inline void ColFM::onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }
+      |                                                            ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onMove()’:
+toolbars.h:192:60: error: invalid use of incomplete type ‘class QStatusBar’
+  192 | inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+      |                                                            ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onDuplicate()’:
+toolbars.h:193:60: error: invalid use of incomplete type ‘class QStatusBar’
+  193 | inline void ColFM::onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
+      |                                                            ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onCreateSoftlink()’:
+toolbars.h:194:60: error: invalid use of incomplete type ‘class QStatusBar’
+  194 | inline void ColFM::onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
+      |                                                            ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+toolbars.h: In member function ‘void ColFM::onViewTree()’:
+toolbars.h:205:49: error: ‘ViewMode’ has not been declared
+  205 | inline void ColFM::onViewTree()   { setViewMode(ViewMode::Tree); }
+      |                                                 ^~~~~~~~
+toolbars.h: In member function ‘void ColFM::onViewColumn()’:
+toolbars.h:206:49: error: ‘ViewMode’ has not been declared
+  206 | inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
+      |                                                 ^~~~~~~~
+toolbars.h: In member function ‘void ColFM::onViewIcon()’:
+toolbars.h:207:49: error: ‘ViewMode’ has not been declared
+  207 | inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }
+      |                                                 ^~~~~~~~
+toolbars.h: In member function ‘void ColFM::onSearchPlocate()’:
+toolbars.h:234:29: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  234 |                 setViewMode(mode);
+      |                             ^~~~
+      |                             model
+toolbars.h:239:29: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+  239 |                 setViewMode(mode);
+      |                             ^~~~
+      |                             model
+In file included from colfm.cpp:234:
+handleopen.h: In member function ‘void ColFM::openFile(const QModelIndex&)’:
+handleopen.h:38:20: error: invalid use of incomplete type ‘class QStatusBar’
+   38 |         statusBar()->showMessage("File not found", 2000);
+      |                    ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+handleopen.h:46:21: error: ‘mode’ was not declared in this scope; did you mean ‘model’?
+   46 |         setViewMode(mode);                  // rebuild view at new root
+      |                     ^~~~
+      |                     model
+handleopen.h:58:25: error: invalid use of incomplete type ‘class QStatusBar’
+   58 |     if (!ok) statusBar()->showMessage("Could not open", 2000);
+      |                         ^~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h:20:7: note: forward declaration of ‘class QStatusBar’
+   20 | class QStatusBar;
+      |       ^~~~~~~~~~
+colfm.cpp: In function ‘int main(int, char**)’:
+colfm.cpp:239:22: error: expected type-specifier before ‘ForceIconStyle’
+  239 |     app.setStyle(new ForceIconStyle(app.style()));
+      |                      ^~~~~~~~~~~~~~

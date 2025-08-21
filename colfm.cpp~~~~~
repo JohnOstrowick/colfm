@@ -1,6 +1,5 @@
-/* colfm.cpp — keep behavior; only small addition to lift the preview image ~100px
- * in Column view by shrinking the details block inside InfoWidget.
- * All edits are annotated with  /* added *\/  comments.
+/* colfm.cpp — minimal changes to embed the existing Get Info panel in the column view’s right pane.
+ * All edits are annotated with `/* added *\/` or `/* modified *\/` comments.
  */
 
 #include <QApplication>
@@ -33,9 +32,10 @@
 #include <QEvent>
 #include <QMessageBox>
 #include <functional>
-#include <QTextBrowser>            /* added */
 
-#include "info.h"                  /* reuse the existing Get Info widget */
+/* added: include the reusable Get Info widget BEFORE the class to avoid any in-class include issues */
+#include "info.h"  /* added */
+
 #include "breadcrumbs.h"
 
 /* -------- Settings -------- */
@@ -56,7 +56,7 @@ public:
     }
 };
 
-/* Fixed decoration size */
+/* Force the decoration (painted icon) to a fixed size */
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
@@ -71,7 +71,7 @@ public:
     }
 };
 
-/* Custom icon provider (tints symlinks; ensures 32px base) */
+/* Custom icon provider: tint symlinks teal, executables light green, base 32px pixmap */
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
@@ -83,25 +83,31 @@ public:
             for (int y = 0; y < img.height(); ++y)
                 for (int x = 0; x < img.width(); ++x) {
                     QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                    img.setPixelColor(x, y, c);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
                 }
             return QIcon(QPixmap::fromImage(img));
         }
+
         if (info.isExecutable() && !info.isDir()) {
             for (int y = 0; y < img.height(); ++y)
                 for (int x = 0; x < img.width(); ++x) {
                     QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                    img.setPixelColor(x, y, c);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
                 }
             return QIcon(QPixmap::fromImage(img));
         }
+
         return QFileIconProvider::icon(info);
     }
 };
 
-/* Clamp DecorationRole to 32×32 */
+/* QFileSystemModel that guarantees 32x32 decoration pixmaps (fixes symlink size) */
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
@@ -109,10 +115,14 @@ public:
         if (role == Qt::DecorationRole) {
             QVariant v = QFileSystemModel::data(index, role);
             QPixmap pm;
-            if (v.canConvert<QIcon>())      pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
-            else if (v.canConvert<QPixmap>()) pm = qvariant_cast<QPixmap>(v);
-            if (!pm.isNull() && pm.size() != kIconSize)
+            if (v.canConvert<QIcon>()) {
+                pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+            } else if (v.canConvert<QPixmap>()) {
+                pm = qvariant_cast<QPixmap>(v);
+            }
+            if (!pm.isNull() && pm.size() != kIconSize) {
                 pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
             if (!pm.isNull()) return pm;
             return v;
         }
@@ -120,7 +130,7 @@ public:
     }
 };
 
-/* Column view: force 32px for spawned columns */
+/* ColumnView subclass that forces 32x32 icons and delegate for every spawned column */
 class ColumnView32 : public QColumnView {
 public:
     using QColumnView::QColumnView;
@@ -138,18 +148,25 @@ protected:
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
-        model = new FixedFSModel(this);
-        model->setIconProvider(new CustomIconProvider());
+        /* model setup */
+        model = new FixedFSModel(this);                              /* nochange */
+        model->setIconProvider(new CustomIconProvider());            /* nochange */
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
         currentRoot = model->setRootPath(QDir::homePath());
 
+        /* breadcrumbs */
         crumbs = new Breadcrumbs("Path", this);
         crumbs->setOnPathChosen([this](const QString &p){
-            if (QDir(p).exists()) { currentRoot = model->index(p); setViewMode(mode); }
-            else statusBar()->showMessage("Path not found", 2000);
+            if (QDir(p).exists()) {
+                currentRoot = model->index(p);
+                setViewMode(mode);
+            } else {
+                statusBar()->showMessage("Path not found", 2000);
+            }
         });
         crumbs->setPath(model->filePath(currentRoot));
 
+        /* toolbar */
         tb = new QToolBar("Main Toolbar", this);
         tb->setMovable(false);
         addToolBar(Qt::TopToolBarArea, tb);
@@ -162,7 +179,7 @@ public:
         resize(1400, 800);
     }
 
-public:
+public: // toolbar & helpers (bodies in headers)
     void drawButtons();
     void onMoveToTrash();
     void onRefresh();
@@ -195,10 +212,11 @@ private:
     QFileSystemModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
-    QLabel *previewLabel{};
+    QLabel *previewLabel{};                      /* nochange: created in viewwidgets.h */
     bool showHidden = false;
 
-    colfm::InfoWidget *infoPanel{};       /* added: existing Info widget reused in column-right pane */
+    /* added: right-pane Get Info widget, injected into the existing preview pane in Column mode */
+    colfm::InfoWidget *infoPanel{};              /* added */
 
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
@@ -210,17 +228,20 @@ private:
     QAction *actSearch{};
     QAbstractItemView *currentView{};
 
-    #include "viewwidgets.h"
+    #include "viewwidgets.h"                    /* nochange */
 
     void setViewMode(ViewMode m) {
         mode = m;
-        infoPanel = nullptr;              /* added: reset before rebuilding */
+
+        /* added: reset our injected panel pointer before rebuilding the center widget */
+        infoPanel = nullptr;                    /* added */
 
         QWidget *old = centralWidget();
         if (old) old->deleteLater();
 
         QWidget *w = nullptr;
         QModelIndex root = currentRoot.isValid() ? currentRoot : model->index(QDir::homePath());
+
         switch (mode) {
             case ViewMode::Tree:   w = buildTreeWidget(root);   break;
             case ViewMode::Column: w = buildColumnWidget(root); break;
@@ -228,43 +249,46 @@ private:
         }
         setCentralWidget(w);
 
-        /* added: replace right preview label with InfoWidget in Column mode and lift image ~100px */
-        if (mode == ViewMode::Column && previewLabel) {
-            QWidget *pane = previewLabel->parentWidget();
-            if (pane && pane->layout()) {
-                pane->layout()->removeWidget(previewLabel);
-                previewLabel->deleteLater();
-                previewLabel = nullptr;
-
-                infoPanel = new colfm::InfoWidget(pane);
-                pane->layout()->addWidget(infoPanel);
-
-                /* added: lift the preview image by shrinking the details block ~100px */
-                if (auto details = infoPanel->findChild<QTextBrowser*>()) {
-                    details->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                    int h = qMax(120, details->sizeHint().height() - 100);
-                    details->setMaximumHeight(h);
-                }
+        /* added: if we are in Column mode, replace the right-hand preview label with the InfoWidget */
+        if (mode == ViewMode::Column && previewLabel) {                           /* added */
+            QWidget *pane = previewLabel->parentWidget();                          /* added */
+            if (pane && pane->layout()) {                                          /* added */
+                pane->layout()->removeWidget(previewLabel);                        /* added */
+                previewLabel->deleteLater();                                       /* added */
+                previewLabel = nullptr;                                            /* added */
+                infoPanel = new colfm::InfoWidget(pane);                           /* added */
+                pane->layout()->addWidget(infoPanel);                              /* added */
             }
-            const QModelIndex cur = currentIndex();
-            if (cur.isValid()) previewFile(cur);
+            /* populate panel with current selection, if any */                    /* added */
+            const QModelIndex cur = currentIndex();                                /* added */
+            if (cur.isValid()) { previewFile(cur); }                               /* added */
         }
 
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
     }
 };
 
-void ColFM::previewFile(const QModelIndex &idx) {
+/* modified: send content to the embedded infoPanel when in Column mode */
+void ColFM::previewFile(const QModelIndex &idx) {                  /* modified */
     if (!idx.isValid() || !model) return;
     const QString path = model->filePath(idx);
 
-    if (mode == ViewMode::Column) {
-        if (infoPanel) { infoPanel->setFile(path); return; }
-        if (previewLabel) { previewLabel->setText(path); previewLabel->setToolTip(path); return; }
+    if (mode == ViewMode::Column) {                                /* modified */
+        if (infoPanel) {                                           /* added */
+            infoPanel->setFile(path);                              /* added: reuse the existing Get Info widget */
+            return;                                                /* added */
+        }
+        if (previewLabel) {
+            previewLabel->setText(path);
+            previewLabel->setToolTip(path);
+            return;
+        }
     }
+
     if (statusBar()) statusBar()->showMessage(path, 1500);
 }
 
+/* include inline toolbar + open helpers AFTER the class */
 #include "toolbars.h"
 #include "handleopen.h"
 

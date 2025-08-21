@@ -1,8 +1,3 @@
-/* colfm.cpp — keep behavior; only small addition to lift the preview image ~100px
- * in Column view by shrinking the details block inside InfoWidget.
- * All edits are annotated with  /* added *\/  comments.
- */
-
 #include <QApplication>
 #include <QMainWindow>
 #include <QToolBar>
@@ -33,17 +28,13 @@
 #include <QEvent>
 #include <QMessageBox>
 #include <functional>
-#include <QTextBrowser>            /* added */
 
-#include "info.h"                  /* reuse the existing Get Info widget */
-#include "breadcrumbs.h"
-
-/* -------- Settings -------- */
+// -------- Settings --------
 static const QSize kIconSize(32, 32);
 
 enum class ViewMode { Tree, Column, Icon };
 
-/* Force app-wide 32 px icon metrics */
+// Force app-wide 32 px icon metrics (kept from earlier revs)
 class ForceIconStyle : public QProxyStyle {
 public:
     using QProxyStyle::QProxyStyle;
@@ -56,7 +47,7 @@ public:
     }
 };
 
-/* Fixed decoration size */
+// Force the decoration (painted icon) to a fixed size — needed for consistent 32px
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
@@ -71,11 +62,12 @@ public:
     }
 };
 
-/* Custom icon provider (tints symlinks; ensures 32px base) */
+// Custom icon provider: tint symlinks teal, executables light green, and start from a 32px pixmap
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
     QIcon icon(const QFileInfo &info) const override {
+        // Start from the platform icon but force a 32px pixmap so overlays don’t end up 16px
         QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
         QImage img = pix.toImage();
 
@@ -83,25 +75,31 @@ public:
             for (int y = 0; y < img.height(); ++y)
                 for (int x = 0; x < img.width(); ++x) {
                     QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                    img.setPixelColor(x, y, c);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
                 }
             return QIcon(QPixmap::fromImage(img));
         }
+
         if (info.isExecutable() && !info.isDir()) {
             for (int y = 0; y < img.height(); ++y)
                 for (int x = 0; x < img.width(); ++x) {
                     QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                    img.setPixelColor(x, y, c);
+                    if (c.alpha() > 0) {
+                        c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
+                        img.setPixelColor(x, y, c);
+                    }
                 }
             return QIcon(QPixmap::fromImage(img));
         }
+
         return QFileIconProvider::icon(info);
     }
 };
 
-/* Clamp DecorationRole to 32×32 */
+// QFileSystemModel that guarantees 32x32 decoration pixmaps (fixes symlink size regressions)
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
@@ -109,10 +107,14 @@ public:
         if (role == Qt::DecorationRole) {
             QVariant v = QFileSystemModel::data(index, role);
             QPixmap pm;
-            if (v.canConvert<QIcon>())      pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
-            else if (v.canConvert<QPixmap>()) pm = qvariant_cast<QPixmap>(v);
-            if (!pm.isNull() && pm.size() != kIconSize)
+            if (v.canConvert<QIcon>()) {
+                pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+            } else if (v.canConvert<QPixmap>()) {
+                pm = qvariant_cast<QPixmap>(v);
+            }
+            if (!pm.isNull() && pm.size() != kIconSize) {
                 pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
             if (!pm.isNull()) return pm;
             return v;
         }
@@ -120,33 +122,29 @@ public:
     }
 };
 
-/* Column view: force 32px for spawned columns */
-class ColumnView32 : public QColumnView {
-public:
-    using QColumnView::QColumnView;
-protected:
-    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
-        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
-        if (v) {
-            v->setIconSize(kIconSize);
-            v->setItemDelegate(new FixedIconDelegate(v));
-        }
-        return v;
-    }
-};
+// ---- New: Breadcrumbs toolbar (editable)
+#include "breadcrumbs.h"
 
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
+        // OLD:
+        // model = new QFileSystemModel(this);
+        // NEW: use FixedFSModel to clamp DecorationRole to 32px
         model = new FixedFSModel(this);
-        model->setIconProvider(new CustomIconProvider());
-        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
+        model->setIconProvider(new CustomIconProvider());  // ensure symlink/exec tinting + 32px base
+        model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
         currentRoot = model->setRootPath(QDir::homePath());
 
+        // Breadcrumbs toolbar (above main toolbar)
         crumbs = new Breadcrumbs("Path", this);
         crumbs->setOnPathChosen([this](const QString &p){
-            if (QDir(p).exists()) { currentRoot = model->index(p); setViewMode(mode); }
-            else statusBar()->showMessage("Path not found", 2000);
+            if (QDir(p).exists()) {
+                currentRoot = model->index(p);
+                setViewMode(mode);
+            } else {
+                statusBar()->showMessage("Path not found", 2000);
+            }
         });
         crumbs->setPath(model->filePath(currentRoot));
 
@@ -162,6 +160,7 @@ public:
         resize(1400, 800);
     }
 
+    // ---- toolbar slots (declared; bodies in toolbars.h) ----
 public:
     void drawButtons();
     void onMoveToTrash();
@@ -182,6 +181,7 @@ public:
     void onViewIcon();
     void onSearchPlocate();
 
+    // helpers declared here; bodies provided elsewhere (handleopen.h for open*)
     QModelIndex currentIndex() const;
     void previewFile(const QModelIndex &idx);
     void openFile(const QModelIndex &idx);
@@ -189,16 +189,16 @@ public:
     void openSelected();
     void openPath(const QString &absPath);
 
+    // event filter implemented inline in toolbars.h
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
 private:
+    // NOTE: keep as QFileSystemModel* so we don’t need FixedFSModel forward-declare here
     QFileSystemModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
-    QLabel *previewLabel{};
+    QLabel *previewLabel{};   // right pane text label (column view); keep
     bool showHidden = false;
-
-    colfm::InfoWidget *infoPanel{};       /* added: existing Info widget reused in column-right pane */
 
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
@@ -210,17 +210,16 @@ private:
     QAction *actSearch{};
     QAbstractItemView *currentView{};
 
-    #include "viewwidgets.h"
+#include "viewwidgets.h"  // builds Tree/Icon/Column widgets; uses kIconSize via delegate
 
     void setViewMode(ViewMode m) {
         mode = m;
-        infoPanel = nullptr;              /* added: reset before rebuilding */
-
         QWidget *old = centralWidget();
         if (old) old->deleteLater();
 
         QWidget *w = nullptr;
         QModelIndex root = currentRoot.isValid() ? currentRoot : model->index(QDir::homePath());
+
         switch (mode) {
             case ViewMode::Tree:   w = buildTreeWidget(root);   break;
             case ViewMode::Column: w = buildColumnWidget(root); break;
@@ -228,50 +227,33 @@ private:
         }
         setCentralWidget(w);
 
-        /* added: replace right preview label with InfoWidget in Column mode and lift image ~100px */
-        if (mode == ViewMode::Column && previewLabel) {
-            QWidget *pane = previewLabel->parentWidget();
-            if (pane && pane->layout()) {
-                pane->layout()->removeWidget(previewLabel);
-                previewLabel->deleteLater();
-                previewLabel = nullptr;
-
-                infoPanel = new colfm::InfoWidget(pane);
-                pane->layout()->addWidget(infoPanel);
-
-                /* added: lift the preview image by shrinking the details block ~100px */
-                if (auto details = infoPanel->findChild<QTextBrowser*>()) {
-                    details->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                    int h = qMax(120, details->sizeHint().height() - 100);
-                    details->setMaximumHeight(h);
-                }
-            }
-            const QModelIndex cur = currentIndex();
-            if (cur.isValid()) previewFile(cur);
-        }
-
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
     }
 };
 
+// ---- helper method DEFINITIONS kept minimal (others live in headers) ----
 void ColFM::previewFile(const QModelIndex &idx) {
     if (!idx.isValid() || !model) return;
     const QString path = model->filePath(idx);
-
     if (mode == ViewMode::Column) {
-        if (infoPanel) { infoPanel->setFile(path); return; }
-        if (previewLabel) { previewLabel->setText(path); previewLabel->setToolTip(path); return; }
+        if (previewLabel) {
+            previewLabel->setText(path);
+            previewLabel->setToolTip(path);
+        }
+    } else {
+        if (statusBar()) statusBar()->showMessage(path, 1500);
     }
-    if (statusBar()) statusBar()->showMessage(path, 1500);
 }
 
+// include inline toolbar definitions AFTER the class (and after helper defs)
 #include "toolbars.h"
 #include "handleopen.h"
+//#include "info.h" // included from toolbars.h when needed
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
-    app.setWindowIcon(QIcon("icons/app_icon.png"));
+    app.setWindowIcon(QIcon("icons/app_icon.png")); // TODO: if not shown, keep as bug
     ColFM w; w.show();
     return app.exec();
 }

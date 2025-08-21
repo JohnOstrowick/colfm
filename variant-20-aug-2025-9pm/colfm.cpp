@@ -34,7 +34,7 @@ static const QSize kIconSize(32, 32);
 
 enum class ViewMode { Tree, Column, Icon };
 
-// Force app-wide 32 px icon metrics (kept from earlier revs)
+// Force app-wide 32 px icon metrics
 class ForceIconStyle : public QProxyStyle {
 public:
     using QProxyStyle::QProxyStyle;
@@ -47,97 +47,67 @@ public:
     }
 };
 
-// Force the decoration (painted icon) to a fixed size — needed for consistent 32px
+// Fixed-size icon delegate for views
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
-    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
-        QStyledItemDelegate::initStyleOption(option, index);
-        option->decorationSize = kIconSize;
-    }
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-        QStyleOptionViewItem opt(option);
-        opt.decorationSize = kIconSize;
-        return QStyledItemDelegate::sizeHint(opt, index);
+    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &idx) const override {
+        QSize s = QStyledItemDelegate::sizeHint(opt, idx);
+        if (s.width() < 32) s.setWidth(32);
+        if (s.height() < 32) s.setHeight(32);
+        return s;
     }
 };
 
-// Custom icon provider: tint symlinks teal, executables light green, and start from a 32px pixmap
+// Custom icon provider (placeholder)
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
+    QIcon icon(IconType type) const override {
+        return QFileIconProvider::icon(type);
+    }
     QIcon icon(const QFileInfo &info) const override {
-        // Start from the platform icon but force a 32px pixmap so overlays don’t end up 16px
-        QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
-        QImage img = pix.toImage();
-
-        if (info.isSymLink()) {
-            for (int y = 0; y < img.height(); ++y)
-                for (int x = 0; x < img.width(); ++x) {
-                    QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) {
-                        c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                        img.setPixelColor(x, y, c);
-                    }
-                }
-            return QIcon(QPixmap::fromImage(img));
-        }
-
-        if (info.isExecutable() && !info.isDir()) {
-            for (int y = 0; y < img.height(); ++y)
-                for (int x = 0; x < img.width(); ++x) {
-                    QColor c = img.pixelColor(x, y);
-                    if (c.alpha() > 0) {
-                        c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                        img.setPixelColor(x, y, c);
-                    }
-                }
-            return QIcon(QPixmap::fromImage(img));
-        }
-
         return QFileIconProvider::icon(info);
     }
 };
 
-// QFileSystemModel that guarantees 32x32 decoration pixmaps (fixes symlink size regressions)
+// FS model with fixed roles
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
-    QVariant data(const QModelIndex &index, int role) const override {
-        if (role == Qt::DecorationRole) {
-            QVariant v = QFileSystemModel::data(index, role);
-            QPixmap pm;
-            if (v.canConvert<QIcon>()) {
-                pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
-            } else if (v.canConvert<QPixmap>()) {
-                pm = qvariant_cast<QPixmap>(v);
-            }
-            if (!pm.isNull() && pm.size() != kIconSize) {
-                pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            }
-            if (!pm.isNull()) return pm;
-            return v;
-        }
-        return QFileSystemModel::data(index, role);
+    QVariant data(const QModelIndex &idx, int role) const override {
+        return QFileSystemModel::data(idx, role);
     }
 };
 
-// ---- New: Breadcrumbs toolbar (editable)
+// ColumnView subclass that forces 32x32 icons and delegate for every spawned column
+class ColumnView32 : public QColumnView {
+public:
+    using QColumnView::QColumnView;
+protected:
+    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
+        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
+        if (v) {
+            v->setIconSize(kIconSize);
+            v->setItemDelegate(new FixedIconDelegate(v));
+        }
+        return v;
+    }
+};
+
 #include "breadcrumbs.h"
 
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
-        // OLD:
-        // model = new QFileSystemModel(this);
-        // NEW: use FixedFSModel to clamp DecorationRole to 32px
         model = new FixedFSModel(this);
-        model->setIconProvider(new CustomIconProvider());  // ensure symlink/exec tinting + 32px base
+        model->setIconProvider(new CustomIconProvider());
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot); // dotfiles hidden by default
         currentRoot = model->setRootPath(QDir::homePath());
 
         // Breadcrumbs toolbar (above main toolbar)
         crumbs = new Breadcrumbs("Path", this);
+        //addToolBar(Qt::TopToolBarArea, crumbs);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) {
                 currentRoot = model->index(p);
@@ -181,7 +151,7 @@ public:
     void onViewIcon();
     void onSearchPlocate();
 
-    // helpers declared here; bodies provided elsewhere (handleopen.h for open*)
+    // helpers declared here; bodies provided elsewhere
     QModelIndex currentIndex() const;
     void previewFile(const QModelIndex &idx);
     void openFile(const QModelIndex &idx);
@@ -193,11 +163,10 @@ public:
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
 private:
-    // NOTE: keep as QFileSystemModel* so we don’t need FixedFSModel forward-declare here
-    QFileSystemModel *model{};
+    FixedFSModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
-    QLabel *previewLabel{};   // right pane text label (column view); keep
+    QLabel *previewLabel{};   // temporary (column preview text)
     bool showHidden = false;
 
     Breadcrumbs *crumbs{};
@@ -210,7 +179,7 @@ private:
     QAction *actSearch{};
     QAbstractItemView *currentView{};
 
-#include "viewwidgets.h"  // builds Tree/Icon/Column widgets; uses kIconSize via delegate
+#include "viewwidgets.h"
 
     void setViewMode(ViewMode m) {
         mode = m;
@@ -231,7 +200,8 @@ private:
     }
 };
 
-// ---- helper method DEFINITIONS kept minimal (others live in headers) ----
+// minimal preview hook; column view uses right-hand label for now
+// this stops LD from crashing
 void ColFM::previewFile(const QModelIndex &idx) {
     if (!idx.isValid() || !model) return;
     const QString path = model->filePath(idx);
@@ -245,10 +215,26 @@ void ColFM::previewFile(const QModelIndex &idx) {
     }
 }
 
+
+// ---- helper method DEFINITIONS (moved outside the class) ----
+/*QModelIndex ColFM::currentIndex() const {
+    return currentView ? currentView->currentIndex() : QModelIndex();
+}
+void ColFM::previewFile(const QModelIndex &idx) {
+    if (!idx.isValid()) return;
+    if (!previewLabel) return;
+    previewLabel->setText(model->filePath(idx));
+}
+void ColFM::openFile(const QModelIndex &idx) {
+    if (!idx.isValid()) return;
+    qDebug() << "Open file:" << model->filePath(idx);
+}
+*/
+
 // include inline toolbar definitions AFTER the class (and after helper defs)
 #include "toolbars.h"
 #include "handleopen.h"
-//#include "info.h" // included from toolbars.h when needed
+//#include "info.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

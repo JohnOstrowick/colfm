@@ -39,7 +39,7 @@ inline void ColFM::drawButtons() {
     actTrash      = tb->addAction(QIcon("icons/move_to_trash.png"), "Move to Trash");    actTrash->setToolTip("Move selected items to Trash");
     // (Move out of Trash — to be added later)
     actEmptyTrash = tb->addAction(QIcon("icons/empty_trash.png"),   "Empty Trash");      actEmptyTrash->setToolTip("Empty the Trash");
-    actRestoreFromTrash = tb->addAction(QIcon("icons/open.png"), "Restore From Trash");
+    actRestoreFromTrash = tb->addAction(QIcon("icons/move_out_trash.png"), "Restore From Trash");
     actRestoreFromTrash->setToolTip("Move selected items out of Trash");
     tb->addSeparator();
 

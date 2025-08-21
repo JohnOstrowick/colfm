@@ -1,10 +1,5 @@
-/* colfm.cpp — minimal additions:
- *  - Left sidebar (100px) with Home folders + Trash, then drives under /media/$USER (or "/ root").
- *  - Sidebar click navigates; eject column shows placeholder (icon expected at icons/eject.png).
- *  - Selection-change now updates Get Info on cursor navigation.
- *  - Double-click / Enter opens items (folders navigate, files/apps open via default).
- * Only this file is changed. Other headers untouched.
- * All edits are annotated with  /* added *\/  or  /* modified *\/ comments.
+/* colfm.cpp — sidebar cleaned up (single column), bigger row spacing, icons, padded eject button.
+ * Minimal edits only; anything replaced is commented with  /* replaced *\/ .
  */
 
 #include <QApplication>
@@ -23,6 +18,7 @@
 #include <QDebug>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QHBoxLayout>          /* added */
 #include <QHeaderView>
 #include <QPixmap>
 #include <QImage>
@@ -36,12 +32,11 @@
 #include <QSizePolicy>
 #include <QEvent>
 #include <QMessageBox>
-#include <functional>
 #include <QTextBrowser>
-/* added */ #include <QTreeWidget>
-/* added */ #include <QTreeWidgetItem>
-/* added */ #include <QPointer>
-/* added */ #include <QKeyEvent>
+#include <QTreeWidget>          /* added */
+#include <QTreeWidgetItem>      /* added */
+#include <QToolButton>          /* added */
+#include <functional>
 
 #include "info.h"
 #include "breadcrumbs.h"
@@ -224,56 +219,92 @@ private:
 
     #include "viewwidgets.h"
 
-    /* added: push current path to history before changing it */
     void pushHistory() {                         /* added */
         backStack.prepend(model->filePath(currentRoot));
         if (backStack.size() > 50) backStack.removeLast();
     }
 
-    /* added: build/refresh sidebar items */
+    /* ---------------------- Sidebar Builder (single column) ---------------------- */
     void populateSidebar() {                     /* added */
         if (!sidebar) return;
+
         sidebar->clear();
-        sidebar->setColumnCount(2);
+        sidebar->setColumnCount(1);                          /* replaced: was 2 */
         sidebar->setHeaderHidden(true);
         sidebar->setRootIsDecorated(false);
         sidebar->setSelectionMode(QAbstractItemView::SingleSelection);
         sidebar->setFocusPolicy(Qt::NoFocus);
         sidebar->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         sidebar->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        sidebar->setFixedWidth(100);
+        sidebar->setFixedWidth(300);
+        sidebar->setAlternatingRowColors(false);
+        // optional dark bg:
+        // sidebar->setStyleSheet("QTreeWidget{background:#1e1e1e;}");
 
-        auto addItem = [&](const QString &label, const QString &path, bool ejectable){
+        /* helper: one row widget per item with icon + text + (optional) eject button */
+        auto addItem = [&](const QString &label, const QString &path, bool ejectable, bool isDrive){
             auto *it = new QTreeWidgetItem(sidebar);
-            it->setText(0, label);
             it->setData(0, Qt::UserRole, path);
-            if (ejectable) {
-                it->setIcon(1, QIcon("icons/eject.png")); /* expected provided later */
-                it->setData(1, Qt::UserRole, QStringLiteral("eject"));
-            }
             it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+
+            QWidget *row = new QWidget(sidebar);
+            auto *h = new QHBoxLayout(row);
+            h->setContentsMargins(8, 6, 8, 6);          // extra leading (top/bottom) and side padding
+            h->setSpacing(6);                            // a bit more kerning
+
+            // icon (16x16)
+            QLabel *ic = new QLabel(row);
+            QPixmap pm;
+            if (isDrive) pm = QPixmap("icons/disk.png");      // user-supplied
+            else         pm = style()->standardIcon(QStyle::SP_DirIcon).pixmap(16,16); // folder
+            ic->setPixmap(pm.scaled(16,16, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            h->addWidget(ic, 0, Qt::AlignVCenter);
+
+            // label
+            QLabel *lab = new QLabel(label, row);
+            lab->setStyleSheet("color:#ddd; font-size:14px; letter-spacing:0.4px;");
+            h->addWidget(lab, 1, Qt::AlignVCenter);
+
+            if (ejectable) {
+                QToolButton *ej = new QToolButton(row);
+                ej->setIcon(QIcon("icons/eject.png"));       // white on black PNG (user provides)
+                ej->setIconSize(QSize(18,18));
+                ej->setAutoRaise(true);
+                ej->setStyleSheet("QToolButton { background:#000; border:none; padding:6px; }"); // padding => visible
+                ej->setToolTip("Eject");
+                ej->setProperty("mount", path);
+                h->addWidget(ej, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+                QObject::connect(ej, &QToolButton::clicked, this, [this, ej]{
+                    const QString mp = ej->property("mount").toString();
+                    statusBar()->showMessage(QString("Eject %1 (not implemented)").arg(mp), 1500);
+                });
+            }
+
+            sidebar->setItemWidget(it, 0, row);
+            it->setSizeHint(0, QSize(100, row->sizeHint().height() + 4)); // a little extra line height
             return it;
         };
 
         const QString home = QDir::homePath();
         // Always show Desktop, Downloads, Trash first
-        addItem("Desktop",  home + "/Desktop", false);
-        addItem("Downloads",home + "/Downloads", false);
-        addItem("Trash",    home + "/.local/share/Trash/files", false);
+        addItem("Desktop",  home + "/Desktop", false, false);
+        addItem("Downloads",home + "/Downloads", false, false);
+        addItem("Trash",    home + "/.local/share/Trash/files", false, false);
 
         // Visible (non-dot) folders in ~
         QDir hd(home);
         for (const QFileInfo &fi : hd.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
             if (fi.fileName().startsWith('.')) continue;
             if (fi.fileName() == "Desktop" || fi.fileName() == "Downloads") continue;
-            addItem(fi.fileName(), fi.absoluteFilePath(), false);
+            addItem(fi.fileName(), fi.absoluteFilePath(), false, false);
         }
 
-        // Divider
+        // Divider (simple spacer row)
         auto *div = new QTreeWidgetItem(sidebar);
         div->setFlags(Qt::NoItemFlags);
         div->setFirstColumnSpanned(true);
-        div->setText(0, "────────");
+        sidebar->setItemWidget(div, 0, new QLabel("────────", sidebar));
 
         // Drives under /media/$USER
         QString user = QFileInfo(home).fileName();
@@ -284,15 +315,14 @@ private:
                 drives << fi.absoluteFilePath();
 
         if (drives.isEmpty()) {
-            addItem("/ root", "/", false);
+            addItem("/ root", "/", false, true);
         } else {
             for (const QString &mp : drives) {
-                addItem(QFileInfo(mp).fileName(), mp, true);
+                addItem(QFileInfo(mp).fileName(), mp, true, true); // ejectable drive
             }
         }
 
-        sidebar->setColumnWidth(0, 78);
-        sidebar->setColumnWidth(1, 20);
+        // (no setColumnWidth calls — single column now)
     }
 
     /* builds outer layout with left sidebar + current view widget */
@@ -307,32 +337,16 @@ private:
         outer->setCollapsible(0, false);
         outer->setCollapsible(1, false);
 
-        // Navigation from sidebar (column 0 text) and eject on column 1
-        connect(sidebar, &QTreeWidget::itemActivated, this, [this](QTreeWidgetItem *it, int col){
+        // Navigation from sidebar (single column)
+        connect(sidebar, &QTreeWidget::itemActivated, this, [this](QTreeWidgetItem *it, int){
             if (!it) return;
-            if (col == 1 && it->data(1, Qt::UserRole).toString() == "eject") {
-                statusBar()->showMessage("Eject not implemented yet", 1500);
-                return;
-            }
             const QString path = it->data(0, Qt::UserRole).toString();
-            if (!path.isEmpty()) {
-                pushHistory();
-                currentRoot = model->index(path);
-                setViewMode(mode);
-            }
+            if (!path.isEmpty()) { pushHistory(); currentRoot = model->index(path); setViewMode(mode); }
         });
-        connect(sidebar, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem *it, int col){
+        connect(sidebar, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem *it, int){
             if (!it) return;
-            if (col == 1 && it->data(1, Qt::UserRole).toString() == "eject") {
-                statusBar()->showMessage("Eject not implemented yet", 1500);
-                return;
-            }
             const QString path = it->data(0, Qt::UserRole).toString();
-            if (!path.isEmpty()) {
-                pushHistory();
-                currentRoot = model->index(path);
-                setViewMode(mode);
-            }
+            if (!path.isEmpty()) { pushHistory(); currentRoot = model->index(path); setViewMode(mode); }
         });
         return outer;
     }
@@ -352,9 +366,7 @@ private:
             case ViewMode::Icon:   center = buildIconWidget(root);   break;
         }
 
-        /* modified: central widget becomes a splitter with sidebar + center */
-        QWidget *w = buildWithSidebar(center); /* added */
-
+        QWidget *w = buildWithSidebar(center); /* modified: wrap with sidebar */
         setCentralWidget(w);
 
         // Replace right preview label with InfoWidget in Column mode (as before)
@@ -378,33 +390,21 @@ private:
             if (cur.isValid()) previewFile(cur);
         }
 
-        /* added: keep breadcrumbs and selection-driven preview in sync */
         if (crumbs) crumbs->setPath(model->filePath(currentRoot));
+
+        // Update Info panel on keyboard navigation + open on activation/double-click
         if (currentView && currentView->selectionModel()) {
-            // Update Info panel on keyboard navigation
             connect(currentView->selectionModel(), &QItemSelectionModel::currentChanged,
                     this, [this](const QModelIndex &cur, const QModelIndex&) { previewFile(cur); });
-            // Also open on activation (Enter/double-click)
             connect(currentView, &QAbstractItemView::activated, this, [this](const QModelIndex &idx){
                 if (!idx.isValid()) return;
-                if (model->isDir(idx)) {
-                    pushHistory();
-                    currentRoot = idx;
-                    setViewMode(mode);
-                } else {
-                    openFile(idx);
-                }
+                if (model->isDir(idx)) { pushHistory(); currentRoot = idx; setViewMode(mode); }
+                else { openFile(idx); }
             });
-            // Ensure double-click opens (some views already connect; this enforces)
             connect(currentView, &QAbstractItemView::doubleClicked, this, [this](const QModelIndex &idx){
                 if (!idx.isValid()) return;
-                if (model->isDir(idx)) {
-                    pushHistory();
-                    currentRoot = idx;
-                    setViewMode(mode);
-                } else {
-                    openFile(idx);
-                }
+                if (model->isDir(idx)) { pushHistory(); currentRoot = idx; setViewMode(mode); }
+                else { openFile(idx); }
             });
         }
     }
@@ -421,12 +421,8 @@ void ColFM::previewFile(const QModelIndex &idx) {
     if (statusBar()) statusBar()->showMessage(path, 1500);
 }
 
-/* include inline toolbar + open helpers AFTER the class */
 #include "toolbars.h"
 #include "handleopen.h"
-
-/* added: keyboard back (Alt+Left) and open with Enter handled in eventFilter via toolbars.h paths.
- * Back button will be added later to toolbar; history already works here. */
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

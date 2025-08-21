@@ -12,34 +12,25 @@
 #include <QAbstractItemView>
 #include <QProxyStyle>
 #include <QColor>
-#include "info.h"
+//#include "info.h" /* commented out: avoid including inside class to prevent Qt types being seen as ColFM::X (kak.txt) */
 
-// NOTE: This header is included inside class ColFM,
-// so members like model, crumbs, currentView, previewLabel, currentRoot are in scope.
+/* NOTE:
+ * This header is included INSIDE class ColFM in colfm.cpp.
+ * The following inline functions are therefore ColFM members and may access:
+ *   model, crumbs, currentView, previewLabel, currentRoot, mode, kIconSize
+ *
+ * FixedIconDelegate and ColumnView32 are defined in colfm.cpp (global scope).
+ * To avoid duplicate definitions, we DO NOT define them here.
+ */
 
-// ---- Force 32px icon metrics at the view level -----------------------------
-class ForceIconStyleLocal : public QProxyStyle {
-public:
-    using QProxyStyle::QProxyStyle;
-    int pixelMetric(PixelMetric m, const QStyleOption *opt, const QWidget *wid) const override {
-        if (m == QStyle::PM_SmallIconSize ||
-            m == QStyle::PM_ListViewIconSize ||
-            m == QStyle::PM_IconViewIconSize ||
-            m == QStyle::PM_ToolBarIconSize) {
-            return 32; // enforce 32px everywhere this style is applied
-        }
-        return QProxyStyle::pixelMetric(m, opt, wid);
-    }
-};
-
+/* commented out duplicate definitions — now provided in colfm.cpp
 // ---- Delegate that enforces 32×32 decoration size --------------------------
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
-
     void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
         QStyledItemDelegate::initStyleOption(option, index);
-        option->decorationSize = kIconSize; // make Qt request 32×32 icons (incl. symlink overlays)
+        option->decorationSize = kIconSize;
     }
     QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &idx) const override {
         QSize s = QStyledItemDelegate::sizeHint(opt, idx);
@@ -57,19 +48,26 @@ protected:
     QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
         QAbstractItemView *v = QColumnView::createColumn(rootIndex);
         if (v) {
-            v->setStyle(new ForceIconStyleLocal(v->style()));   // NEW: override icon metrics
-            v->setIconSize(kIconSize);                          // NEW: 32×32
-            v->setItemDelegate(new FixedIconDelegate(v));       // NEW: enforce decorationSize
+            v->setIconSize(kIconSize);
+            v->setItemDelegate(new FixedIconDelegate(v));
         }
         return v;
     }
 };
+*/
 
-// ---- Tree (list) view ------------------------------------------------------
-inline QWidget* buildTreeWidget(const QModelIndex &root) {
+/* added: helper to ensure we always have a valid root index */
+inline QModelIndex ensureRootIndex(const QModelIndex &root) {
+    if (root.isValid()) return root;
+    return model->index(QDir::homePath());
+}
+
+/* ------------------------------ Tree (list) view ------------------------------ */
+inline QWidget* buildTreeWidget(const QModelIndex &rootIdx) {
     auto *view = new QTreeView();
-    view->setStyle(new ForceIconStyleLocal(view->style())); // NEW
+
     view->setModel(model);
+    const QModelIndex root = ensureRootIndex(rootIdx);            /* added */
     view->setRootIndex(root);
     if (crumbs) crumbs->setPath(model->filePath(root));
 
@@ -77,9 +75,9 @@ inline QWidget* buildTreeWidget(const QModelIndex &root) {
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
     view->setAlternatingRowColors(true);
 
-    // Ensure 32×32 icons
-    view->setIconSize(kIconSize);                         // NEW
-    view->setItemDelegate(new FixedIconDelegate(view));   // NEW
+    /* added: force 32×32 rendering */
+    view->setIconSize(kIconSize);
+    view->setItemDelegate(new FixedIconDelegate(view));
 
     currentView = view;
 
@@ -87,6 +85,7 @@ inline QWidget* buildTreeWidget(const QModelIndex &root) {
     view->header()->setStretchLastSection(false);
     view->setColumnWidth(0, 600);
 
+    /* added: double-click navigation and preview */
     connect(view, &QTreeView::doubleClicked, this, [this, view](const QModelIndex &idx){
         if (!idx.isValid()) return;
         if (model->isDir(idx)) {
@@ -97,45 +96,44 @@ inline QWidget* buildTreeWidget(const QModelIndex &root) {
             previewFile(idx);
         }
     });
+
     return view;
 }
 
-// ---- Column view with right preview label (unchanged behavior) -------------
-inline QWidget* buildColumnWidget(const QModelIndex &root) {
+/* ------------------------------ Column view ------------------------------ */
+inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
     auto *splitter = new QSplitter(Qt::Horizontal);
 
-    auto *cv = new ColumnView32();
-    cv->setStyle(new ForceIconStyleLocal(cv->style()));   // NEW
+    auto *cv = new ColumnView32();                 /* uses definition from colfm.cpp */
     cv->setModel(model);
+    const QModelIndex root = ensureRootIndex(rootIdx);            /* added */
     cv->setRootIndex(root);
 
-    // Also enforce on the initial visible column view object
-    cv->setIconSize(kIconSize);                           // NEW
-    cv->setItemDelegate(new FixedIconDelegate(cv));       // NEW
+    /* added: ensure 32×32 on the initial visible column */
+    cv->setIconSize(kIconSize);
+    cv->setItemDelegate(new FixedIconDelegate(cv));
 
     currentView = cv;
 
-    /*
+    /* right-side preview pane: keep label (Info panel can replace later) */
     QWidget *previewPane = new QWidget();
     QPalette pal = previewPane->palette();
     pal.setColor(QPalette::Window, QColor(30, 30, 30));
     previewPane->setAutoFillBackground(true);
     previewPane->setPalette(pal);
 
-    // Keep existing preview label (we are only fixing icon sizes here)
     if (!previewLabel) previewLabel = new QLabel("Preview");
     previewLabel->setStyleSheet("QLabel { color: white; padding: 8px; }");
     auto *previewLayout = new QVBoxLayout(previewPane);
     previewLayout->setContentsMargins(0,0,0,0);
     previewLayout->addWidget(previewLabel);
-    */
-    infoPanel = new colfm::InfoWidget();
 
     splitter->addWidget(cv);
     splitter->addWidget(previewPane);
     splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 2);
 
+    /* added: update preview + breadcrumbs on click */
     connect(cv, &QColumnView::clicked, this, [this, cv](const QModelIndex &idx){
         if (!idx.isValid()) return;
         if (model->isDir(idx)) {
@@ -145,20 +143,13 @@ inline QWidget* buildColumnWidget(const QModelIndex &root) {
         }
         previewFile(idx);
     });
-	if (cv->selectionModel()) {
-	    connect(cv->selectionModel(), &QItemSelectionModel::currentChanged,
-		    this, [this](const QModelIndex &cur, const QModelIndex&){
-			previewFile(cur);
-		    });
-	}
 
     return splitter;
 }
 
-// ---- Icon (grid) view ------------------------------------------------------
-inline QWidget* buildIconWidget(const QModelIndex &root) {
+/* ------------------------------ Icon (grid) view ------------------------------ */
+inline QWidget* buildIconWidget(const QModelIndex &rootIdx) {
     auto *view = new QListView();
-    view->setStyle(new ForceIconStyleLocal(view->style())); // NEW
 
     view->setViewMode(QListView::IconMode);
     view->setResizeMode(QListView::Adjust);
@@ -166,18 +157,17 @@ inline QWidget* buildIconWidget(const QModelIndex &root) {
     view->setUniformItemSizes(false);
 
     view->setModel(model);
+    const QModelIndex root = ensureRootIndex(rootIdx);            /* added */
     view->setRootIndex(root);
     if (crumbs) crumbs->setPath(model->filePath(root));
 
-    // Enforce 32×32 icons and decoration size
-    view->setIconSize(kIconSize);                         // NEW
-    view->setItemDelegate(new FixedIconDelegate(view));   // NEW
-
-    // If you already set a grid size elsewhere, keep it; this is layout, not icon pixels.
-    // view->setGridSize(QSize(96, 96));
+    /* added: enforce 32×32 */
+    view->setIconSize(kIconSize);
+    view->setItemDelegate(new FixedIconDelegate(view));
 
     currentView = view;
 
+    /* added: double-click navigation and preview */
     connect(view, &QListView::doubleClicked, this, [this, view](const QModelIndex &idx){
         if (!idx.isValid()) return;
         if (model->isDir(idx)) {
@@ -188,5 +178,6 @@ inline QWidget* buildIconWidget(const QModelIndex &root) {
             previewFile(idx);
         }
     });
+
     return view;
 }

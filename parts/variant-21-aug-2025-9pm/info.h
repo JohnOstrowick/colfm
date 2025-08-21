@@ -5,6 +5,8 @@
 #include <QLabel>
 #include <QTextBrowser>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLineEdit>
 #include <QFileInfo>
 #include <QMimeDatabase>
 #include <QImageReader>
@@ -15,6 +17,8 @@
 #include <QBuffer>
 #include <QTemporaryDir>
 #include <QLocale>
+#include <QDir>
+#include <QMessageBox>
 
 namespace colfm {
 
@@ -38,29 +42,43 @@ inline QString permsToString(QFile::Permissions p) {
 class InfoWidget : public QWidget {
 public:
     explicit InfoWidget(QWidget *parent=nullptr) : QWidget(parent) {
+        // Top: editable file name (rename)
+        auto *topRow = new QHBoxLayout();
+        auto *nameLbl = new QLabel("Name:");
+        nameEdit = new QLineEdit();
+        nameEdit->setClearButtonEnabled(true);
+        topRow->addWidget(nameLbl);
+        topRow->addWidget(nameEdit);
+
+        // Info (HTML) + preview image/label
+        info = new QTextBrowser();
+        info->setOpenLinks(false);
+        info->setReadOnly(true);
+        info->setStyleSheet("QTextBrowser{background:transparent;}");
+
         preview = new QLabel();
         preview->setAlignment(Qt::AlignCenter);
         preview->setMinimumHeight(180);
 
-        info = new QTextBrowser();
-        info->setOpenLinks(false);
-        info->setReadOnly(true);
-        // Ensure readable on dark themes
-        info->setStyleSheet("QTextBrowser{background:transparent;}");
-
         auto *lay = new QVBoxLayout(this);
         lay->setContentsMargins(8,8,8,8);
         lay->setSpacing(8);
+        lay->addLayout(topRow);
         lay->addWidget(info, 2);
         lay->addWidget(preview, 3);
         setLayout(lay);
-        setMinimumWidth(420);
-        setMinimumHeight(520);
+        setMinimumWidth(460);
+        setMinimumHeight(560);
+
+        connect(nameEdit, &QLineEdit::editingFinished, this, [this]{ tryRename(); });
+        connect(nameEdit, &QLineEdit::returnPressed,  this, [this]{ tryRename(); });
     }
 
     void setFile(const QString &path) {
         lastPath = path;
         QFileInfo fi(path);
+        nameEdit->setText(fi.fileName());
+
         QMimeDatabase db; QMimeType mt = db.mimeTypeForFile(path, QMimeDatabase::MatchContent);
         const QString extra = buildExtraHtml(fi, mt);
         info->setHtml(buildInfoHtml(fi, mt, extra));
@@ -68,73 +86,96 @@ public:
     }
     QString currentPath() const { return lastPath; }
 
-    static QString buildInfoHtml(const QFileInfo &fi, const QMimeType &mt, const QString &extraHtml) {
-        const QString name = fi.fileName().toHtmlEscaped();
-        const QString type = (mt.isValid()? mt.name() : "unknown").toHtmlEscaped();
-        const QString size = fi.isDir()? "-" : humanSize(fi.size());
-        const QString mod  = QLocale().toString(fi.lastModified(), QLocale::ShortFormat);
-        const QString created = fi.birthTime().isValid()
-            ? QLocale().toString(fi.birthTime(), QLocale::ShortFormat) : "-";
-        const QString perms = permsToString(fi.permissions());
-        const QString owner = fi.owner().toHtmlEscaped();
-        const QString group = fi.group().toHtmlEscaped();
-        const QString path  = fi.absoluteFilePath().toHtmlEscaped();
 
-        // Dark-theme friendly CSS
-        const QString css = R"(
-            <style>
-              :root { --fg:#e6e6e6; --fg2:#cccccc; --muted:#a0a0a0; --rule:#3a3a3a; }
-              body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
-                     font-size:12px; color:var(--fg); background:transparent; margin:0; }
-              .title { font-weight:700; font-size:14px; margin:0 0 8px 0; color:#ffffff; }
-              .section { border-top:1px solid var(--rule); padding:8px 0; }
-              .row { display:grid; grid-template-columns:140px 1fr; gap:8px; padding:2px 0; align-items:start; }
-              .k { font-weight:600; color:var(--fg2); white-space:nowrap; }
-              .v { color:var(--fg); overflow-wrap:anywhere; }
-              .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-              .hint { color:var(--muted); font-size:11px; }
-              pre { margin:0; }
-            </style>
-        )";
+static QString buildInfoHtml(const QFileInfo &fi, const QMimeType &mt, const QString &extraHtml) {
+    const QString type = (mt.isValid()? mt.name() : "unknown").toHtmlEscaped();
+    const QString size = fi.isDir()? "-" : humanSize(fi.size());
+    const QString mod  = QLocale().toString(fi.lastModified(), QLocale::ShortFormat);
+    const QString created = fi.birthTime().isValid()
+        ? QLocale().toString(fi.birthTime(), QLocale::ShortFormat) : "-";
+    const QString perms = permsToString(fi.permissions());
+    const QString owner = fi.owner().toHtmlEscaped();
+    const QString group = fi.group().toHtmlEscaped();
+    const QString path  = fi.absoluteFilePath().toHtmlEscaped();
 
-        auto row = [](const QString &k, const QString &v){
-            return QString("<div class='row'><div class='k'>%1</div><div class='v'>%2</div></div>").arg(k, v);
-        };
+    const QString css = R"(
+        <style>
+          body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+               font-size:12px;color:#e6e6e6;background:transparent;margin:0}
+          table{width:100%;border-collapse:collapse}
+          td.k{font-weight:700;white-space:nowrap;color:#cccccc;padding:2px 8px 2px 0}
+          td.v{color:#e6e6e6;word-break:break-word}
+          .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+          .rule{border-top:1px solid #3a3a3a;height:8px}
+          .hint{color:#a0a0a0;font-size:11px}
+          pre{margin:0}
+        </style>
+    )";
 
-        QString html;
-        html += "<html><head>"+css+"</head><body>";
-        html += "<div class='title'>" + name + "</div>";
-        html += "<div class='section'>";
-        html += row("Kind", type);
-        html += row("Size", size);
-        html += row("Where", path);
-        html += row("Created", created);
-        html += row("Modified", mod);
-        html += row("Owner", owner);
-        html += row("Group", group);
-        html += row("Permissions", "<span class='mono'>"+perms+"</span>");
-        html += "</div>";
+    auto row = [](const QString &k, const QString &v){
+        return QString("<tr><td class='k'>%1:</td><td class='v'>%2</td></tr>").arg(k, v);
+    };
 
-        html += "<div class='section'>";
-        html += row("Name &amp; Extension", name);
-        html += row("", "<span class='hint'>Extension hiding not yet implemented</span>");
-        html += "</div>";
+    QString html;
+    html += "<html><head>"+css+"</head><body>";
+    html += "<table>";
+    html += row("Kind", type);
+    html += row("Size", size);
+    html += row("Where", path);
+    html += row("Created", created);
+    html += row("Modified", mod);
+    html += row("Owner", owner);
+    html += row("Group", group);
+    html += row("Permissions", "<span class='mono'>"+perms+"</span>");
+    html += "</table>";
+    html += "<div class='rule'></div>";
 
-        html += "<div class='section'>" + row("Comments", "<span class='hint'>Not implemented</span>") + "</div>";
-        html += "<div class='section'>" + row("Open with", type) + "</div>";
-
-        if (!extraHtml.isEmpty())
-            html += "<div class='section'>" + extraHtml + "</div>";
-
-        html += "<div class='section'><div class='row'><div class='k'>Preview</div><div class='v hint'>Shown below</div></div></div>";
-        html += "</body></html>";
-        return html;
+    if (!extraHtml.isEmpty()) {
+        html += "<table>";
+        html += row("Snippet", extraHtml);
+        html += "</table>";
+        html += "<div class='rule'></div>";
     }
+
+    html += "<table>";
+    html += row("Preview", "<span class='hint'>Shown below</span>");
+    html += "</table>";
+    html += "</body></html>";
+    return html;
+}
 
 private:
     QLabel *preview{};
     QTextBrowser *info{};
+    QLineEdit *nameEdit{};
     QString lastPath;
+
+    void tryRename() {
+        if (lastPath.isEmpty()) return;
+        QFileInfo fi(lastPath);
+        QString newName = nameEdit->text().trimmed();
+        if (newName.isEmpty() || newName == fi.fileName()) return;
+        if (newName.contains('/')) {
+            QMessageBox::warning(this, "Rename", "Invalid name.");
+            nameEdit->setText(fi.fileName());
+            return;
+        }
+        QDir dir(fi.absolutePath());
+        const QString newPath = dir.absoluteFilePath(newName);
+        if (QFile::exists(newPath)) {
+            QMessageBox::warning(this, "Rename", "A file with that name already exists.");
+            nameEdit->setText(fi.fileName());
+            return;
+        }
+        if (!dir.rename(fi.fileName(), newName)) {
+            QMessageBox::warning(this, "Rename", "Rename failed. Check permissions.");
+            nameEdit->setText(fi.fileName());
+            return;
+        }
+        // Success: refresh to new path
+        lastPath = newPath;
+        setFile(lastPath);
+    }
 
     QString buildExtraHtml(const QFileInfo &fi, const QMimeType &mt) {
         if (fi.isFile() && (mt.name().startsWith("text/") || mt.inherits("application/json") || mt.inherits("application/xml"))) {
@@ -210,7 +251,7 @@ inline QDialog* showInfoDialog(QWidget *parent, const QString &path) {
     auto *w = new InfoWidget(dlg);
     dlg->layout()->addWidget(w);
     w->setFile(path);
-    dlg->resize(460, 620);
+    dlg->resize(480, 640);
     dlg->setModal(false);
     dlg->show();
     return dlg;

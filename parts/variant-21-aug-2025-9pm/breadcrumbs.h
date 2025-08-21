@@ -10,15 +10,19 @@
 #include <QStringList>
 #include <functional>
 
+// ---- Breadcrumbs toolbar (editable) ----
 class Breadcrumbs : public QToolBar {
 public:
     explicit Breadcrumbs(const QString &title, QWidget *parent=nullptr)
         : QToolBar(title, parent) {
         setMovable(true);
+
+        // Anchor spacer and editable field
         spacerAct = addWidget(makeSpacer());
         edit = new QLineEdit(this);
         edit->setPlaceholderText("Path…");
         editAct = addWidget(edit);
+
         QObject::connect(edit, &QLineEdit::returnPressed, this, [this]{
             if (onPathChosen) onPathChosen(edit->text());
         });
@@ -27,7 +31,9 @@ public:
     void setOnPathChosen(std::function<void(const QString&)> cb) { onPathChosen = std::move(cb); }
     QLineEdit* editField() const { return edit; }
 
+    /*
     void setPath(const QString &path) {
+        // Clear old segments
         for (QAction *a : segActs) { removeAction(a); delete a; }
         segActs.clear();
 
@@ -38,6 +44,7 @@ public:
         bool absolute = clean.startsWith(sep);
         QStringList parts = clean.split(sep, Qt::SkipEmptyParts);
 
+        // Root segment for absolute paths
         if (absolute) addSegment("/", sep);
 
         QString accum = absolute ? sep : QString();
@@ -47,6 +54,17 @@ public:
             addSegment(parts[i], accum);
         }
     }
+    */
+    void setPath(const QString &path) {
+        // Clear old segments (breadcrumb buttons)
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        // Just put the cleaned path into the edit box
+        QString clean = QDir::cleanPath(path);
+            if (edit) edit->setText(clean);
+    }
+
 
 private:
     QLineEdit *edit{};

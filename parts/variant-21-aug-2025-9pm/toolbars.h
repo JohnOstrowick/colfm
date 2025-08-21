@@ -22,7 +22,6 @@
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
-#include "info.h"
 
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
@@ -164,14 +163,7 @@ inline void ColFM::onInfo() {
         idx = currentView->indexAt(vp);
     }
     if (!idx.isValid()) return;
-
     const QString path = model->filePath(idx);
-
-    if (mode == ViewMode::Column && infoPanel) {
-        infoPanel->setFile(path);      // show in right pane
-        return;
-    }
-    // list/icon -> separate dialog
     colfm::showInfoDialog(this, path);
 }
 

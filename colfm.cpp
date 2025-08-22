@@ -184,6 +184,7 @@ public:
     void onOpen();
     void onCloseAction();
     void onInfo();
+    void onGetInfo();
     void onRename();
     void onMove();
     void onDuplicate();
@@ -501,6 +502,8 @@ void ColFM::previewFile(const QModelIndex &idx) {
     }
     if (statusBar()) statusBar()->showMessage(path, 1500);
 }
+
+void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
 #include "keys.h"
 #include "toolbars.h"

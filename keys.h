@@ -47,7 +47,7 @@ inline bool focusSearch(ColFM *win)
 // Prefer a stable slot name “onGetInfo” (or “showGetInfoDialog”).
 inline bool showInfo(ColFM *win)
 {
-    if (tryInvoke(win, "onGetInfo")) return true;
+    if (tryInvoke(win, "onInfo")) return true;
     if (tryInvoke(win, "showGetInfoDialog")) return true;
     stub(reinterpret_cast<QWidget*>(win), "Get Info");
     return true;
@@ -204,19 +204,19 @@ inline bool handleKeyEvent(ColFM *win, QKeyEvent *ev)
             if (w) w->showMinimized();
             return true;
         }
-        case Qt::Key_I: return showInfo(win);
+        case Qt::Key_I: win->onInfo(); return true;
         case Qt::Key_J: return saveViewForFolder(win);
         case Qt::Key_L: return makeLink(win);
         case Qt::Key_M: return doMove(win);
         case Qt::Key_N: return newWindow(win);
-        case Qt::Key_O: return doOpen(win);
+	case Qt::Key_O: win->onOpen(); return true;
         case Qt::Key_P: return doPrint(win);
         case Qt::Key_Q: qApp->quit(); return true;
         case Qt::Key_R: return findOriginal(win);
         case Qt::Key_T: return newTab(win);
         case Qt::Key_U: return goUp(win);
         case Qt::Key_V: return doPaste(win);
-        case Qt::Key_W: { QWidget *w = reinterpret_cast<QWidget*>(win); if (w) w->close(); return true; }
+	case Qt::Key_W: { QWidget *w = QApplication::activeModalWidget(); if (w) w->close(); else reinterpret_cast<QWidget*>(win)->close(); return true; }
         case Qt::Key_X: return doCut(win);
         case Qt::Key_Y: return doRedo(win);
         case Qt::Key_Z: return doUndo(win);

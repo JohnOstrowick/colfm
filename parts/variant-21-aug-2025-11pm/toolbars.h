@@ -125,7 +125,7 @@ inline void ColFM::onOpenTrash() {
     if (crumbs) crumbs->setPath(trash);
     setViewMode(mode);
 }
-/*
+
 inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {
     // Avoid re-entrancy (e.g., Space inside a modal QMessageBox)
     if (QApplication::activeModalWidget()) return QObject::eventFilter(obj, ev);
@@ -142,7 +142,7 @@ inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {
     }
     return QObject::eventFilter(obj, ev);
 }
-*/
+
 inline void ColFM::onUp() {
     QString path = crumbs ? crumbs->editField()->text() : model->filePath(currentRoot);
     QDir d(path);

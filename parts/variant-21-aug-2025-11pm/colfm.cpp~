@@ -1,3 +1,7 @@
+/* colfm.cpp — sidebar cleaned up (single column), bigger row spacing, icons, padded eject button.
+ * Minimal edits only; anything replaced is commented with  /* replaced *\/ .
+ */
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QToolBar>
@@ -14,7 +18,7 @@
 #include <QDebug>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QHBoxLayout>          
+#include <QHBoxLayout>          /* added */
 #include <QHeaderView>
 #include <QPixmap>
 #include <QImage>
@@ -29,12 +33,12 @@
 #include <QEvent>
 #include <QMessageBox>
 #include <QTextBrowser>
-#include <QTreeWidget>          
-#include <QTreeWidgetItem>      
-#include <QToolButton>          
+#include <QTreeWidget>          /* added */
+#include <QTreeWidgetItem>      /* added */
+#include <QToolButton>          /* added */
 #include <QMenu>
 #include <functional>
-#include <QKeyEvent>
+
 #include "info.h"
 #include "breadcrumbs.h"
 
@@ -101,6 +105,24 @@ public:
     }
 };
 
+/* Clamp DecorationRole to 32×32 */
+class FixedFSModel : public QFileSystemModel {
+public:
+    using QFileSystemModel::QFileSystemModel;
+    QVariant data(const QModelIndex &index, int role) const override {
+        if (role == Qt::DecorationRole) {
+            QVariant v = QFileSystemModel::data(index, role);
+            QPixmap pm;
+            if (v.canConvert<QIcon>())      pm = qvariant_cast<QIcon>(v).pixmap(kIconSize);
+            else if (v.canConvert<QPixmap>()) pm = qvariant_cast<QPixmap>(v);
+            if (!pm.isNull() && pm.size() != kIconSize)
+                pm = pm.scaled(kIconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            if (!pm.isNull()) return pm;
+            return v;
+        }
+        return QFileSystemModel::data(index, role);
+    }
+};
 
 /* Column view: force 32px for spawned columns */
 class ColumnView32 : public QColumnView {
@@ -115,32 +137,6 @@ protected:
         }
         return v;
     }
-};
-
-class FixedFSModel : public QFileSystemModel {
-public:
-    using QFileSystemModel::QFileSystemModel;
-    void setIconSize(const QSize &s) { iconSz = s; }                 /* added */
-
-    QVariant data(const QModelIndex &index, int role) const override {
-        if (role == Qt::DecorationRole) {
-            QVariant v = QFileSystemModel::data(index, role);
-            QPixmap pm;
-            if (v.canConvert<QIcon>()) {
-                pm = qvariant_cast<QIcon>(v).pixmap(iconSz);         /* modified: dynamic size */
-            } else if (v.canConvert<QPixmap>()) {
-                pm = qvariant_cast<QPixmap>(v);
-            }
-            if (!pm.isNull() && pm.size() != iconSz) {
-                pm = pm.scaled(iconSz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            }
-            if (!pm.isNull()) return pm;
-            return v;
-        }
-        return QFileSystemModel::data(index, role);
-    }
-private:
-    QSize iconSz = kIconSize;                                        /* added */
 };
 
 class ColFM : public QMainWindow {
@@ -168,8 +164,6 @@ public:
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
-	//qApp->installEventFilter(this);
-	this->installEventFilter(this);
         resize(1400, 800);
     }
 
@@ -419,41 +413,43 @@ private:
     }
 };
 
-/* Requires: #include <QMenu> once at the top of colfm.cpp */
+/* === paste this WHOLE function after your sidebar code in colfm.cpp ==========================
+   Requires: #include <QMenu> at top of colfm.cpp (once).
+   Usage: call addIconSizePopup(); once in ColFM constructor AFTER drawButtons() and AFTER adding breadcrumbs.
+   This inserts a toolbar popup AFTER the "show/hide hidden files" (eye) action.
+=============================================================================================*/
+
 void ColFM::addIconSizePopup() {
+    // find the spot: immediately AFTER the toggleHiddenBtn in the toolbar
     QAction *insertBefore = nullptr;
     const auto acts = tb->actions();
     int pos = acts.indexOf(toggleHiddenBtn);
     if (pos >= 0 && pos + 1 < acts.size()) insertBefore = acts.at(pos + 1);
 
+    // small toolbutton with a menu of sizes
     QToolButton *btn = new QToolButton(tb);
     btn->setToolTip("Icon size");
     btn->setText("Size");
     btn->setPopupMode(QToolButton::InstantPopup);
 
-    QMenu *m = new QMenu(btn);
+    QMenu *m = new QMenu(btn); /* needs #include <QMenu> */
     btn->setMenu(m);
 
     auto addSizeAction = [&](int s){
         QAction *a = m->addAction(QString::number(s));
         a->setCheckable(true);
-        if (s == 32) a->setChecked(true);
+        if (s == 32) a->setChecked(true); // current default
         QObject::connect(a, &QAction::triggered, this, [this, m, s]{
-            // uncheck/check
+            // uncheck others
             for (QAction *x : m->actions()) x->setChecked(false);
+            // check this one
             for (QAction *x : m->actions()) if (x->text().toInt() == s) { x->setChecked(true); break; }
 
-            const QSize newSz(s, s);
+            // apply size to all item-views in the central widget (tree/icon/columns)
+            auto root = this->centralWidget();
+            if (!root) return;
 
-            // 1) tell the model to use the new decoration size
-            if (auto f = dynamic_cast<FixedFSModel*>(model)) {       /* added */
-                f->setIconSize(newSz);
-            }
-
-            // 2) rebuild the center so column subviews pick up fresh settings
-            onRefresh();                                             /* added */
-
-            // 3) apply runtime delegate + icon size to all current views
+            // local adjustable delegate (uses runtime size instead of fixed kIconSize)
             class LocalAdjDelegate : public QStyledItemDelegate {
             public:
                 explicit LocalAdjDelegate(const QSize &sz, QObject *parent=nullptr)
@@ -466,19 +462,20 @@ void ColFM::addIconSizePopup() {
                 QSize dec;
             };
 
-            if (auto root = this->centralWidget()) {
-                const auto views = root->findChildren<QAbstractItemView*>();
-                for (QAbstractItemView *v : views) {
-                    v->setIconSize(newSz);
-                    v->setItemDelegate(new LocalAdjDelegate(newSz, v));
-                    v->viewport()->update();
-                }
+            const QSize newSz(s, s);
+            // apply to ALL views present (handles column subviews too)
+            const auto views = root->findChildren<QAbstractItemView*>();
+            for (QAbstractItemView *v : views) {
+                v->setIconSize(newSz);
+                v->setItemDelegate(new LocalAdjDelegate(newSz, v));
+                v->viewport()->update();
             }
-
+            // refresh status
             if (statusBar()) statusBar()->showMessage(QString("Icon size: %1").arg(s), 1200);
         });
     };
 
+    // menu entries (square sizes)
     addSizeAction(16);
     addSizeAction(24);
     addSizeAction(32);
@@ -486,10 +483,16 @@ void ColFM::addIconSizePopup() {
     addSizeAction(64);
     addSizeAction(128);
 
+    // insert into toolbar right after the eye button; fallback to end if not found
     if (insertBefore) tb->insertWidget(insertBefore, btn);
     else              tb->addWidget(btn);
 }
-/* ============================================================================================ */
+
+/* --- also add ONE line in your ColFM constructor AFTER drawButtons() and AFTER adding breadcrumbs:
+        addIconSizePopup();
+   --- and add this declaration inside class ColFM (public or private section):
+        void addIconSizePopup();
+*/
 
 void ColFM::previewFile(const QModelIndex &idx) {
     if (!idx.isValid() || !model) return;
@@ -502,17 +505,8 @@ void ColFM::previewFile(const QModelIndex &idx) {
     if (statusBar()) statusBar()->showMessage(path, 1500);
 }
 
-#include "keys.h"
 #include "toolbars.h"
 #include "handleopen.h"
-
-bool ColFM::eventFilter(QObject *obj, QEvent *event) {
-    if (event->type() == QEvent::KeyPress) {
-        if (handleKeyEvent(this, static_cast<QKeyEvent*>(event)))
-            return true;
-    }
-    return QObject::eventFilter(obj, event);
-}
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

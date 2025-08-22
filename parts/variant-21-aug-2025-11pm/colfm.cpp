@@ -1,3 +1,7 @@
+/* colfm.cpp — sidebar cleaned up (single column), bigger row spacing, icons, padded eject button.
+ * Minimal edits only; anything replaced is commented with  /* replaced *\/ .
+ */
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QToolBar>
@@ -14,7 +18,7 @@
 #include <QDebug>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QHBoxLayout>          
+#include <QHBoxLayout>          /* added */
 #include <QHeaderView>
 #include <QPixmap>
 #include <QImage>
@@ -29,12 +33,12 @@
 #include <QEvent>
 #include <QMessageBox>
 #include <QTextBrowser>
-#include <QTreeWidget>          
-#include <QTreeWidgetItem>      
-#include <QToolButton>          
+#include <QTreeWidget>          /* added */
+#include <QTreeWidgetItem>      /* added */
+#include <QToolButton>          /* added */
 #include <QMenu>
 #include <functional>
-#include <QKeyEvent>
+
 #include "info.h"
 #include "breadcrumbs.h"
 
@@ -168,8 +172,6 @@ public:
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
-	//qApp->installEventFilter(this);
-	this->installEventFilter(this);
         resize(1400, 800);
     }
 
@@ -502,17 +504,8 @@ void ColFM::previewFile(const QModelIndex &idx) {
     if (statusBar()) statusBar()->showMessage(path, 1500);
 }
 
-#include "keys.h"
 #include "toolbars.h"
 #include "handleopen.h"
-
-bool ColFM::eventFilter(QObject *obj, QEvent *event) {
-    if (event->type() == QEvent::KeyPress) {
-        if (handleKeyEvent(this, static_cast<QKeyEvent*>(event)))
-            return true;
-    }
-    return QObject::eventFilter(obj, event);
-}
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

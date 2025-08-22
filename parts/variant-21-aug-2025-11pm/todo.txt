@@ -1,0 +1,19 @@
+
+Bugs
+
+- Get Info button doesn’t work; preview pane is broken.
+- (Spec: dialog in list & icon views; inline pane in column view.)
+- Preview pane creeps downward in column view and expands over time.
+- Column view assert in empty folders (QList::!isEmpty() intermittent).
+- Verify what files are able to be previewed eg esp PDF
+
+Features (queued)
+
+- Icon size picker (px).
+- Right-click context menu button (and full context menu wiring).
+- New browser window button.
+- New folder button.
+- Sidebar with mounted drives/Home/*/Trash as defaults.
+- Drag between two open instances
+- Add control X C V Z
+- Add cut/copy/paste/undo buttons in toolbar

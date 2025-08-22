@@ -58,7 +58,7 @@ inline bool doOpen(ColFM *win)
 {
     if (tryInvoke(win, "onOpen")) return true;
     if (tryInvoke(win, "openSelection")) return true;
-    stub(reinterpret_cast<QWidget*>(win), "Open");
+    //stub(reinterpret_cast<QWidget*>(win), "Open");
     return true;
 }
 
@@ -234,7 +234,7 @@ inline bool handleKeyEvent(ColFM *win, QKeyEvent *ev)
     // ----- Non-ctrl keys -----
     switch (key) {
     case Qt::Key_Return:
-    case Qt::Key_Enter:   return doOpen(win);             // Enter => Open
+    case Qt::Key_Enter:   win->onOpen(); return true;             // Enter => Open
     case Qt::Key_Slash:   return goRoot(win);             // / => Root
     case Qt::Key_Backslash: return focusBreadcrumbs(win); // \ => Breadcrumb focus
     case Qt::Key_Question:  return showHelp(win);         // ? => Help

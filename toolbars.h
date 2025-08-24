@@ -87,26 +87,10 @@ inline void ColFM::drawButtons() {
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
 
-    // Global shortcuts for preview (Space, Ctrl+I)
-    /*
-
-    // should be in keys.h
-    auto scSpace = new QShortcut(QKeySequence(Qt::Key_Space), this);
-    scSpace->setContext(Qt::ApplicationShortcut);
-    connect(scSpace, &QShortcut::activated, this, [this]{
-        auto i = currentIndex(); if (i.isValid()) previewFile(i);
-    });
-
-    auto scInfo  = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_I), this);
-    scInfo->setContext(Qt::ApplicationShortcut);
-    connect(scInfo,  &QShortcut::activated, this, [this]{
-        auto i = currentIndex(); if (i.isValid()) previewFile(i);
-    });
-    */
 }
 
 // ---- Handlers (single definitions) ----
-
+// others are in their relevantly named files
 
 inline void ColFM::onRefresh() {
     const QString path = model->filePath(currentRoot);
@@ -116,37 +100,6 @@ inline void ColFM::onRefresh() {
     statusBar()->showMessage("Folder refreshed", 1500);
 }
 
-/*
-inline void ColFM::onOpenTrash() {
-    const QString trash = QDir::homePath() + "/.local/share/Trash/files";
-    if (!QDir(trash).exists()) {
-        statusBar()->showMessage("Trash folder not found", 2000);
-        return;
-    }
-    currentRoot = model->setRootPath(trash);        // used currently
-    // currentRoot = model->index(trash);           // alternative kept (not deleted)
-    if (crumbs) crumbs->setPath(trash);
-    setViewMode(mode);
-}
-*/
-/*
-inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {
-    // Avoid re-entrancy (e.g., Space inside a modal QMessageBox)
-    if (QApplication::activeModalWidget()) return QObject::eventFilter(obj, ev);
-
-    if (ev->type() == QEvent::KeyPress) {
-        QKeyEvent *ke = static_cast<QKeyEvent*>(ev);
-        const bool isSpace = (ke->key() == Qt::Key_Space) && (ke->modifiers() == Qt::NoModifier);
-        const bool isCtrlI = (ke->key() == Qt::Key_I) && (ke->modifiers() & Qt::ControlModifier);
-        if (isSpace || isCtrlI) {
-            QModelIndex idx = currentIndex();
-            if (idx.isValid()) previewFile(idx);
-            return true; // consume
-        }
-    }
-    return QObject::eventFilter(obj, ev);
-}
-*/
 inline void ColFM::onUp() {
     QString path = crumbs ? crumbs->editField()->text() : model->filePath(currentRoot);
     QDir d(path);
@@ -158,7 +111,6 @@ inline void ColFM::onUp() {
 }
 
 inline void ColFM::onOpen()                   { const QModelIndex idx = currentIndex(); if (idx.isValid()) openFile(idx); }
-inline void ColFM::onCloseAction()            { statusBar()->showMessage("TODO: Close", 2000); }
 
 inline void ColFM::onInfo() {
     QModelIndex idx = currentIndex();
@@ -172,7 +124,6 @@ inline void ColFM::onInfo() {
 }
 
 inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
-inline void ColFM::onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
 
 inline void ColFM::onToggleHidden() {
     showHidden = !showHidden;

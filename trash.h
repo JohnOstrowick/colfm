@@ -4,11 +4,55 @@
 #include <QMessageBox>
 
 inline void ColFM::onMoveToTrash() {
-    statusBar()->showMessage("TODO: Move selected item to Trash", 2000);
+    QModelIndex idx = currentIndex();
+    if (!idx.isValid() && currentView) {
+        QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
+        idx = currentView->indexAt(vp);
+    }
+    if (!idx.isValid()) return;
+
+    QString path = model->filePath(idx);
+    QFileInfo info(path);
+    QString target = QDir::homePath() + "/.local/share/Trash/files/" + info.fileName();
+
+    if (QFile::exists(target)) {
+        QMessageBox::warning(this, "Move to Trash", "Item already exists in Trash.");
+        return;
+    }
+
+    if (!QFile::rename(path, target)) {
+        QMessageBox::critical(this, "Move to Trash", "Failed to move item to Trash.");
+        return;
+    }
+
+    statusBar()->showMessage("Item moved to Trash", 2000);
+    onRefresh();
 }
 
 inline void ColFM::onRestoreFromTrash() {
-    statusBar()->showMessage("TODO: Restore item from Trash", 2000);
+    QModelIndex idx = currentIndex();
+    if (!idx.isValid() && currentView) {
+        QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
+        idx = currentView->indexAt(vp);
+    }
+    if (!idx.isValid()) return;
+
+    QString path = model->filePath(idx);
+    QFileInfo info(path);
+    QString target = QDir::homePath() + "/Desktop/" + info.fileName();
+
+    if (QFile::exists(target)) {
+        QMessageBox::warning(this, "Restore from Trash", "Item already exists on Desktop.");
+        return;
+    }
+
+    if (!QFile::rename(path, target)) {
+        QMessageBox::critical(this, "Restore from Trash", "Failed to restore item.");
+        return;
+    }
+
+    QMessageBox::information(this, "Restore", "Item restored to Desktop.");
+    onRefresh();
 }
 
 inline void ColFM::onEmptyTrash() {

@@ -1,4 +1,10 @@
 #include <QApplication>
+#include <QAbstractItemView>
+#include <QItemSelectionModel>
+#include <QAbstractItemModel>
+#include <QColumnView>
+#include <QListView>
+#include <QTreeView>
 #include <QMainWindow>
 #include <QToolBar>
 #include <QAction>
@@ -35,6 +41,8 @@
 #include <QMenu>
 #include <functional>
 #include <QKeyEvent>
+#include <QTimer>
+#include <QShortcut>
 #include "info.h"
 #include "breadcrumbs.h"
 
@@ -152,6 +160,7 @@ public:
         currentRoot = model->setRootPath(QDir::homePath());
 
         crumbs = new Breadcrumbs("Path", this);
+	crumbs->setFocusPolicy(Qt::NoFocus);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) { pushHistory(); currentRoot = model->index(p); setViewMode(mode); }
             else statusBar()->showMessage("Path not found", 2000);
@@ -170,6 +179,15 @@ public:
         setWindowTitle("ColFM — Multi-View File Manager");
 	//qApp->installEventFilter(this);
 	this->installEventFilter(this);
+	QTimer::singleShot(0, this, [this]{
+	    if (auto v = findChild<QAbstractItemView*>())
+		v->setFocus(Qt::OtherFocusReason);
+	});
+
+	new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, []{
+	    if (auto w = QApplication::activeModalWidget())
+		w->close();
+	});
         resize(1400, 800);
     }
 
@@ -185,11 +203,13 @@ public:
     void onCloseAction();
     void onInfo();
     void onGetInfo();
-    void onRename();
     void onMove();
     void onDuplicate();
     void onCreateSoftlink();
     void onToggleHidden();
+  
+    void onRename(); void onRenameSelected(const QString &path);
+
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
@@ -505,6 +525,7 @@ void ColFM::previewFile(const QModelIndex &idx) {
 
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
+#include "rename.h"
 #include "keys.h"
 #include "toolbars.h"
 #include "handleopen.h"

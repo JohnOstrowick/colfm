@@ -167,7 +167,6 @@ inline void ColFM::onInfo() {
     colfm::showInfoDialog(this, path);
 }
 
-inline void ColFM::onRename()                 { statusBar()->showMessage("TODO: Rename", 2000); }
 inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
 inline void ColFM::onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
 inline void ColFM::onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }

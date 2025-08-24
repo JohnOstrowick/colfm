@@ -16,11 +16,17 @@
 #include <QDialog>
 #include <QBuffer>
 #include <QTemporaryDir>
+#include <QKeyEvent>
+#include <QAction>
+#include <QMessageBox>
 #include <QLocale>
 #include <QDir>
 #include <QMessageBox>
+#include <QShortcut>
 
 namespace colfm {
+
+class CtrlWFilter : public QObject { public: using QObject::QObject; bool eventFilter(QObject* o, QEvent* e) override { const auto t=e->type(); if (t==QEvent::ShortcutOverride || t==QEvent::KeyPress) { auto *k=static_cast<QKeyEvent*>(e); if ((k->modifiers() & Qt::ControlModifier) && k->key()==Qt::Key_W) { if (auto *d=qobject_cast<QDialog*>(o)) d->close(); e->accept(); return true; } } return QObject::eventFilter(o,e); } };
 
 // ---- small helpers ---------------------------------------------------------
 inline QString humanSize(qint64 bytes) {
@@ -252,7 +258,9 @@ inline QDialog* showInfoDialog(QWidget *parent, const QString &path) {
     dlg->layout()->addWidget(w);
     w->setFile(path);
     dlg->resize(480, 640);
+auto *f = new CtrlWFilter(dlg); dlg->installEventFilter(f); for (auto *w : dlg->findChildren<QWidget*>()) w->installEventFilter(f);
     dlg->setModal(false);
+    dlg->raise(); dlg->activateWindow();
     dlg->show();
     return dlg;
 }

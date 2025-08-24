@@ -46,7 +46,6 @@ actGoHome->setToolTip("Go to your home directory");
     tb->addSeparator();
 
     // group 3
-    actOpen       = tb->addAction(QIcon("icons/open.png"),          "Open");         actOpen->setToolTip("Open item");
     actInfo       = tb->addAction(QIcon("icons/info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
     actRename     = tb->addAction(QIcon("icons/rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
     actMove       = tb->addAction(QIcon("icons/move.png"),          "Move");             actMove->setToolTip("Move selected item");
@@ -69,9 +68,6 @@ actNewFolder->setToolTip("Create a new folder");
 actNewWindow = tb->addAction(QIcon("icons/newwindow.png"), "New Window");
 actNewWindow->setToolTip("Open a new browser window");
 
-actNewTerminal = tb->addAction(QIcon("icons/terminal.png"), "New Terminal");
-actNewTerminal->setToolTip("Open Terminal in Current Folder");
-
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
 
@@ -83,7 +79,6 @@ actNewTerminal->setToolTip("Open Terminal in Current Folder");
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
     connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
-    connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
 
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
@@ -104,7 +99,6 @@ connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
 
 connect(actNewFolder, &QAction::triggered, this, &ColFM::onNewFolder);
 connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
-connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 
 }
 

@@ -195,6 +195,7 @@ public:
     void drawButtons();
     void addIconSizePopup();
     void onMoveToTrash();
+    void onEmptyTrash();
     void onRefresh();
     void onOpenTrash();
     void onRestoreFromTrash();
@@ -534,6 +535,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "handleopen.h"
 #include "settings.h"
 #include "progress.h"
+#include "trash.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

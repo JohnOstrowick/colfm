@@ -106,7 +106,6 @@ inline void ColFM::drawButtons() {
 
 // ---- Handlers (single definitions) ----
 
-inline void ColFM::onMoveToTrash()            { statusBar()->showMessage("TODO: Move to Trash", 2000); }
 
 inline void ColFM::onRefresh() {
     const QString path = model->filePath(currentRoot);
@@ -116,14 +115,7 @@ inline void ColFM::onRefresh() {
     statusBar()->showMessage("Folder refreshed", 1500);
 }
 
-//inline void ColFM::onSettings() {
-  //  statusBar()->showMessage("TODO: Open Settings Dialog", 2000);
-//}
-
-inline void ColFM::onRestoreFromTrash() {
-    statusBar()->showMessage("TODO: Restore from Trash", 2000);
-}
-
+/*
 inline void ColFM::onOpenTrash() {
     const QString trash = QDir::homePath() + "/.local/share/Trash/files";
     if (!QDir(trash).exists()) {
@@ -135,6 +127,7 @@ inline void ColFM::onOpenTrash() {
     if (crumbs) crumbs->setPath(trash);
     setViewMode(mode);
 }
+*/
 /*
 inline bool ColFM::eventFilter(QObject *obj, QEvent *ev) {
     // Avoid re-entrancy (e.g., Space inside a modal QMessageBox)
@@ -196,8 +189,6 @@ inline void ColFM::onToggleHidden() {
 inline void ColFM::onViewTree()   { setViewMode(ViewMode::Tree); }
 inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
 inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }
-
-
 
 // Helpers for per-volume plocate DBs (~/.cache/plocate/vol_<sanitized>.db)
 inline QString _volDbPath(const QString &volPath) {

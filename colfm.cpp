@@ -227,6 +227,9 @@ void onProgress(QObject *target, QColor colour, QColor background, int width, in
     void openSelected();
     void openPath(const QString &absPath);
 
+void onNewFolder();
+void onNewWindow();
+
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
 private:
@@ -245,6 +248,7 @@ private:
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
+    QAction *actNewFolder{}, *actNewWindow{};
     QAction *actSearch{};
     QAbstractItemView *currentView{};
 
@@ -554,6 +558,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "progress.h"
 #include "trash.h"
 #include "link.h"
+#include "new.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

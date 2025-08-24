@@ -1,26 +1,29 @@
-Declare function in colfm.cpp (e.g. vi +210):
+<!-- sample_button_setup.html -->
+<pre><code>// colfm.cpp around line 210:
+void onSampleButton();
 
-void onSettings();
+// colfm.cpp around line 251:
+QAction *actSampleButton{};
 
+// toolbars.h where buttons are added:
+actSampleButton = tb->addAction(QIcon("icons/sample.png"), "Sample Button");
+actSampleButton->setToolTip("Click me for something");
 
-Add button pointer in colfm.cpp (e.g. vi +240):
+// toolbars.h where connects are added:
+connect(actSampleButton, &QAction::triggered, this, &ColFM::onSampleButton);
 
-QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
+// sample.h:
+#ifndef SAMPLE_H
+#define SAMPLE_H
 
+#include &lt;QMessageBox&gt;
 
-Define visual button in toolbars.h:
-
-settingsBtn = tb->addAction(QIcon("icons/settings.png"), "Settings");
-settingsBtn->setToolTip("Open Settings dialog");
-
-
-Wire slot in toolbars.h:
-
-connect(settingsBtn, &QAction::triggered, this, &ColFM::onSettings);
-
-
-Define stub:
-
-inline void ColFM::onSettings() {
-    statusBar()->showMessage("TODO: Open Settings Dialog", 2000);
+inline void ColFM::onSampleButton() {
+    statusBar()-&gt;showMessage("Sample clicked", 2000);
 }
+
+#endif // SAMPLE_H
+
+// colfm.cpp after class definition:
+#include "sample.h"
+</code></pre>

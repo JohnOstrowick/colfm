@@ -60,6 +60,12 @@ inline void ColFM::drawButtons() {
     // (Icon size popup — to be added later)
     tb->addSeparator();
 
+actNewFolder = tb->addAction(QIcon("icons/newfolder.png"), "New Folder");
+actNewFolder->setToolTip("Create a new folder");
+
+actNewWindow = tb->addAction(QIcon("icons/newwindow.png"), "New Window");
+actNewWindow->setToolTip("Open a new browser window");
+
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
 
@@ -86,6 +92,9 @@ inline void ColFM::drawButtons() {
     connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
+
+connect(actNewFolder, &QAction::triggered, this, &ColFM::onNewFolder);
+connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
 
 }
 

@@ -56,6 +56,7 @@ inline void ColFM::drawButtons() {
     columnBtn       = tb->addAction(QIcon("icons/view_columns.png"),  "Column View");      columnBtn->setToolTip("Switch to Column view");
     iconBtn         = tb->addAction(QIcon("icons/view_icons.png"),    "Icon View");        iconBtn->setToolTip("Switch to Icon view");
     toggleHiddenBtn = tb->addAction(QIcon("icons/eye-slash.png"),     "Show Hidden");      toggleHiddenBtn->setToolTip("Toggle hidden files");
+    settingsBtn     = tb->addAction(QIcon("icons/settings.png"),      "Settings");         settingsBtn->setToolTip("Open Settings dialog");
     // (Icon size popup — to be added later)
     tb->addSeparator();
 
@@ -83,8 +84,12 @@ inline void ColFM::drawButtons() {
     connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);
     connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
+    connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
 
     // Global shortcuts for preview (Space, Ctrl+I)
+    /*
+
+    // should be in keys.h
     auto scSpace = new QShortcut(QKeySequence(Qt::Key_Space), this);
     scSpace->setContext(Qt::ApplicationShortcut);
     connect(scSpace, &QShortcut::activated, this, [this]{
@@ -96,6 +101,7 @@ inline void ColFM::drawButtons() {
     connect(scInfo,  &QShortcut::activated, this, [this]{
         auto i = currentIndex(); if (i.isValid()) previewFile(i);
     });
+    */
 }
 
 // ---- Handlers (single definitions) ----
@@ -109,6 +115,10 @@ inline void ColFM::onRefresh() {
     if (crumbs) crumbs->setPath(path);
     statusBar()->showMessage("Folder refreshed", 1500);
 }
+
+//inline void ColFM::onSettings() {
+  //  statusBar()->showMessage("TODO: Open Settings Dialog", 2000);
+//}
 
 inline void ColFM::onRestoreFromTrash() {
     statusBar()->showMessage("TODO: Restore from Trash", 2000);
@@ -168,7 +178,6 @@ inline void ColFM::onInfo() {
 }
 
 inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
-inline void ColFM::onDuplicate()              { statusBar()->showMessage("TODO: Duplicate", 2000); }
 inline void ColFM::onCreateSoftlink()         { statusBar()->showMessage("TODO: Create Softlink", 2000); }
 
 inline void ColFM::onToggleHidden() {

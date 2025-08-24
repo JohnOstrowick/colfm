@@ -207,9 +207,11 @@ public:
     void onDuplicate();
     void onCreateSoftlink();
     void onToggleHidden();
-  
+    void onSettings(); 
+void writePrefs(int folderMB, int iconSize, int viewMode);
+void readPrefs(int &folderMB, int &iconSize, int &viewMode);
+void onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel);
     void onRename(); void onRenameSelected(const QString &path);
-
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
@@ -238,7 +240,7 @@ private:
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
-    QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{};
+    QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
     QAction *actSearch{};
     QAbstractItemView *currentView{};
@@ -526,9 +528,12 @@ void ColFM::previewFile(const QModelIndex &idx) {
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
 #include "rename.h"
+#include "duplicate.h"
 #include "keys.h"
 #include "toolbars.h"
 #include "handleopen.h"
+#include "settings.h"
+#include "progress.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

@@ -32,8 +32,16 @@ inline bool copyDirRecursively(const QString &srcPath, const QString &dstPath) {
 inline qint64 folderSize(const QString &folderPath) {
     qint64 total = 0;
     QDir dir(folderPath);
-    for (const QFileInfo &fi : dir.entryInfoList(QDir::NoDotAndDotDot | QDir::Files))
-        total += fi.size();
+    QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
+
+    for (const QFileInfo &fi : entries) {
+        if (fi.isDir()) {
+            total += folderSize(fi.absoluteFilePath());
+        } else {
+            total += fi.size();
+        }
+    }
+
     return total;
 }
 
@@ -73,16 +81,24 @@ inline void ColFM::onDuplicate() {
     qint64 thresholdBytes = thresholdMB * 1000000LL;
 
     bool showProgress = false;
-    if (info.isDir()) {
+    /*if (info.isDir()) {
         if (folderSize(path) >= thresholdBytes)
             showProgress = true;
     } else {
         if (info.size() >= thresholdBytes)
             showProgress = true;
     }
+    */
+    if (info.isDir()) {
+    qint64 sz = folderSize(path);
+    QMessageBox::information(this, "Debug", "Folder size: " + QString::number(sz));
+    if (sz >= thresholdBytes)
+        showProgress = true;
+    }
+
 
     QProgressDialog *progress = nullptr;
-    /* temp comment
+    /* temp comment */
     if (showProgress) {
         progress = new QProgressDialog("Copying...", nullptr, 0, 0, this);
         progress->setWindowModality(Qt::ApplicationModal);
@@ -96,7 +112,7 @@ inline void ColFM::onDuplicate() {
         progress->show();
         qApp->processEvents();
     }
-    */
+    
     if (showProgress) {
     int response = QMessageBox::question(
         this,

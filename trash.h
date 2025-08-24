@@ -13,6 +13,7 @@ inline void ColFM::onRestoreFromTrash() {
 
 inline void ColFM::onEmptyTrash() {
     const QString trashPath = QDir::homePath() + "/.local/share/Trash/files";
+
     if (!QDir(trashPath).exists()) {
         statusBar()->showMessage("Trash folder not found", 2000);
         return;
@@ -21,18 +22,24 @@ inline void ColFM::onEmptyTrash() {
     int confirm = QMessageBox::question(
         this,
         "Empty Trash",
-        "Are you sure you want to permanently delete all items in the Trash?",
+        "Are you sure you want to permanently delete all files and folders in the Trash?",
         QMessageBox::Yes | QMessageBox::Cancel
     );
 
-    if (confirm == QMessageBox::Yes) {
-        QDir trashDir(trashPath);
-        for (const QString &entry : trashDir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries)) {
-            trashDir.remove(entry);  // note: won't delete subdirs yet
+    if (confirm != QMessageBox::Yes)
+        return;
+
+    QDir trashDir(trashPath);
+    for (const QFileInfo &item : trashDir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries)) {
+        if (item.isDir()) {
+            QDir(item.absoluteFilePath()).removeRecursively();
+        } else {
+            QFile::remove(item.absoluteFilePath());
         }
-        statusBar()->showMessage("Trash emptied", 2000);
-        onRefresh();  // optional
     }
+
+    statusBar()->showMessage("Trash emptied", 2000);
+    onRefresh();
 }
 
 inline void ColFM::onOpenTrash() {

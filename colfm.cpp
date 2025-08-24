@@ -194,11 +194,13 @@ public:
 public:
     void drawButtons();
     void addIconSizePopup();
+    void onRefresh();
+
     void onMoveToTrash();
     void onEmptyTrash();
-    void onRefresh();
     void onOpenTrash();
     void onRestoreFromTrash();
+
     void onUp();
     void onOpen();
     void onCloseAction();
@@ -289,6 +291,7 @@ private:
             QLabel *ic = new QLabel(row);
             QPixmap pm;
             if (isDrive) pm = QPixmap("icons/disk.png");      // user-supplied
+	    else if (path.endsWith("/.local/share/Trash/files")) pm = QPixmap("icons/open_trash.png");
             else         pm = style()->standardIcon(QStyle::SP_DirIcon).pixmap(16,16); // folder
             ic->setPixmap(pm.scaled(16,16, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             h->addWidget(ic, 0, Qt::AlignVCenter);
@@ -323,7 +326,21 @@ private:
         // Always show Desktop, Downloads, Trash first
         addItem("Desktop",  home + "/Desktop", false, false);
         addItem("Downloads",home + "/Downloads", false, false);
-        addItem("Trash",    home + "/.local/share/Trash/files", false, false);
+
+	// trash icon
+        //addItem("Trash",    home + "/.local/share/Trash/files", false, false);
+        QTreeWidgetItem *trashItem = addItem("Trash", home + "/.local/share/Trash/files", false, false);
+	QObject::connect(sidebar, &QTreeWidget::itemClicked, this, [this, trashItem](QTreeWidgetItem *clicked, int){
+	    if (clicked == trashItem) {
+		onOpenTrash();
+	    }
+	});
+
+	// Divider (simple spacer row)
+        auto *div = new QTreeWidgetItem(sidebar);
+        div->setFlags(Qt::NoItemFlags);
+        div->setFirstColumnSpanned(true);
+        sidebar->setItemWidget(div, 0, new QLabel("────────", sidebar));
 
         // Visible (non-dot) folders in ~
         QDir hd(home);
@@ -333,11 +350,11 @@ private:
             addItem(fi.fileName(), fi.absoluteFilePath(), false, false);
         }
 
-        // Divider (simple spacer row)
-        auto *div = new QTreeWidgetItem(sidebar);
-        div->setFlags(Qt::NoItemFlags);
-        div->setFirstColumnSpanned(true);
-        sidebar->setItemWidget(div, 0, new QLabel("────────", sidebar));
+	// Divider (simple spacer row)
+	auto *div2 = new QTreeWidgetItem(sidebar);
+	div2->setFlags(Qt::NoItemFlags);
+	div2->setFirstColumnSpanned(true);
+	sidebar->setItemWidget(div2, 0, new QLabel("────────", sidebar));
 
         // Drives under /media/$USER
         QString user = QFileInfo(home).fileName();

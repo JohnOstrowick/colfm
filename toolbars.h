@@ -72,6 +72,7 @@ inline void ColFM::drawButtons() {
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
     connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+    connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
 
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);

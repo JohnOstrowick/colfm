@@ -1,0 +1,91 @@
+#pragma once
+#include <QToolBar>
+#include <QLineEdit>
+#include <QWidgetAction>
+#include <QSizePolicy>
+#include <QDir>
+#include <QAction>
+#include <QList>
+#include <QString>
+#include <QStringList>
+#include <functional>
+
+// ---- Breadcrumbs toolbar (editable) ----
+class Breadcrumbs : public QToolBar {
+public:
+    explicit Breadcrumbs(const QString &title, QWidget *parent=nullptr)
+        : QToolBar(title, parent) {
+        setMovable(true);
+
+        // Anchor spacer and editable field
+        spacerAct = addWidget(makeSpacer());
+        edit = new QLineEdit(this);
+        edit->setPlaceholderText("Path…");
+        editAct = addWidget(edit);
+
+        QObject::connect(edit, &QLineEdit::returnPressed, this, [this]{
+            if (onPathChosen) onPathChosen(edit->text());
+        });
+    }
+
+    void setOnPathChosen(std::function<void(const QString&)> cb) { onPathChosen = std::move(cb); }
+    QLineEdit* editField() const { return edit; }
+
+    /*
+    void setPath(const QString &path) {
+        // Clear old segments
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        const QString sep = QDir::separator();
+        QString clean = QDir::cleanPath(path);
+        edit->setText(clean);
+
+        bool absolute = clean.startsWith(sep);
+        QStringList parts = clean.split(sep, Qt::SkipEmptyParts);
+
+        // Root segment for absolute paths
+        if (absolute) addSegment("/", sep);
+
+        QString accum = absolute ? sep : QString();
+        for (int i = 0; i < parts.size(); ++i) {
+            if (accum.isEmpty() || accum == sep) accum += parts[i];
+            else accum += sep + parts[i];
+            addSegment(parts[i], accum);
+        }
+    }
+    */
+    void setPath(const QString &path) {
+        // Clear old segments (breadcrumb buttons)
+        for (QAction *a : segActs) { removeAction(a); delete a; }
+        segActs.clear();
+
+        // Just put the cleaned path into the edit box
+        QString clean = QDir::cleanPath(path);
+            if (edit) edit->setText(clean);
+    }
+
+
+private:
+    QLineEdit *edit{};
+    QAction *spacerAct{};
+    QAction *editAct{};
+    QList<QAction*> segActs;
+    std::function<void(const QString&)> onPathChosen;
+
+    QWidget* makeSpacer() {
+        QWidget *sp = new QWidget(this);
+        sp->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        return sp;
+    }
+
+    void addSegment(const QString &label, const QString &fullPath) {
+        QAction *seg = new QAction(label, this);
+        insertAction(spacerAct, seg);
+        segActs.push_back(seg);
+        QObject::connect(seg, &QAction::triggered, this, [this, fullPath]{
+            if (onPathChosen) onPathChosen(fullPath);
+            if (edit) edit->setText(fullPath);
+        });
+    }
+};

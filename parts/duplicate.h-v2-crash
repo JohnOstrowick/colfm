@@ -6,8 +6,10 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QtConcurrent/QtConcurrent>
+#include <QFuture>
 
-// Recursive copy
+// Recursive copy helper
 inline bool copyDirRecursively(const QString &srcPath, const QString &dstPath) {
     QDir srcDir(srcPath);
     if (!srcDir.exists()) return false;
@@ -28,7 +30,7 @@ inline bool copyDirRecursively(const QString &srcPath, const QString &dstPath) {
     return true;
 }
 
-// Shallow folder size checker
+// Non-recursive folder size estimator
 inline qint64 folderSize(const QString &folderPath) {
     qint64 total = 0;
     QDir dir(folderPath);
@@ -68,10 +70,34 @@ inline void ColFM::onDuplicate() {
 
     QString newPath = dirPath + "/" + copyName;
 
+    // Read threshold from settings
     int thresholdMB, dummy1, dummy2;
     readPrefs(thresholdMB, dummy1, dummy2);
     qint64 thresholdBytes = thresholdMB * 1000000LL;
 
+    // Async copy lambda
+    auto doCopy = [=]() -> bool {
+        bool ok = false;
+
+        if (QFileInfo(path).isDir()) {
+            if (!QDir().mkpath(newPath)) return false;
+            ok = copyDirRecursively(path, newPath);
+        } else {
+            ok = QFile::copy(path, newPath);
+        }
+
+        QMetaObject::invokeMethod(qApp, [this, ok]() {
+            if (!ok) {
+                QMessageBox::critical(this, "Duplicate Failed", "Could not complete copy.");
+            } else {
+                onRefresh();
+            }
+        }, Qt::QueuedConnection);
+
+        return ok;
+    };
+
+    // Decide if progress dialog should be shown
     bool showProgress = false;
     if (info.isDir()) {
         if (folderSize(path) >= thresholdBytes)
@@ -81,50 +107,25 @@ inline void ColFM::onDuplicate() {
             showProgress = true;
     }
 
-    QProgressDialog *progress = nullptr;
-    /* temp comment
+    QFuture<bool> future = QtConcurrent::run(doCopy);
+
     if (showProgress) {
-        progress = new QProgressDialog("Copying...", nullptr, 0, 0, this);
-        progress->setWindowModality(Qt::ApplicationModal);
-        progress->setAutoClose(true);
-        progress->setCancelButton(nullptr);
-        progress->setMinimumWidth(400);
-        progress->setStyleSheet(
+        QProgressDialog progress("Copying...", "", 0, 0, this);
+        progress.setWindowModality(Qt::ApplicationModal);
+        progress.setAutoClose(true);
+        progress.setCancelButton(nullptr);
+        progress.setMinimumWidth(400);
+        progress.setStyleSheet(
             "QProgressBar::chunk { background-color: #46B5CE; } "
             "QProgressBar { background-color: #333333; }"
         );
-        progress->show();
-        qApp->processEvents();
-    }
-    */
-    if (showProgress) {
-    int response = QMessageBox::question(
-        this,
-        "Large Copy",
-        "This item is large. Proceed with making a copy?",
-        QMessageBox::Ok | QMessageBox::Cancel
-    );
-    if (response != QMessageBox::Ok)
-        return;
-}
+        progress.show();
 
-    bool ok = false;
-    if (info.isDir()) {
-        if (!QDir().mkpath(newPath)) {
-            QMessageBox::critical(this, "Duplicate Failed", "Could not create destination folder.");
-            return;
+        while (!future.isFinished()) {
+            qApp->processEvents();
         }
-        ok = copyDirRecursively(path, newPath);
-    } else {
-        ok = QFile::copy(path, newPath);
-    }
 
-    if (progress) progress->close();
-
-    if (!ok) {
-        QMessageBox::critical(this, "Duplicate Failed", "Could not complete copy.");
-    } else {
-        onRefresh();
+        future.result();  // ensure clean exit
     }
 }
 

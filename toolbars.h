@@ -33,6 +33,8 @@ inline void ColFM::drawButtons() {
     actUp         = tb->addAction(QIcon("icons/up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
     actRefresh    = tb->addAction(QIcon("icons/refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
     tb->addSeparator();
+actGoHome = tb->addAction(QIcon("icons/home.png"), "Go to Home");
+actGoHome->setToolTip("Go to your home directory");
 
     // group 2
     actOpenTrash  = tb->addAction(QIcon("icons/open_trash.png"),    "Open Trash");       actOpenTrash->setToolTip("Open the Trash folder");
@@ -77,10 +79,12 @@ actNewWindow->setToolTip("Open a new browser window");
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
     connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
+
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
 
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
+connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
     connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
     connect(actMove,          &QAction::triggered, this, &ColFM::onMove);

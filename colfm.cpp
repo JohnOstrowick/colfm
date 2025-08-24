@@ -208,6 +208,7 @@ public:
     void onGetInfo();
     void onMove();
     void onDuplicate();
+void onGoHome();
     void onCreateSoftlink();
     void onToggleHidden();
     void onSettings(); 
@@ -248,6 +249,7 @@ private:
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
+    QAction *actGoHome{};
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actSearch{};
     QAbstractItemView *currentView{};
@@ -559,6 +561,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "trash.h"
 #include "link.h"
 #include "new.h"
+#include "home.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

@@ -262,6 +262,8 @@ QAction *actNewTerminal{};
 
     #include "viewwidgets.h"
 
+    QString getCWD();
+
     void pushHistory() {                         /* added */
         backStack.prepend(model->filePath(currentRoot));
         if (backStack.size() > 50) backStack.removeLast();
@@ -468,6 +470,17 @@ QAction *actNewTerminal{};
         }
     }
 };
+
+// function to return our CWD anywhere
+QString ColFM::getCWD() {
+    QModelIndex idx = currentIndex();
+    if (!idx.isValid() && currentView) {
+        QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
+        idx = currentView->indexAt(vp);
+    }
+    if (!idx.isValid()) return QDir::homePath();
+    return model->filePath(idx);
+}
 
 /* Requires: #include <QMenu> once at the top of colfm.cpp */
 void ColFM::addIconSizePopup() {

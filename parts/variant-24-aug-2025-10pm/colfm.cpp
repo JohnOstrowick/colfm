@@ -230,6 +230,7 @@ void onProgress(QObject *target, QColor colour, QColor background, int width, in
 
 void onNewFolder();
 void onNewWindow();
+void onNewTerminal();
 
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
@@ -251,6 +252,7 @@ private:
     QAction *actEmptyTrash{};
     QAction *actGoHome{};
     QAction *actNewFolder{}, *actNewWindow{};
+QAction *actNewTerminal{};
     QAction *actSearch{};
     QAbstractItemView *currentView{};
 
@@ -330,6 +332,7 @@ private:
 
         const QString home = QDir::homePath();
         // Always show Desktop, Downloads, Trash first
+        addItem("Home",  home + "./", false, false);
         addItem("Desktop",  home + "/Desktop", false, false);
         addItem("Downloads",home + "/Downloads", false, false);
 
@@ -562,6 +565,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "link.h"
 #include "new.h"
 #include "home.h"
+#include "new_terminal.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

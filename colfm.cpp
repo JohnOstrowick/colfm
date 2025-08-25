@@ -208,13 +208,13 @@ public:
     void onGetInfo();
     void onMove();
     void onDuplicate();
-void onGoHome();
+    void onGoHome();
     void onCreateSoftlink();
     void onToggleHidden();
     void onSettings(); 
-void writePrefs(int folderMB, int iconSize, int viewMode);
-void readPrefs(int &folderMB, int &iconSize, int &viewMode);
-void onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel);
+    void writePrefs(int folderMB, int iconSize, int viewMode);
+    void readPrefs(int &folderMB, int &iconSize, int &viewMode);
+    void onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel);
     void onRename(); void onRenameSelected(const QString &path);
     void onViewTree();
     void onViewColumn();
@@ -227,10 +227,12 @@ void onProgress(QObject *target, QColor colour, QColor background, int width, in
     void openApp(const QString &path);
     void openSelected();
     void openPath(const QString &absPath);
+    void contextMenuEvent(QContextMenuEvent *event) override;
+    void showContextMenu(QContextMenuEvent *event);
 
-void onNewFolder();
-void onNewWindow();
-void onNewTerminal();
+    void onNewFolder();
+    void onNewWindow();
+    void onNewTerminal();
 
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
@@ -252,8 +254,8 @@ private:
     QAction *actEmptyTrash{};
     QAction *actGoHome{};
     QAction *actNewFolder{}, *actNewWindow{};
-QAction *actNewTerminal{};
-    QAction *actSearch{};
+    QAction *actNewTerminal{};
+    QAction *actSearch{}, *actSettings{};
     QAbstractItemView *currentView{};
 
     /* added: sidebar + simple back history */
@@ -471,6 +473,11 @@ QAction *actNewTerminal{};
     }
 };
 
+// context menu
+void ColFM::contextMenuEvent(QContextMenuEvent *event) {
+    showContextMenu(event);
+}
+
 // function to return our CWD anywhere
 QString ColFM::getCWD() {
     QModelIndex idx = currentIndex();
@@ -579,6 +586,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new.h"
 #include "home.h"
 #include "new_terminal.h"
+#include "contextmenu.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

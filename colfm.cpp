@@ -203,6 +203,7 @@ public:
 
     void onUp();
     void onOpen();
+void openWith(const QString &filePath);
     void onCloseAction();
     void onInfo();
     void onGetInfo();

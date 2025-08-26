@@ -4,6 +4,7 @@
 #include <QAbstractItemModel>
 #include <QColumnView>
 #include <QListView>
+#include <QTreeView>
 #include <QMainWindow>
 #include <QToolBar>
 #include <QAction>
@@ -250,7 +251,7 @@ private:
     QToolBar *tb{};
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actRestoreFromTrash{};
-    QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};
+    QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actDuplicate{}, *actLink{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
     QAction *actGoHome{};
@@ -588,7 +589,6 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "home.h"
 #include "new_terminal.h"
 #include "contextmenu.h"
-#include "folderize.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

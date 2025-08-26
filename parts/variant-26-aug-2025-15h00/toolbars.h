@@ -50,9 +50,6 @@ actGoHome->setToolTip("Go to your home directory");
     actInfo       = tb->addAction(QIcon("icons/info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
     actRename     = tb->addAction(QIcon("icons/rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
     actMove       = tb->addAction(QIcon("icons/move.png"),          "Move");             actMove->setToolTip("Move selected item");
-actFolderize = tb->addAction(QIcon("icons/folderize.png"), "Folderize");
-actFolderize->setToolTip("Place selected items into a new folder");
-
     actDuplicate  = tb->addAction(QIcon("icons/duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
     actLink       = tb->addAction(QIcon("icons/softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
     tb->addSeparator();
@@ -96,7 +93,6 @@ connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
     connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
     connect(actMove,          &QAction::triggered, this, &ColFM::onMove);
-connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
     connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
     connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
 

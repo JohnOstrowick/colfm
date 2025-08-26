@@ -12,6 +12,49 @@
 #include <QAbstractItemView>
 #include <QProxyStyle>
 #include <QColor>
+//#include "info.h" /* commented out: avoid including inside class to prevent Qt types being seen as ColFM::X (kak.txt) */
+
+/* NOTE:
+ * This header is included INSIDE class ColFM in colfm.cpp.
+ * The following inline functions are therefore ColFM members and may access:
+ *   model, crumbs, currentView, previewLabel, currentRoot, mode, kIconSize
+ *
+ * FixedIconDelegate and ColumnView32 are defined in colfm.cpp (global scope).
+ * To avoid duplicate definitions, we DO NOT define them here.
+ */
+
+/* commented out duplicate definitions — now provided in colfm.cpp
+// ---- Delegate that enforces 32×32 decoration size --------------------------
+class FixedIconDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
+        option->decorationSize = kIconSize;
+    }
+    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &idx) const override {
+        QSize s = QStyledItemDelegate::sizeHint(opt, idx);
+        if (s.width()  < kIconSize.width())  s.setWidth(kIconSize.width());
+        if (s.height() < kIconSize.height()) s.setHeight(kIconSize.height());
+        return s;
+    }
+};
+
+// ---- Column view subclass: apply 32×32 to every spawned column -------------
+class ColumnView32 : public QColumnView {
+public:
+    using QColumnView::QColumnView;
+protected:
+    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
+        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
+        if (v) {
+            v->setIconSize(kIconSize);
+            v->setItemDelegate(new FixedIconDelegate(v));
+        }
+        return v;
+    }
+};
+*/
 
 /* added: helper to ensure we always have a valid root index */
 inline QModelIndex ensureRootIndex(const QModelIndex &root) {
@@ -22,7 +65,6 @@ inline QModelIndex ensureRootIndex(const QModelIndex &root) {
 /* ------------------------------ Tree (list) view ------------------------------ */
 inline QWidget* buildTreeWidget(const QModelIndex &rootIdx) {
     auto *view = new QTreeView();
-    view->setSelectionMode(QAbstractItemView::ExtendedSelection); 
 
     view->setModel(model);
     const QModelIndex root = ensureRootIndex(rootIdx);            /* added */
@@ -69,7 +111,6 @@ inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
 
     /* added: ensure 32×32 on the initial visible column */
     cv->setIconSize(kIconSize);
-    cv->setSelectionMode(QAbstractItemView::ExtendedSelection);
     cv->setItemDelegate(new FixedIconDelegate(cv));
 
     currentView = cv;
@@ -109,7 +150,6 @@ inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
 /* ------------------------------ Icon (grid) view ------------------------------ */
 inline QWidget* buildIconWidget(const QModelIndex &rootIdx) {
     auto *view = new QListView();
-    view->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     view->setViewMode(QListView::IconMode);
     view->setResizeMode(QListView::Adjust);

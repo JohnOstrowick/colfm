@@ -89,9 +89,6 @@ menu.addAction("Empty Trash", this, &ColFM::onEmptyTrash);
 menu.addAction("Get Info", this, &ColFM::onInfo);
 menu.addAction("Rename", this, &ColFM::onRename);
 menu.addAction("Create Link", this, &ColFM::onCreateSoftlink);
-menu.addAction("Create Archive", this, &ColFM::onZip);
-menu.addAction("Extract Archive", this, &ColFM::onUnZip);
-
 menu.addAction("Get Info", this, &ColFM::onInfo);
 menu.addAction("Rename", this, &ColFM::onRename);
 menu.addAction("Move", this, &ColFM::onMove);

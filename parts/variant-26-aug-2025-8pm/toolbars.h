@@ -57,12 +57,6 @@ actFolderize->setToolTip("Place selected items into a new folder");
     actLink       = tb->addAction(QIcon("icons/softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
     tb->addSeparator();
 
-actZip = tb->addAction(QIcon("icons/zip.png"), "Archive");
-actZip->setToolTip("Create archive from selected files");
-
-actUnZip = tb->addAction(QIcon("icons/unzip.png"), "Extract");
-actUnZip->setToolTip("Extract archive contents into folder");
-
     // group 4
     treeBtn         = tb->addAction(QIcon("icons/view_tree.png"),     "List View");        treeBtn->setToolTip("Switch to Tree/List view");
     columnBtn       = tb->addAction(QIcon("icons/view_columns.png"),  "Column View");      columnBtn->setToolTip("Switch to Column view");
@@ -105,9 +99,6 @@ connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
 connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
     connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
     connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
-
-connect(actZip, &QAction::triggered, this, &ColFM::onZip);
-connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
 
     connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
     connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);

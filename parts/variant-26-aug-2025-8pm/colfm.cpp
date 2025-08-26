@@ -211,17 +211,12 @@ void openWith(const QString &filePath);
     void onDuplicate();
     void onGoHome();
     void onCreateSoftlink();
-    void onZip();
-void onUnZip();
-
     void onToggleHidden();
     void onSettings(); 
     void writePrefs(int folderMB, int iconSize, int viewMode);
     void readPrefs(int &folderMB, int &iconSize, int &viewMode);
     void onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel);
     void onRename(); void onRenameSelected(const QString &path);
-
-
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
@@ -256,7 +251,6 @@ private:
     QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};
-    QAction *actZip{},*actUnZip{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
     QAction *actGoHome{};
@@ -595,7 +589,6 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new_terminal.h"
 #include "contextmenu.h"
 #include "folderize.h"
-#include "archivezip.h"
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

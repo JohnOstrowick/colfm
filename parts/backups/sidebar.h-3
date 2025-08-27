@@ -1,3 +1,5 @@
+// sidebar.h
+
 #ifndef COLFM_SIDEBAR_H
 #define COLFM_SIDEBAR_H
 
@@ -15,6 +17,47 @@
 #include <QApplication>
 #include <QItemSelectionModel>
 
+// forward declaration so we can use model and getCWD()
+extern QFileSystemModel *model;
+extern QString getCWD();
+extern QTreeWidget *sidebar;
+
+// ----------------------
+// Named function handler
+// ----------------------
+inline void handleColorLabelClicked(QWidget *parent, const QString &color) {
+    QStringList sel;
+    if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
+        if (av->selectionModel()) {
+            const auto idxs = av->selectionModel()->selectedIndexes();
+            for (const QModelIndex &ix : idxs) {
+                if (ix.column() != 0) continue;
+                sel << model->fileName(ix);
+            }
+        }
+    }
+
+    const QString targets = sel.isEmpty() ? getCWD() : sel.join(", ");
+    QMessageBox::information(parent, "Label debug",
+                             QString("you clicked colour %1, to apply to file(s) %2")
+                             .arg(color, targets));
+
+    QMessageBox::information(parent, "Write path",
+                             QString("now writing to %1/.labelcolor").arg(getCWD()));
+
+    QStringList csvLines;
+    for (const QString &base : sel) {
+        QString basename = QFileInfo(base).fileName();  // fixes full path issue
+        csvLines << QString("\"%1\",\"%2\"").arg(basename, color);
+    }
+
+    QMessageBox::information(parent, "CSV Preview",
+                             csvLines.isEmpty() ? "(nothing selected)" : csvLines.join("\n"));
+}
+
+// ----------------------
+// Original function
+// ----------------------
 inline void populateSidebar() {
     if (!sidebar) return;
 
@@ -22,9 +65,7 @@ inline void populateSidebar() {
     sidebar->setColumnCount(1);
     sidebar->setHeaderHidden(true);
 
-    // enable disclosure triangles
     sidebar->setRootIsDecorated(true);
-
     sidebar->setSelectionMode(QAbstractItemView::SingleSelection);
     sidebar->setFocusPolicy(Qt::NoFocus);
     sidebar->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -34,7 +75,6 @@ inline void populateSidebar() {
 
     const QString home = QDir::homePath();
 
-    // helper to build a row widget (icon + label)
     auto makeRow = [&](const QString &label, const QString &path, bool isDrive){
         QWidget *row = new QWidget(sidebar);
         auto *h = new QHBoxLayout(row);
@@ -48,7 +88,7 @@ inline void populateSidebar() {
         else if (label == "Downloads")               pm = QPixmap("icons/downloads.png");
         else if (isDrive)                            pm = QPixmap("icons/disk.png");
         else if (path.endsWith("/.local/share/Trash/files")) pm = QPixmap("icons/open_trash.png");
-        else              pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
+        else              pm = sidebar->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
         ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         h->addWidget(ic, 0, Qt::AlignVCenter);
 
@@ -59,17 +99,13 @@ inline void populateSidebar() {
         return row;
     };
 
-    // --- Top fixed items -----------------------------------------------------
-
-    // Home (top-level, expandable; clicking arrow reveals child folders)
     QTreeWidgetItem *homeItem = new QTreeWidgetItem(sidebar);
     homeItem->setData(0, Qt::UserRole, home + "./");
     homeItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-    sidebar->setItemWidget(homeItem, 0, makeRow("Home", home + "./", /*isDrive*/false));
+    sidebar->setItemWidget(homeItem, 0, makeRow("Home", home + "./", false));
     homeItem->setSizeHint(0, QSize(100, sidebar->itemWidget(homeItem,0)->sizeHint().height() + 4));
     homeItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
 
-    // Desktop
     {
         QTreeWidgetItem *it = new QTreeWidgetItem(sidebar);
         it->setData(0, Qt::UserRole, home + "/Desktop");
@@ -78,7 +114,6 @@ inline void populateSidebar() {
         it->setSizeHint(0, QSize(100, sidebar->itemWidget(it,0)->sizeHint().height() + 4));
     }
 
-    // Downloads
     {
         QTreeWidgetItem *it = new QTreeWidgetItem(sidebar);
         it->setData(0, Qt::UserRole, home + "/Downloads");
@@ -87,19 +122,16 @@ inline void populateSidebar() {
         it->setSizeHint(0, QSize(100, sidebar->itemWidget(it,0)->sizeHint().height() + 4));
     }
 
-    // Trash
     QTreeWidgetItem *trashItem = new QTreeWidgetItem(sidebar);
     trashItem->setData(0, Qt::UserRole, home + "/.local/share/Trash/files");
     trashItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     sidebar->setItemWidget(trashItem, 0, makeRow("Trash", home + "/.local/share/Trash/files", false));
     trashItem->setSizeHint(0, QSize(100, sidebar->itemWidget(trashItem,0)->sizeHint().height() + 4));
 
-    QObject::connect(sidebar, &QTreeWidget::itemClicked, this,
-        [this, trashItem](QTreeWidgetItem *clicked, int){
+    QObject::connect(sidebar, &QTreeWidget::itemClicked, sidebar,
+        [trashItem](QTreeWidgetItem *clicked, int){
             if (clicked == trashItem) onOpenTrash();
         });
-
-    // --- Children under Home -------------------------------------------------
 
     {
         QDir hd(home);
@@ -118,7 +150,7 @@ inline void populateSidebar() {
             h->setSpacing(6);
 
             QLabel *ic = new QLabel(row);
-            QPixmap pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
+            QPixmap pm = sidebar->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
             ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             h->addWidget(ic, 0, Qt::AlignVCenter);
 
@@ -133,7 +165,6 @@ inline void populateSidebar() {
         homeItem->setExpanded(false);
     }
 
-    // Divider
     {
         auto *div = new QTreeWidgetItem(sidebar);
         div->setFlags(Qt::NoItemFlags);
@@ -141,7 +172,6 @@ inline void populateSidebar() {
         sidebar->setItemWidget(div, 0, new QLabel("────────", sidebar));
     }
 
-    // Drives under /media/$USER
     QString user = QFileInfo(home).fileName();
     QDir md(QString("/media/%1").arg(user));
     QStringList drives;
@@ -165,7 +195,6 @@ inline void populateSidebar() {
         }
     }
 
-    // Divider (below disks)
     {
         auto *div3 = new QTreeWidgetItem(sidebar);
         div3->setFlags(Qt::NoItemFlags);
@@ -173,7 +202,6 @@ inline void populateSidebar() {
         sidebar->setItemWidget(div3, 0, new QLabel("────────", sidebar));
     }
 
-    // Colour labels row
     {
         QTreeWidgetItem *swRow = new QTreeWidgetItem(sidebar);
         swRow->setFlags(Qt::NoItemFlags);
@@ -192,27 +220,11 @@ inline void populateSidebar() {
                 "border-radius:12px; padding:0;} "
                 "QToolButton:pressed{transform: scale(0.96);}").arg(hex));
             tb->setToolTip(name);
-// here
-//here
-QObject::connect(tb, &QToolButton::clicked, this, [this, name=name]{
-    QStringList sel;
 
-    if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
-        if (av->selectionModel()) {
-            const auto idxs = av->selectionModel()->selectedIndexes();
-            for (const QModelIndex &ix : idxs)
-                if (ix.column() == 0)
-                    sel << model->fileName(ix);
-        }
-    }
+            QObject::connect(tb, &QToolButton::clicked, sidebar, [=]{
+                handleColorLabelClicked(sidebar, name);
+            });
 
-    const QString targets = sel.isEmpty() ? getCWD() : sel.join(", ");
-    QMessageBox::information(this, "Selected", QString("you clicked colour %1, applying to: %2").arg(name, targets));
-	QMessageBox::information(this, "Write location", QString("Will write to:\n%1/.labelcolor").arg(getCWD()));
-    QProcess::execute("sh", {"-c", QString("echo \"\\\"%2\\\",\\\"%1\\\"\" >> \"%3/.labelcolor\"").arg(name, targets, getCWD())});
-});
-//end here
-// end here
             h->addWidget(tb);
         };
 
@@ -242,14 +254,15 @@ inline QWidget* buildWithSidebar(QWidget *center) {
     outer->setCollapsible(0, false);
     outer->setCollapsible(1, false);
 
-    QObject::connect(sidebar, &QTreeWidget::itemActivated, this,
-        [this](QTreeWidgetItem *it, int){
+    QObject::connect(sidebar, &QTreeWidget::itemActivated, sidebar,
+        [](QTreeWidgetItem *it, int){
             if (!it) return;
             const QString path = it->data(0, Qt::UserRole).toString();
             if (!path.isEmpty()) { pushHistory(); currentRoot = model->index(path); setViewMode(mode); }
         });
-    QObject::connect(sidebar, &QTreeWidget::itemClicked, this,
-        [this](QTreeWidgetItem *it, int){
+
+    QObject::connect(sidebar, &QTreeWidget::itemClicked, sidebar,
+        [](QTreeWidgetItem *it, int){
             if (!it) return;
             const QString path = it->data(0, Qt::UserRole).toString();
             if (!path.isEmpty()) { pushHistory(); currentRoot = model->index(path); setViewMode(mode); }

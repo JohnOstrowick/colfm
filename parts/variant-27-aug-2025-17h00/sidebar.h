@@ -10,10 +10,6 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QStyle>
-#include <QMessageBox>
-#include <QAbstractItemView>
-#include <QApplication>
-#include <QItemSelectionModel>
 
 inline void populateSidebar() {
     if (!sidebar) return;
@@ -43,13 +39,10 @@ inline void populateSidebar() {
 
         QLabel *ic = new QLabel(row);
         QPixmap pm;
-        if (label == "Home")                         pm = QPixmap("icons/home.png");
-        else if (label == "Desktop")                 pm = QPixmap("icons/desktop.png");
-        else if (label == "Downloads")               pm = QPixmap("icons/downloads.png");
-        else if (isDrive)                            pm = QPixmap("icons/disk.png");
+        if (isDrive) pm = QPixmap("icons/disk.png");
         else if (path.endsWith("/.local/share/Trash/files")) pm = QPixmap("icons/open_trash.png");
-        else              pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
-        ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        else              pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(16,16);
+        ic->setPixmap(pm.scaled(16,16, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         h->addWidget(ic, 0, Qt::AlignVCenter);
 
         QLabel *lab = new QLabel(label, row);
@@ -112,14 +105,15 @@ inline void populateSidebar() {
             child->setData(0, Qt::UserRole, fi.absoluteFilePath());
             child->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
+            // indent visually by increasing left margin
             QWidget *row = new QWidget(sidebar);
             auto *h = new QHBoxLayout(row);
             h->setContentsMargins(24, 6, 8, 6);
             h->setSpacing(6);
 
             QLabel *ic = new QLabel(row);
-            QPixmap pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
-            ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            QPixmap pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(16,16);
+            ic->setPixmap(pm.scaled(16,16, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             h->addWidget(ic, 0, Qt::AlignVCenter);
 
             QLabel *lab = new QLabel(name, row);
@@ -130,7 +124,7 @@ inline void populateSidebar() {
             child->setSizeHint(0, QSize(100, row->sizeHint().height() + 4));
         }
 
-        homeItem->setExpanded(false);
+        homeItem->setExpanded(false); // start collapsed; triangle visible
     }
 
     // Divider
@@ -164,71 +158,6 @@ inline void populateSidebar() {
             it->setSizeHint(0, QSize(100, sidebar->itemWidget(it,0)->sizeHint().height() + 4));
         }
     }
-
-    // Divider (below disks)
-    {
-        auto *div3 = new QTreeWidgetItem(sidebar);
-        div3->setFlags(Qt::NoItemFlags);
-        div3->setFirstColumnSpanned(true);
-        sidebar->setItemWidget(div3, 0, new QLabel("────────", sidebar));
-    }
-
-    // Colour labels row
-    {
-        QTreeWidgetItem *swRow = new QTreeWidgetItem(sidebar);
-        swRow->setFlags(Qt::NoItemFlags);
-        QWidget *row = new QWidget(sidebar);
-        auto *h = new QHBoxLayout(row);
-        h->setContentsMargins(8, 8, 8, 8);
-        h->setSpacing(12);
-
-        auto addSwatch = [&](const QString &name, const QString &hex){
-            QToolButton *tb = new QToolButton(row);
-            tb->setAutoRaise(true);
-            tb->setCursor(Qt::PointingHandCursor);
-            tb->setFixedSize(24,24);
-            tb->setStyleSheet(QString(
-                "QToolButton{background:%1; border:1px solid rgba(255,255,255,0.25);"
-                "border-radius:12px; padding:0;} "
-                "QToolButton:pressed{transform: scale(0.96);}").arg(hex));
-            tb->setToolTip(name);
-// here
-//here
-QObject::connect(tb, &QToolButton::clicked, this, [this, name=name]{
-    QStringList sel;
-
-    if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
-        if (av->selectionModel()) {
-            const auto idxs = av->selectionModel()->selectedIndexes();
-            for (const QModelIndex &ix : idxs)
-                if (ix.column() == 0)
-                    sel << model->fileName(ix);
-        }
-    }
-
-    const QString targets = sel.isEmpty() ? getCWD() : sel.join(", ");
-    QMessageBox::information(this, "Selected", QString("you clicked colour %1, applying to: %2").arg(name, targets));
-	QMessageBox::information(this, "Write location", QString("Will write to:\n%1/.labelcolor").arg(getCWD()));
-    QProcess::execute("sh", {"-c", QString("echo \"\\\"%2\\\",\\\"%1\\\"\" >> \"%3/.labelcolor\"").arg(name, targets, getCWD())});
-});
-//end here
-// end here
-            h->addWidget(tb);
-        };
-
-        addSwatch("red",    "#e74c3c");
-        addSwatch("orange", "#f39c12");
-        addSwatch("yellow", "#f1c40f");
-        addSwatch("green",  "#2ecc71");
-        addSwatch("blue",   "#3498db");
-        addSwatch("violet", "#8e44ad");
-        addSwatch("black",  "#000000");
-        addSwatch("white",  "#ffffff");
-        addSwatch("grey",   "#7f8c8d");
-
-        sidebar->setItemWidget(swRow, 0, row);
-        swRow->setSizeHint(0, QSize(100, row->sizeHint().height() + 4));
-    }
 }
 
 inline QWidget* buildWithSidebar(QWidget *center) {
@@ -242,6 +171,7 @@ inline QWidget* buildWithSidebar(QWidget *center) {
     outer->setCollapsible(0, false);
     outer->setCollapsible(1, false);
 
+    // navigation (top-level and children)
     QObject::connect(sidebar, &QTreeWidget::itemActivated, this,
         [this](QTreeWidgetItem *it, int){
             if (!it) return;

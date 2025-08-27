@@ -10,11 +10,15 @@
 #include "folderize.h"
 
 inline bool isToolAvailable(const QString &tool) {
-    return !QProcess::execute("which " + tool) != -1;
+    QProcess proc;
+    proc.start("sh", QStringList() << "-c" << "command -v " + tool);
+    proc.waitForFinished();
+    return proc.exitCode() == 0;
 }
 
 inline void ColFM::onZip() {
-    if (selectedFiles.isEmpty()) {
+    auto items = currentView->selectionModel()->selectedRows();
+    if (items.isEmpty()) {
         QMessageBox::warning(this, "Archive", "No files selected.");
         return;
     }
@@ -23,78 +27,95 @@ inline void ColFM::onZip() {
     if (isToolAvailable("zip")) formats << "zip";
     if (isToolAvailable("gzip")) formats << "tar.gz";
     if (isToolAvailable("bzip2")) formats << "tar.bz2";
+
     if (formats.isEmpty()) {
         QMessageBox::critical(this, "Error", "No supported compression tools found.");
         return;
     }
 
-    QString choice = QInputDialog::getItem(this, "Choose Format", "Archive format:", formats, 0, false);
-    if (choice.isEmpty()) return;
+    QString format = QInputDialog::getItem(this, "Choose Format", "Archive format:", formats, 0, false);
+    if (format.isEmpty()) return;
 
-    QString archiveName = QInputDialog::getText(this, "Archive Name", "Enter archive name (without extension):");
-    if (archiveName.isEmpty()) return;
+    QString cwd = ColFM::getCWD();
+    auto *model = static_cast<QFileSystemModel *>(currentView->model());
 
-    QString outPath = currentDir + "/" + archiveName;
+    QString archiveBaseName;
 
-    if (selectedFiles.size() > 1) {
-        folderize();  // Assumes this packs all selectedFiles into currentDir + "/Folderized/"
-        outPath += (choice.startsWith("tar") ? ".tar" : "." + choice);
-        QString folder = currentDir + "/Folderized";
-
-        if (choice == "zip") {
-            QProcess::execute("zip -r \"" + outPath + "\" \"" + folder + "\"");
-        } else if (choice == "tar.gz") {
-            QProcess::execute("tar -czf \"" + outPath + ".gz\" -C \"" + currentDir + "\" Folderized");
-        } else if (choice == "tar.bz2") {
-            QProcess::execute("tar -cjf \"" + outPath + ".bz2\" -C \"" + currentDir + "\" Folderized");
-        }
-
+    if (items.size() > 1) {
+        onFolderize();  // creates "Folderized/"
+        archiveBaseName = "Folderized";
     } else {
-        QString file = selectedFiles.first();
-        QFileInfo info(file);
-        outPath += (choice.startsWith("tar") ? ".tar" : "." + choice);
+        QString src = model->filePath(items.first());
+        QFileInfo info(src);
+        archiveBaseName = info.completeBaseName();
+    }
 
-        if (choice == "zip") {
-            QProcess::execute("zip \"" + outPath + "\" \"" + file + "\"");
-        } else if (choice == "tar.gz") {
-            QProcess::execute("tar -czf \"" + outPath + ".gz\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
-        } else if (choice == "tar.bz2") {
-            QProcess::execute("tar -cjf \"" + outPath + ".bz2\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
+    QString outFile;
+
+    if (format == "zip") {
+        outFile = cwd + "/" + archiveBaseName + ".zip";
+        if (items.size() > 1)
+            QProcess::execute("zip -r \"" + outFile + "\" \"" + cwd + "/Folderized\"");
+        else {
+            QString src = model->filePath(items.first());
+            QProcess::execute("zip \"" + outFile + "\" \"" + src + "\"");
+        }
+    } else if (format == "tar.gz") {
+        outFile = cwd + "/" + archiveBaseName + ".tar.gz";
+        if (items.size() > 1)
+            QProcess::execute("tar -czf \"" + outFile + "\" -C \"" + cwd + "\" Folderized");
+        else {
+            QString src = model->filePath(items.first());
+            QFileInfo info(src);
+            QProcess::execute("tar -czf \"" + outFile + "\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
+        }
+    } else if (format == "tar.bz2") {
+        outFile = cwd + "/" + archiveBaseName + ".tar.bz2";
+        if (items.size() > 1)
+            QProcess::execute("tar -cjf \"" + outFile + "\" -C \"" + cwd + "\" Folderized");
+        else {
+            QString src = model->filePath(items.first());
+            QFileInfo info(src);
+            QProcess::execute("tar -cjf \"" + outFile + "\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
         }
     }
 
-    statusBar()->showMessage("Archive created: " + outPath, 3000);
+    statusBar()->showMessage("Archive created: " + outFile, 3000);
 }
 
 inline void ColFM::onUnZip() {
-    if (selectedFiles.isEmpty()) {
+    auto items = currentView->selectionModel()->selectedRows();
+    if (items.isEmpty()) {
         QMessageBox::warning(this, "Extract", "No archive selected.");
         return;
     }
 
-    for (const QString &archive : selectedFiles) {
-        QFileInfo info(archive);
-        QString baseName = info.completeBaseName();
-        QString destFolder = currentDir + "/" + baseName;
+    QString cwd = ColFM::getCWD();
+    auto *model = static_cast<QFileSystemModel *>(currentView->model());
 
-        QDir().mkpath(destFolder); // create target folder
+    for (const QModelIndex &index : items) {
+        QString src = model->filePath(index);
+        QFileInfo info(src);
+        QString base = info.completeBaseName();
+        QString dest = cwd + "/" + base;
+        QDir().mkpath(dest);
 
         QString cmd;
-        if (archive.endsWith(".zip", Qt::CaseInsensitive)) {
-            cmd = "unzip -o \"" + archive + "\" -d \"" + destFolder + "\"";
-        } else if (archive.endsWith(".tar.gz", Qt::CaseInsensitive) || archive.endsWith(".tgz", Qt::CaseInsensitive)) {
-            cmd = "tar -xzf \"" + archive + "\" -C \"" + destFolder + "\"";
-        } else if (archive.endsWith(".tar.bz2", Qt::CaseInsensitive) || archive.endsWith(".tbz", Qt::CaseInsensitive)) {
-            cmd = "tar -xjf \"" + archive + "\" -C \"" + destFolder + "\"";
-        } else if (archive.endsWith(".tar", Qt::CaseInsensitive)) {
-            cmd = "tar -xf \"" + archive + "\" -C \"" + destFolder + "\"";
+        if (src.endsWith(".zip", Qt::CaseInsensitive)) {
+            cmd = "unzip -o \"" + src + "\" -d \"" + dest + "\"";
+        } else if (src.endsWith(".tar.gz", Qt::CaseInsensitive) || src.endsWith(".tgz", Qt::CaseInsensitive)) {
+            cmd = "tar -xzf \"" + src + "\" -C \"" + dest + "\"";
+        } else if (src.endsWith(".tar.bz2", Qt::CaseInsensitive) || src.endsWith(".tbz", Qt::CaseInsensitive)) {
+            cmd = "tar -xjf \"" + src + "\" -C \"" + dest + "\"";
+        } else if (src.endsWith(".tar", Qt::CaseInsensitive)) {
+            cmd = "tar -xf \"" + src + "\" -C \"" + dest + "\"";
         } else {
-            QMessageBox::warning(this, "Unknown Format", "Cannot extract: " + archive);
+            QMessageBox::warning(this, "Unknown Format", "Cannot extract: " + src);
             continue;
         }
 
         QProcess::execute(cmd);
-        statusBar()->showMessage("Extracted to " + destFolder, 2000);
+        statusBar()->showMessage("Extracted to " + dest, 2000);
     }
 }
 

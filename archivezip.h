@@ -6,8 +6,9 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QDir>
-
+#include <QFileInfoList>
 #include "folderize.h"
+#include "progress.h"
 
 inline bool isToolAvailable(const QString &tool) {
     QProcess proc;
@@ -39,48 +40,64 @@ inline void ColFM::onZip() {
     QString cwd = ColFM::getCWD();
     auto *model = static_cast<QFileSystemModel *>(currentView->model());
 
-    QString archiveBaseName;
+    QString archiveTarget;
+    QString archiveCommand;
 
     if (items.size() > 1) {
-        onFolderize();  // creates "Folderized/"
-        archiveBaseName = "Folderized";
+        QString target = cwd + "/Folderized";
+        QDir(target).removeRecursively();
+        QDir().mkdir(target);
+
+        for (const QModelIndex &index : items) {
+            QString src = model->filePath(index);
+            QFileInfo fi(src);
+            QString baseName = fi.fileName();
+            QString dest = target + "/" + baseName;
+            QProcess::execute("cp -dpRuf \"" + src + "\" \"" + dest + "\"");
+        }
+
+        qint64 sizeBytes = folderSize(target);
+        if (sizeBytes > 30 * 1024 * 1024)
+            onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 240, 18, true);
+
+        if (format == "zip") {
+            archiveTarget = target + ".zip";
+            archiveCommand = "cd \"" + cwd + "\" && zip -r \"" + archiveTarget + "\" Folderized";
+        } else if (format == "tar.gz") {
+            archiveTarget = target + ".tar.gz";
+            archiveCommand = "tar -czf \"" + archiveTarget + "\" -C \"" + cwd + "\" Folderized";
+        } else if (format == "tar.bz2") {
+            archiveTarget = target + ".tar.bz2";
+            archiveCommand = "tar -cjf \"" + archiveTarget + "\" -C \"" + cwd + "\" Folderized";
+        }
+
+        int result = QProcess::execute("sh", QStringList() << "-c" << archiveCommand);
+        QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
+
     } else {
         QString src = model->filePath(items.first());
         QFileInfo info(src);
-        archiveBaseName = info.completeBaseName();
+        QString name = info.completeBaseName();
+        QString path = info.absolutePath();
+
+        if (format == "zip") {
+            archiveTarget = cwd + "/" + name + ".zip";
+            archiveCommand = "cd \"" + path + "\" && zip -r \"" + archiveTarget + "\" \"" + info.fileName() + "\"";
+        } else if (format == "tar.gz") {
+            archiveTarget = cwd + "/" + name + ".tar.gz";
+            archiveCommand = "tar -czf \"" + archiveTarget + "\" -C \"" + path + "\" \"" + info.fileName() + "\"";
+        } else if (format == "tar.bz2") {
+            archiveTarget = cwd + "/" + name + ".tar.bz2";
+            archiveCommand = "tar -cjf \"" + archiveTarget + "\" -C \"" + path + "\" \"" + info.fileName() + "\"";
+        }
+
+        int result = QProcess::execute("sh", QStringList() << "-c" << archiveCommand);
+        QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
     }
 
-    QString outFile;
-
-    if (format == "zip") {
-        outFile = cwd + "/" + archiveBaseName + ".zip";
-        if (items.size() > 1)
-            QProcess::execute("zip -r \"" + outFile + "\" \"" + cwd + "/Folderized\"");
-        else {
-            QString src = model->filePath(items.first());
-            QProcess::execute("zip \"" + outFile + "\" \"" + src + "\"");
-        }
-    } else if (format == "tar.gz") {
-        outFile = cwd + "/" + archiveBaseName + ".tar.gz";
-        if (items.size() > 1)
-            QProcess::execute("tar -czf \"" + outFile + "\" -C \"" + cwd + "\" Folderized");
-        else {
-            QString src = model->filePath(items.first());
-            QFileInfo info(src);
-            QProcess::execute("tar -czf \"" + outFile + "\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
-        }
-    } else if (format == "tar.bz2") {
-        outFile = cwd + "/" + archiveBaseName + ".tar.bz2";
-        if (items.size() > 1)
-            QProcess::execute("tar -cjf \"" + outFile + "\" -C \"" + cwd + "\" Folderized");
-        else {
-            QString src = model->filePath(items.first());
-            QFileInfo info(src);
-            QProcess::execute("tar -cjf \"" + outFile + "\" -C \"" + info.path() + "\" \"" + info.fileName() + "\"");
-        }
-    }
-
-    statusBar()->showMessage("Archive created: " + outFile, 3000);
+    onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 0, 0, false);
+    onRefresh();
+    statusBar()->showMessage("Archive created: " + archiveTarget, 3000);
 }
 
 inline void ColFM::onUnZip() {
@@ -114,9 +131,11 @@ inline void ColFM::onUnZip() {
             continue;
         }
 
-        QProcess::execute(cmd);
+        QProcess::execute("sh", QStringList() << "-c" << cmd);
         statusBar()->showMessage("Extracted to " + dest, 2000);
     }
+
+    onRefresh();
 }
 
 #endif // ARCHIVEZIP_H

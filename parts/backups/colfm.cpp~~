@@ -42,13 +42,22 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QShortcut>
+#include <QSaveFile>
+#include <QTextStream>
+#include <QApplication>
+#include <QAbstractItemView>
+#include <QItemSelectionModel>
+#include <QMap>
 #include "info.h"
 #include "breadcrumbs.h"
+#include "search.h"
+#include "labels.h"
 
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
 
 enum class ViewMode { Tree, Column, Icon };
+
 
 /* Force app-wide 32 px icon metrics */
 class ForceIconStyle : public QProxyStyle {
@@ -79,6 +88,7 @@ public:
 };
 
 /* Custom icon provider (tints symlinks; ensures 32px base) */
+
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
@@ -104,6 +114,23 @@ public:
                 }
             return QIcon(QPixmap::fromImage(img));
         }
+	// added to label colours
+	// Label tint (from .labelcolor), skip links (already tinted teal)
+        {
+            LabelManager::readLabelFile(info.dir().absolutePath());
+	    const QMap<QString,QString> map = LabelManager::labelMap;
+            const QString colourName = map.value(info.fileName());
+            if (!colourName.isEmpty()) {
+                //const QColor accent = colourFromName(colourName);
+		const QColor accent = LabelManager::colourFromName(colourName);
+                if (accent.isValid()) {
+                    QImage img2 = img; // img came from base pixmap earlier
+                    LabelManager::tintImage(img2, accent);
+                    return QIcon(QPixmap::fromImage(img2));
+                }
+            }
+        }
+
         return QFileIconProvider::icon(info);
     }
 };
@@ -171,7 +198,7 @@ public:
         addToolBar(Qt::TopToolBarArea, tb);
 
         drawButtons();
-	addIconSizePopup();
+	//addIconSizePopup();
         addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
@@ -193,7 +220,7 @@ public:
 public:
     void drawButtons();
     void onFolderize();
-    void addIconSizePopup();
+    //void addIconSizePopup();
     void onRefresh();
 
     void onMoveToTrash();
@@ -203,8 +230,7 @@ public:
 
     void onUp();
     void onOpen();
-void openWith(const QString &filePath);
-    void onCloseAction();
+    void openWith(const QString &filePath);
     void onInfo();
     void onGetInfo();
     void onMove();
@@ -212,7 +238,8 @@ void openWith(const QString &filePath);
     void onGoHome();
     void onCreateSoftlink();
     void onZip();
-void onUnZip();
+    void onUnZip();
+    //void addIconSizePopup();
 
     void onToggleHidden();
     void onSettings(); 
@@ -263,6 +290,7 @@ private:
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actNewTerminal{};
     QAction *actSearch{}, *actSettings{};
+    //QAction *addIconSizePopup{};
     QAbstractItemView *currentView{};
 
     /* added: sidebar + simple back history */
@@ -338,6 +366,7 @@ private:
                 else { openFile(idx); }
             });
         }
+
     }
 };
 
@@ -357,76 +386,6 @@ QString ColFM::getCWD() {
     return model->filePath(idx);
 }
 
-/* Requires: #include <QMenu> once at the top of colfm.cpp */
-void ColFM::addIconSizePopup() {
-    QAction *insertBefore = nullptr;
-    const auto acts = tb->actions();
-    int pos = acts.indexOf(toggleHiddenBtn);
-    if (pos >= 0 && pos + 1 < acts.size()) insertBefore = acts.at(pos + 1);
-
-    QToolButton *btn = new QToolButton(tb);
-    btn->setToolTip("Icon size");
-    btn->setText("Size");
-    btn->setPopupMode(QToolButton::InstantPopup);
-
-    QMenu *m = new QMenu(btn);
-    btn->setMenu(m);
-
-    auto addSizeAction = [&](int s){
-        QAction *a = m->addAction(QString::number(s));
-        a->setCheckable(true);
-        if (s == 32) a->setChecked(true);
-        QObject::connect(a, &QAction::triggered, this, [this, m, s]{
-            // uncheck/check
-            for (QAction *x : m->actions()) x->setChecked(false);
-            for (QAction *x : m->actions()) if (x->text().toInt() == s) { x->setChecked(true); break; }
-
-            const QSize newSz(s, s);
-
-            // 1) tell the model to use the new decoration size
-            if (auto f = dynamic_cast<FixedFSModel*>(model)) {       /* added */
-                f->setIconSize(newSz);
-            }
-
-            // 2) rebuild the center so column subviews pick up fresh settings
-            onRefresh();                                             /* added */
-
-            // 3) apply runtime delegate + icon size to all current views
-            class LocalAdjDelegate : public QStyledItemDelegate {
-            public:
-                explicit LocalAdjDelegate(const QSize &sz, QObject *parent=nullptr)
-                    : QStyledItemDelegate(parent), dec(sz) {}
-                void initStyleOption(QStyleOptionViewItem *opt, const QModelIndex &idx) const override {
-                    QStyledItemDelegate::initStyleOption(opt, idx);
-                    opt->decorationSize = dec;
-                }
-            private:
-                QSize dec;
-            };
-
-            if (auto root = this->centralWidget()) {
-                const auto views = root->findChildren<QAbstractItemView*>();
-                for (QAbstractItemView *v : views) {
-                    v->setIconSize(newSz);
-                    v->setItemDelegate(new LocalAdjDelegate(newSz, v));
-                    v->viewport()->update();
-                }
-            }
-
-            if (statusBar()) statusBar()->showMessage(QString("Icon size: %1").arg(s), 1200);
-        });
-    };
-
-    addSizeAction(16);
-    addSizeAction(24);
-    addSizeAction(32);
-    addSizeAction(48);
-    addSizeAction(64);
-    addSizeAction(128);
-
-    if (insertBefore) tb->insertWidget(insertBefore, btn);
-    else              tb->addWidget(btn);
-}
 /* ============================================================================================ */
 
 void ColFM::previewFile(const QModelIndex &idx) {

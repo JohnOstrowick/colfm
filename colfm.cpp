@@ -57,7 +57,6 @@ static const QSize kIconSize(32, 32);
 
 enum class ViewMode { Tree, Column, Icon };
 
-
 /* Force app-wide 32 px icon metrics */
 class ForceIconStyle : public QProxyStyle {
 public:
@@ -116,8 +115,8 @@ public:
 	// added to label colours
 	// Label tint (from .labelcolor), skip links (already tinted teal)
         {
-            LabelManager::readLabelFile(info.absolutePath());
-            const QMap<QString,QString> map = LabelManager::labelMap;
+            LabelManager::readLabelFile(info.dir().absolutePath());
+	    const QMap<QString,QString> map = LabelManager::labelMap;
             const QString colourName = map.value(info.fileName());
             if (!colourName.isEmpty()) {
                 //const QColor accent = colourFromName(colourName);
@@ -175,7 +174,6 @@ public:
 private:
     QSize iconSz = kIconSize;                                        /* added */
 };
-
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
@@ -217,6 +215,7 @@ public:
     }
 
 public:
+    QStringList selectItems();
     void drawButtons();
     void onFolderize();
     //void addIconSizePopup();
@@ -233,6 +232,8 @@ public:
     void onInfo();
     void onGetInfo();
     void onMove();
+    void onMoveButton();
+
     void onDuplicate();
     void onGoHome();
     void onCreateSoftlink();
@@ -251,7 +252,7 @@ public:
     void onViewTree();
     void onViewColumn();
     void onViewIcon();
-    void onSearchPlocate();
+    void doSearch();
 
     QModelIndex currentIndex() const;
     void previewFile(const QModelIndex &idx);
@@ -268,7 +269,7 @@ public:
 
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
-private:
+//private:
     QFileSystemModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
@@ -305,8 +306,9 @@ private:
         if (backStack.size() > 50) backStack.removeLast();
     }
 
+	#include <QCursor>   // needed for QCursor::pos()
+
     /* ---------------------- Sidebar Builder (single column) ---------------------- */
-  
     #include "sidebar.h"
     
     void setViewMode(ViewMode m) {
@@ -369,6 +371,34 @@ private:
     }
 };
 
+#include <QCursor>   // for QCursor::pos()
+
+QStringList ColFM::selectItems() {
+    QStringList paths;
+    if (!currentView || !model) return paths;
+
+    // Prefer explicit multi-selection; first column only to avoid duplicate rows
+    if (currentView->selectionModel()) {
+        const QModelIndexList rows = currentView->selectionModel()->selectedRows(0);
+        for (const QModelIndex &idx : rows) {
+            if (idx.isValid()) paths << model->filePath(idx);
+        }
+    }
+
+    // Fallback: current index, else item under mouse
+    if (paths.isEmpty()) {
+        QModelIndex idx = currentView->currentIndex();
+        if (!idx.isValid()) {
+            const QPoint p = currentView->mapFromGlobal(QCursor::pos());
+            idx = currentView->indexAt(p);
+        }
+        if (idx.isValid()) paths << model->filePath(idx);
+    }
+
+    return paths;
+}
+
+
 // context menu
 void ColFM::contextMenuEvent(QContextMenuEvent *event) {
     showContextMenu(event);
@@ -401,6 +431,7 @@ void ColFM::previewFile(const QModelIndex &idx) {
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
 #include "rename.h"
+#include "move.h"
 #include "duplicate.h"
 #include "keys.h"
 #include "toolbars.h"
@@ -415,6 +446,8 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "contextmenu.h"
 #include "folderize.h"
 #include "archivezip.h"
+#include "search.h"
+// glue: toolbar action → search helper
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

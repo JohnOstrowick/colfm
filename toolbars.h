@@ -26,6 +26,7 @@
 
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
+namespace Search { void doSearch(ColFM *); }
 
 inline void ColFM::drawButtons() {
     tb->clear();
@@ -34,8 +35,8 @@ inline void ColFM::drawButtons() {
     actUp         = tb->addAction(QIcon("icons/up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
     actRefresh    = tb->addAction(QIcon("icons/refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
     tb->addSeparator();
-actGoHome = tb->addAction(QIcon("icons/home.png"), "Go to Home");
-actGoHome->setToolTip("Go to your home directory");
+    actGoHome = tb->addAction(QIcon("icons/home.png"), "Go to Home");
+    actGoHome->setToolTip("Go to your home directory");
 
     // group 2
     actOpenTrash  = tb->addAction(QIcon("icons/open_trash.png"),    "Open Trash");       actOpenTrash->setToolTip("Open the Trash folder");
@@ -51,18 +52,18 @@ actGoHome->setToolTip("Go to your home directory");
     actInfo       = tb->addAction(QIcon("icons/info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
     actRename     = tb->addAction(QIcon("icons/rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
     actMove       = tb->addAction(QIcon("icons/move.png"),          "Move");             actMove->setToolTip("Move selected item");
-actFolderize = tb->addAction(QIcon("icons/folderize.png"), "Folderize");
-actFolderize->setToolTip("Place selected items into a new folder");
+    actFolderize = tb->addAction(QIcon("icons/folderize.png"), "Folderize");
+    actFolderize->setToolTip("Place selected items into a new folder");
 
     actDuplicate  = tb->addAction(QIcon("icons/duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
     actLink       = tb->addAction(QIcon("icons/softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
     tb->addSeparator();
 
-actZip = tb->addAction(QIcon("icons/zip.png"), "Archive");
-actZip->setToolTip("Create archive from selected files");
+    actZip = tb->addAction(QIcon("icons/zip.png"), "Archive");
+    actZip->setToolTip("Create archive from selected files");
 
-actUnZip = tb->addAction(QIcon("icons/unzip.png"), "Extract");
-actUnZip->setToolTip("Extract archive contents into folder");
+    actUnZip = tb->addAction(QIcon("icons/unzip.png"), "Extract");
+    actUnZip->setToolTip("Extract archive contents into folder");
 
     // group 4
     treeBtn         = tb->addAction(QIcon("icons/view_tree.png"),     "List View");        treeBtn->setToolTip("Switch to Tree/List view");
@@ -73,43 +74,43 @@ actUnZip->setToolTip("Extract archive contents into folder");
     // (Icon size popup — to be added later)
     tb->addSeparator();
 
-actNewFolder = tb->addAction(QIcon("icons/newfolder.png"), "New Folder");
-actNewFolder->setToolTip("Create a new folder");
+    actNewFolder = tb->addAction(QIcon("icons/newfolder.png"), "New Folder");
+    actNewFolder->setToolTip("Create a new folder");
 
-actNewWindow = tb->addAction(QIcon("icons/newwindow.png"), "New Window");
-actNewWindow->setToolTip("Open a new browser window");
+    actNewWindow = tb->addAction(QIcon("icons/newwindow.png"), "New Window");
+    actNewWindow->setToolTip("Open a new browser window");
 
-actNewTerminal = tb->addAction(QIcon("icons/terminal.png"), "New Terminal");
-actNewTerminal->setToolTip("Open Terminal in Current Folder");
+    actNewTerminal = tb->addAction(QIcon("icons/terminal.png"), "New Terminal");
+    actNewTerminal->setToolTip("Open Terminal in Current Folder");
 
 	addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
 
 	connect(actSearch, &QAction::triggered, this, [this]() {
-	    onSearchPlocate();
+	    Search::doSearch(this);
 	});
 
     // Wire up
-    connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
+    connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
+    connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
-    connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
+    
     connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
-
+    connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
+    connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
 
-    connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
-connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
     connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
-    connect(actMove,          &QAction::triggered, this, &ColFM::onMove);
-connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+    connect(actMove,          &QAction::triggered, this, &ColFM::onMoveButton);
+    connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
     connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
     connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
 
-connect(actZip, &QAction::triggered, this, &ColFM::onZip);
-connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+    connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+    connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
 
     connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
     connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);
@@ -117,9 +118,9 @@ connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
 
-connect(actNewFolder, &QAction::triggered, this, &ColFM::onNewFolder);
-connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
-connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+    connect(actNewFolder, &QAction::triggered, this, &ColFM::onNewFolder);
+    connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
+    connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 
 }
 
@@ -127,6 +128,7 @@ connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 // others are in their relevantly named files
 
 inline void ColFM::onRefresh() {
+    model->setIconProvider(new CustomIconProvider());  // rebuild icons (incl. folder label colours)
     const QString path = model->filePath(currentRoot);
     model->setRootPath(path);
     setViewMode(mode);
@@ -193,151 +195,4 @@ inline bool _ensureVolDb(const QString &volPath, int maxAgeSecs = 3600) { // 1h 
     p.start("updatedb", QStringList() << "-o" << db << "-U" << volPath);
     p.waitForFinished(-1);
     return (p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0 && QFileInfo::exists(db));
-}
-
-// Runs dialog + plocate; returns fully-filtered results.
-// Optionally returns chosen scope root and hidden toggle.
-inline QStringList runPlocateDialogAndSearch(QWidget *parent,
-                                             QString *outScopeRoot = nullptr,
-                                             bool *outShowHidden = nullptr) {
-    // --- dialog ---
-    QDialog dlg(parent);
-    dlg.setWindowTitle("Search with plocate");
-
-    auto *edit  = new QLineEdit(&dlg); edit->setPlaceholderText("Search term…");
-    auto *scope = new QComboBox(&dlg);
-    auto *showHidden = new QCheckBox("Show hidden files", &dlg); showHidden->setChecked(false);
-
-    const QString home = QDir::homePath();
-    scope->addItem("My Home", home);       // default
-    scope->addItem("Entire System", "/");
-    scope->addItem("/var", "/var");
-
-    // Placeholder + per-volume media entries
-    const QString user = qEnvironmentVariable("USER");
-    const QString mediaRoot = QString("/media/%1").arg(user);
-    scope->addItem("USB Drives", mediaRoot);
-
-    QDir mediaDir(mediaRoot);
-    if (mediaDir.exists()) {
-        for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-            const QString volPath = mediaDir.absoluteFilePath(vol);
-            scope->addItem(QString("Media: %1").arg(vol), volPath);
-        }
-    }
-
-    auto *form = new QFormLayout();
-    form->addRow("Search term:", edit);
-    form->addRow("Scope:", scope);
-    form->addRow("", showHidden);
-
-    auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
-    QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-
-    auto *layout = new QVBoxLayout(&dlg);
-    layout->addLayout(form);
-    layout->addWidget(btns);
-
-    edit->setFocus();
-    if (dlg.exec() != QDialog::Accepted) return {};
-
-    const QString query = edit->text().trimmed();
-    if (query.isEmpty()) return {};
-
-    const QString selRoot = scope->currentData().toString();
-    if (outScopeRoot) *outScopeRoot = selRoot;
-    if (outShowHidden) *outShowHidden = showHidden->isChecked();
-
-    // --- build per-volume DB(s) if scope is under /media/$USER ---
-    QStringList dbArgs;
-    if (selRoot.startsWith(mediaRoot)) {
-        QStringList volumes;
-        if (selRoot == mediaRoot) {
-            for (const QString &vol : mediaDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-                volumes << mediaDir.absoluteFilePath(vol);
-            }
-        } else {
-            volumes << selRoot; // specific volume
-        }
-        for (const QString &volPath : volumes) {
-            if (_ensureVolDb(volPath)) {
-                dbArgs << "-d" << _volDbPath(volPath);
-            }
-        }
-    }
-
-    // --- run plocate ---
-    QStringList args;
-    args << "-i" << "--basename" << query;
-    if (!dbArgs.isEmpty()) args << dbArgs;  // use per-volume DBs when available
-
-    QProcess proc;
-    proc.start("plocate", args);
-    proc.waitForFinished(-1);
-
-    QStringList all = QString::fromUtf8(proc.readAllStandardOutput())
-                          .split('\n', Qt::SkipEmptyParts);
-
-    // --- scope filter (if not using custom dbs) ---
-    QStringList scoped;
-    if (!dbArgs.isEmpty()) {
-        scoped = all; // already scoped by -d
-    } else if (selRoot == "/") {
-        scoped = all;
-    } else {
-        auto inScope = [&](const QString &p){
-            return p == selRoot || p.startsWith(selRoot + "/");
-        };
-        for (const auto &p : all) if (inScope(p)) scoped << p;
-    }
-
-    // --- hidden filter ---
-    if (!showHidden->isChecked()) {
-        QRegularExpression hiddenRe("(^|/)\\.[^/]+"); // any dot-starting path component
-        QStringList filtered;
-        for (const QString &p : scoped) {
-            if (hiddenRe.match(p).hasMatch()) continue;
-            filtered << p;
-        }
-        scoped = filtered;
-    }
-
-    return scoped;
-}
-
-// --- Wire ColFM to the helper ---
-inline void ColFM::onSearchPlocate() {
-    QString scopeRoot; bool showHidden = false;
-    const QStringList results = runPlocateDialogAndSearch(this, &scopeRoot, &showHidden);
-    if (results.isEmpty()) {
-        statusBar()->showMessage("No results found", 2000);
-        return;
-    }
-
-    auto *lv = new QListView();
-    auto *listModel = new QStringListModel(results, lv);
-    lv->setModel(listModel);
-    lv->setUniformItemSizes(true);
-    lv->setSelectionMode(QAbstractItemView::SingleSelection);
-    currentView = lv;
-    setCentralWidget(lv);
-
-    connect(lv, &QListView::doubleClicked, this, [this, listModel](const QModelIndex &i){
-        if (!i.isValid()) return;
-        const QString path = listModel->data(i, Qt::DisplayRole).toString();
-        QFileInfo fi(path);
-        if (fi.isDir()) {
-            currentRoot = model->index(fi.absoluteFilePath());
-            setViewMode(mode);
-            if (crumbs) crumbs->setPath(fi.absoluteFilePath());
-        } else {
-            const QString parent = fi.absolutePath();
-            currentRoot = model->index(parent);
-            setViewMode(mode);
-            if (crumbs) crumbs->setPath(parent);
-            const QModelIndex fileIdx = model->index(path);
-            if (fileIdx.isValid()) previewFile(fileIdx);
-        }
-    });
 }

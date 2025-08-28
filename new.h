@@ -16,7 +16,8 @@ inline void ColFM::onNewFolder() {
     QString folderName = QInputDialog::getText(this, "Create Folder", "New folder name:", QLineEdit::Normal, "new_folder", &ok);
     if (!ok || folderName.isEmpty()) return;
 
-    const QString parentDir = model->filePath(currentRoot);  // <- get current view folder
+    //const QString parentDir = model->filePath(currentRoot);  // <- get current view folder
+    const QString parentDir = ColFM::getCWD();  // <- get current view folder
     QDir dir(parentDir);
     if (dir.mkdir(folderName)) {
         statusBar()->showMessage("Folder created: " + folderName, 2000);

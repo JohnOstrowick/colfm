@@ -22,6 +22,7 @@
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "iconsize.h"
 
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
@@ -81,6 +82,7 @@ actNewWindow->setToolTip("Open a new browser window");
 actNewTerminal = tb->addAction(QIcon("icons/terminal.png"), "New Terminal");
 actNewTerminal->setToolTip("Open Terminal in Current Folder");
 
+	addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
 

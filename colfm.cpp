@@ -50,6 +50,7 @@
 #include <QMap>
 #include "info.h"
 #include "breadcrumbs.h"
+#include "labels.h"
 
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
@@ -87,91 +88,6 @@ public:
 
 /* Custom icon provider (tints symlinks; ensures 32px base) */
 
-inline QColor colourFromName(const QString &name) {
-    const QString n = name.toLower();
-    if (n=="red")    return QColor("#e74c3c");
-    if (n=="orange") return QColor("#f39c12");
-    if (n=="yellow") return QColor("#f1c40f");
-    if (n=="green")  return QColor("#2ecc71");
-    if (n=="blue")   return QColor("#3498db");
-    if (n=="violet") return QColor("#8e44ad");
-    if (n=="black")  return QColor("#000000");
-    if (n=="white")  return QColor("#ffffff");
-    if (n=="grey"||n=="gray") return QColor("#7f8c8d");
-    return QColor(); // invalid
-}
-
-// Read .labelcolor into {basename -> colourName}
-inline QMap<QString,QString> readLabelMap(const QString &dirPath) {
-    QMap<QString,QString> map;
-    QFile f(dirPath + "/.labelcolor");
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return map;
-    QTextStream ts(&f);
-    while (!ts.atEnd()) {
-        const QString line = ts.readLine().trimmed();
-        if (line.isEmpty() || line.startsWith('#')) continue;
-        const int tab = line.indexOf('\t');
-        if (tab <= 0) continue;
-        const QString base = line.left(tab);
-        const QString col  = line.mid(tab+1);
-        if (!base.isEmpty() && !col.isEmpty()) map[base] = col;
-    }
-    return map;
-}
-
-// Write/overwrite one entry in .labelcolor
-inline bool writeLabelEntry(const QString &dirPath, const QString &baseName, const QString &colourName) {
-    // read existing
-    QMap<QString,QString> map = readLabelMap(dirPath);
-    map[baseName] = colourName;
-
-    QSaveFile sf(dirPath + "/.labelcolor");
-    if (!sf.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
-    QTextStream ts(&sf);
-    for (auto it = map.constBegin(); it != map.constEnd(); ++it)
-        ts << it.key() << '\t' << it.value() << '\n';
-    return sf.commit();
-}
-
-// Apply a gentle tint to img with accent
-inline void tintImage(QImage &img, const QColor &accent) {
-    if (!accent.isValid()) return;
-    const int ar = accent.red();
-    const int ag = accent.green();
-    const int ab = accent.blue();
-    for (int y = 0; y < img.height(); ++y) {
-        QRgb *scan = reinterpret_cast<QRgb*>(img.scanLine(y));
-        for (int x = 0; x < img.width(); ++x) {
-            QColor c = QColor::fromRgba(scan[x]);
-            if (qAlpha(scan[x]) == 0) continue;
-            c.setRgb((c.red()+ar)/2, (c.green()+ag)/2, (c.blue()+ab)/2, c.alpha());
-            scan[x] = c.rgba();
-        }
-    }
-}
-
-// Label selected files with colour; skips symlinks
-inline void applyLabelColourToSelection(const QString &colourName,
-                                        QFileSystemModel *model,
-                                        const QModelIndex &currentRoot,
-                                        std::function<void(ViewMode)> setViewMode,
-                                        ViewMode mode) {
-    Q_UNUSED(currentRoot);
-    auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget());
-    if (!av || !av->selectionModel()) return;
-    const auto idxs = av->selectionModel()->selectedIndexes();
-    if (idxs.isEmpty()) return;
-
-    for (const QModelIndex &ix : idxs) {
-        if (!ix.isValid()) continue;
-        QFileInfo fi = model->fileInfo(ix);
-        if (!fi.exists() || fi.isSymLink()) continue; // no labels for linkfiles
-        writeLabelEntry(fi.dir().absolutePath(), fi.fileName(), colourName);
-    }
-    // crude refresh so CustomIconProvider re-asks for icons
-    setViewMode(mode);
-}
-
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
@@ -200,13 +116,15 @@ public:
 	// added to label colours
 	// Label tint (from .labelcolor), skip links (already tinted teal)
         {
-            const QMap<QString,QString> map = readLabelMap(info.absolutePath());
+            LabelManager::readLabelFile(info.absolutePath());
+            const QMap<QString,QString> map = LabelManager::labelMap;
             const QString colourName = map.value(info.fileName());
             if (!colourName.isEmpty()) {
-                const QColor accent = colourFromName(colourName);
+                //const QColor accent = colourFromName(colourName);
+		const QColor accent = LabelManager::colourFromName(colourName);
                 if (accent.isValid()) {
                     QImage img2 = img; // img came from base pixmap earlier
-                    tintImage(img2, accent);
+                    LabelManager::tintImage(img2, accent);
                     return QIcon(QPixmap::fromImage(img2));
                 }
             }
@@ -279,7 +197,7 @@ public:
         addToolBar(Qt::TopToolBarArea, tb);
 
         drawButtons();
-	addIconSizePopup();
+	//addIconSizePopup();
         addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
@@ -301,7 +219,7 @@ public:
 public:
     void drawButtons();
     void onFolderize();
-    void addIconSizePopup();
+    //void addIconSizePopup();
     void onRefresh();
 
     void onMoveToTrash();
@@ -311,8 +229,7 @@ public:
 
     void onUp();
     void onOpen();
-void openWith(const QString &filePath);
-    void onCloseAction();
+    void openWith(const QString &filePath);
     void onInfo();
     void onGetInfo();
     void onMove();
@@ -320,7 +237,8 @@ void openWith(const QString &filePath);
     void onGoHome();
     void onCreateSoftlink();
     void onZip();
-void onUnZip();
+    void onUnZip();
+    //void addIconSizePopup();
 
     void onToggleHidden();
     void onSettings(); 
@@ -371,6 +289,7 @@ private:
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actNewTerminal{};
     QAction *actSearch{}, *actSettings{};
+    //QAction *addIconSizePopup{};
     QAbstractItemView *currentView{};
 
     /* added: sidebar + simple back history */
@@ -446,6 +365,7 @@ private:
                 else { openFile(idx); }
             });
         }
+
     }
 };
 
@@ -465,76 +385,6 @@ QString ColFM::getCWD() {
     return model->filePath(idx);
 }
 
-/* Requires: #include <QMenu> once at the top of colfm.cpp */
-void ColFM::addIconSizePopup() {
-    QAction *insertBefore = nullptr;
-    const auto acts = tb->actions();
-    int pos = acts.indexOf(toggleHiddenBtn);
-    if (pos >= 0 && pos + 1 < acts.size()) insertBefore = acts.at(pos + 1);
-
-    QToolButton *btn = new QToolButton(tb);
-    btn->setToolTip("Icon size");
-    btn->setText("Size");
-    btn->setPopupMode(QToolButton::InstantPopup);
-
-    QMenu *m = new QMenu(btn);
-    btn->setMenu(m);
-
-    auto addSizeAction = [&](int s){
-        QAction *a = m->addAction(QString::number(s));
-        a->setCheckable(true);
-        if (s == 32) a->setChecked(true);
-        QObject::connect(a, &QAction::triggered, this, [this, m, s]{
-            // uncheck/check
-            for (QAction *x : m->actions()) x->setChecked(false);
-            for (QAction *x : m->actions()) if (x->text().toInt() == s) { x->setChecked(true); break; }
-
-            const QSize newSz(s, s);
-
-            // 1) tell the model to use the new decoration size
-            if (auto f = dynamic_cast<FixedFSModel*>(model)) {       /* added */
-                f->setIconSize(newSz);
-            }
-
-            // 2) rebuild the center so column subviews pick up fresh settings
-            onRefresh();                                             /* added */
-
-            // 3) apply runtime delegate + icon size to all current views
-            class LocalAdjDelegate : public QStyledItemDelegate {
-            public:
-                explicit LocalAdjDelegate(const QSize &sz, QObject *parent=nullptr)
-                    : QStyledItemDelegate(parent), dec(sz) {}
-                void initStyleOption(QStyleOptionViewItem *opt, const QModelIndex &idx) const override {
-                    QStyledItemDelegate::initStyleOption(opt, idx);
-                    opt->decorationSize = dec;
-                }
-            private:
-                QSize dec;
-            };
-
-            if (auto root = this->centralWidget()) {
-                const auto views = root->findChildren<QAbstractItemView*>();
-                for (QAbstractItemView *v : views) {
-                    v->setIconSize(newSz);
-                    v->setItemDelegate(new LocalAdjDelegate(newSz, v));
-                    v->viewport()->update();
-                }
-            }
-
-            if (statusBar()) statusBar()->showMessage(QString("Icon size: %1").arg(s), 1200);
-        });
-    };
-
-    addSizeAction(16);
-    addSizeAction(24);
-    addSizeAction(32);
-    addSizeAction(48);
-    addSizeAction(64);
-    addSizeAction(128);
-
-    if (insertBefore) tb->insertWidget(insertBefore, btn);
-    else              tb->addWidget(btn);
-}
 /* ============================================================================================ */
 
 void ColFM::previewFile(const QModelIndex &idx) {

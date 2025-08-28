@@ -173,61 +173,10 @@ inline void populateSidebar() {
         sidebar->setItemWidget(div3, 0, new QLabel("────────", sidebar));
     }
 
-    // Colour labels row
+   /* */
+   // Colour labels row
     {
-        QTreeWidgetItem *swRow = new QTreeWidgetItem(sidebar);
-        swRow->setFlags(Qt::NoItemFlags);
-        QWidget *row = new QWidget(sidebar);
-        auto *h = new QHBoxLayout(row);
-        h->setContentsMargins(8, 8, 8, 8);
-        h->setSpacing(12);
-
-        auto addSwatch = [&](const QString &name, const QString &hex){
-            QToolButton *tb = new QToolButton(row);
-            tb->setAutoRaise(true);
-            tb->setCursor(Qt::PointingHandCursor);
-            tb->setFixedSize(24,24);
-            tb->setStyleSheet(QString(
-                "QToolButton{background:%1; border:1px solid rgba(255,255,255,0.25);"
-                "border-radius:12px; padding:0;} "
-                "QToolButton:pressed{transform: scale(0.96);}").arg(hex));
-            tb->setToolTip(name);
-// here
-//here
-QObject::connect(tb, &QToolButton::clicked, this, [this, name=name]{
-    QStringList sel;
-
-    if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
-        if (av->selectionModel()) {
-            const auto idxs = av->selectionModel()->selectedIndexes();
-            for (const QModelIndex &ix : idxs)
-                if (ix.column() == 0)
-                    sel << model->fileName(ix);
-        }
-    }
-
-    const QString targets = sel.isEmpty() ? getCWD() : sel.join(", ");
-    QMessageBox::information(this, "Selected", QString("you clicked colour %1, applying to: %2").arg(name, targets));
-	QMessageBox::information(this, "Write location", QString("Will write to:\n%1/.labelcolor").arg(getCWD()));
-    QProcess::execute("sh", {"-c", QString("echo \"\\\"%2\\\",\\\"%1\\\"\" >> \"%3/.labelcolor\"").arg(name, targets, getCWD())});
-});
-//end here
-// end here
-            h->addWidget(tb);
-        };
-
-        addSwatch("red",    "#e74c3c");
-        addSwatch("orange", "#f39c12");
-        addSwatch("yellow", "#f1c40f");
-        addSwatch("green",  "#2ecc71");
-        addSwatch("blue",   "#3498db");
-        addSwatch("violet", "#8e44ad");
-        addSwatch("black",  "#000000");
-        addSwatch("white",  "#ffffff");
-        addSwatch("grey",   "#7f8c8d");
-
-        sidebar->setItemWidget(swRow, 0, row);
-        swRow->setSizeHint(0, QSize(100, row->sizeHint().height() + 4));
+        LabelManager::drawSwatches(sidebar, this, model, [this]{ return getCWD(); });
     }
 }
 

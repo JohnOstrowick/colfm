@@ -453,7 +453,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new.h"
 #include "home.h"
 #include "new_terminal.h"
-#define COLFM_UI 1
+#define COLFM_MAIN 1
 #include "contextmenu.h"
 #include "folderize.h"
 #include "archivezip.h"

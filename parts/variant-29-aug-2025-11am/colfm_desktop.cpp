@@ -23,64 +23,6 @@ static inline QString trashDir() {
     return QDir::homePath() + "/.local/share/Trash/files";
 }
 
-static QPixmap boxIcon(const QPixmap &src, int box) {
-    QPixmap out(box, box);
-    out.fill(Qt::transparent);
-    if (src.isNull()) return out;
-
-    // scale up/down into the box while keeping aspect
-    QPixmap scaled = src.scaled(box, box, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    QPainter p(&out);
-    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    const int x = (box - scaled.width()) / 2;
-    const int y = (box - scaled.height()) / 2;
-    p.drawPixmap(x, y, scaled);
-    return out;
-}
-
-static QIcon boxedIconFromImage(QImage img, int box) {
-    // ensure final is exactly box×box centered
-    QPixmap pm = QPixmap::fromImage(img);
-    return QIcon(boxIcon(pm, box));
-}
-
-static QIcon tintedIconFor(const QFileInfo &fi, int box /*48, 32, ...*/) {
-    QPixmap base = QFileIconProvider().icon(fi).pixmap(box);
-    if (base.isNull())
-        return QIcon(QPixmap(box, box)); // empty box
-
-    QImage img = base.toImage();
-
-    // Symlink: teal buff
-    if (fi.isSymLink()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0)
-                    c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-
-    // Executable (non-dir): subtle green buff
-    if (fi.isExecutable() && !fi.isDir()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0)
-                    c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-
-    // No tint → just box to exact size
-    return QIcon(boxIcon(QPixmap::fromImage(img), box));
-}
-
-
 static QPixmap loadBackground(const QRect &screenGeom) {
     QString p = QCoreApplication::applicationDirPath() + "/wallpapers/default.jpg";
     QPixmap pm;
@@ -95,8 +37,6 @@ static QPixmap loadBackground(const QRect &screenGeom) {
 }
 
 // ---------- simple model ----------
-
-
 class DesktopModel : public QStandardItemModel {
 public:
     enum Roles { PathRole = Qt::UserRole + 1, KindRole };
@@ -116,9 +56,8 @@ public:
         rows.reserve(list.size());
 
         for (const QFileInfo &fi : list) {
-	    QIcon ico = tintedIconFor(fi, 48);  // or 32 if you want tighter icons
-	    auto *it = new QStandardItem(ico, fi.fileName());
-
+            QIcon ico = prov.icon(fi);
+            auto *it = new QStandardItem(ico, fi.fileName());
             it->setEditable(false);
             it->setToolTip(fi.absoluteFilePath());
             it->setData(fi.absoluteFilePath(), PathRole);

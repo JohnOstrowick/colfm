@@ -54,7 +54,8 @@
 #include "info.h"
 #include "breadcrumbs.h"
 #include "labels.h"
-
+#define COLFM_MAIN 1
+#include "contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
 
 
@@ -158,6 +159,13 @@ protected:
         if (v) {
             v->setIconSize(kIconSize);
             v->setItemDelegate(new FixedIconDelegate(v));
+            v->setContextMenuPolicy(Qt::CustomContextMenu);
+        QObject::connect(v, &QWidget::customContextMenuRequested, v,
+                         [v](const QPoint &pos) {
+            const QModelIndex idx = v->indexAt(pos);
+            if (!idx.isValid()) return;
+            ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
+        });
         }
         return v;
     }
@@ -409,10 +417,6 @@ QStringList ColFM::selectItems() {
 }
 
 
-// context menu
-void ColFM::contextMenuEvent(QContextMenuEvent *event) {
-    showContextMenu(event);
-}
 
 // function to return our CWD anywhere
 QString ColFM::getCWD() {
@@ -453,11 +457,17 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new.h"
 #include "home.h"
 #include "new_terminal.h"
-#define COLFM_MAIN 1
-#include "contextmenu.h"
 #include "folderize.h"
 #include "archivezip.h"
 #include "search.h"
+
+void ColFM::contextMenuEvent(QContextMenuEvent *event) {
+    if (!currentView || !model) return;
+    const QPoint viewPos = currentView->viewport()->mapFromGlobal(event->globalPos());
+    const QModelIndex idx = currentView->indexAt(viewPos);
+    if (!idx.isValid()) return;
+    ::showContextMenu(currentView, idx, model, event->globalPos());
+}
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {

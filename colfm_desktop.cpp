@@ -23,6 +23,8 @@ static inline QString trashDir() {
     return QDir::homePath() + "/.local/share/Trash/files";
 }
 
+#include "labels.h"
+
 static QPixmap boxIcon(const QPixmap &src, int box) {
     QPixmap out(box, box);
     out.fill(Qt::transparent);
@@ -100,10 +102,11 @@ static QPixmap loadBackground(const QRect &screenGeom) {
 class DesktopModel : public QStandardItemModel {
 public:
     enum Roles { PathRole = Qt::UserRole + 1, KindRole };
-
+    
     void rebuild() {
         clear();
         setColumnCount(1);
+        LabelManager::readLabelFile(desktopDir());
 
         QString p = desktopDir();
         QDir d(p);
@@ -117,6 +120,17 @@ public:
 
         for (const QFileInfo &fi : list) {
 	    QIcon ico = tintedIconFor(fi, 48);  // or 32 if you want tighter icons
+	    // Label tint (hex from .labelcolor): blend like the symlink buff
+		QString lab = LabelManager::getLabel(fi.fileName());
+			if (!lab.isEmpty()) {
+		    QColor qc(lab);
+		    if (qc.isValid()) {
+			QImage im = ico.pixmap(48,48).toImage();
+			LabelManager::tintImage(im, qc);                  // same 50/50 blend
+			ico = QIcon(QPixmap::fromImage(im));
+		    }
+		}
+
 	    auto *it = new QStandardItem(ico, fi.fileName());
 
             it->setEditable(false);

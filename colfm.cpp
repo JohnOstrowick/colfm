@@ -103,51 +103,6 @@ static QPixmap boxIcon(const QPixmap &src, int box) {
     p.drawPixmap(x, y, scaled);
     return out;
 }
-/*static QIcon boxedIconFromImage(const QImage &img, int box) {
-    return QIcon(boxIcon(QPixmap::fromImage(img), box));
-}
-
-static QIcon tintAndBox(const QFileInfo &info, int box) {
-    // base pixmap at requested size
-    QPixmap base = QFileIconProvider().icon(info).pixmap(box);
-    if (base.isNull()) return QIcon(QPixmap(box, box)); // empty box
-    QImage img = base.toImage();
-
-    // 1) symlink → teal buff
-    if (info.isSymLink()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-    // 2) executable (non-dir) → subtle green buff
-    if (info.isExecutable() && !info.isDir()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-    // 3) label colour from .labelcolor (CSV)
-    LabelManager::readLabelFile(info.dir().absolutePath());
-    const QString lab = LabelManager::getLabel(info.fileName());
-    if (!lab.isEmpty()) {
-        const QColor qc = LabelManager::colourFromName(lab);
-        if (qc.isValid()) {
-            QImage im2 = img;
-            LabelManager::tintImage(im2, qc);          // same blend you use elsewhere
-            return boxedIconFromImage(im2, box);
-        }
-    }
-    // 4) no tint → ensure exact box size
-    return QIcon(boxIcon(base, box));
-}
-    */
 
 class CustomIconProvider : public QFileIconProvider {
 public:
@@ -498,6 +453,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new.h"
 #include "home.h"
 #include "new_terminal.h"
+#define COLFM_UI 1
 #include "contextmenu.h"
 #include "folderize.h"
 #include "archivezip.h"

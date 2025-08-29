@@ -42,6 +42,8 @@ inline QStringList getGuiAppsForMime(const QString &mimeType) {
     return knownApps;
 }
 
+#ifdef COLFM_UI
+
 inline void ColFM::openWith(const QString &filePath) {
     QFileInfo fi(filePath);
     if (!fi.exists()) return;
@@ -103,5 +105,6 @@ menu.addAction("Move all to new folder", this, &ColFM::onFolderize);
 
     menu.exec(event->globalPos());
 }
+#endif // COLFM_UI
 
 #endif // CONTEXTMENU_H

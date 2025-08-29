@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include <QtCore>
 #include <QtGui>
-
+#include "contextmenu.h"
 #if __has_include(<X11/Xlib.h>)
   #define HAVE_X11 1
   #include <X11/Xlib.h>
@@ -160,45 +160,70 @@ public:
 };
 
 // ---------- context menu ----------
+// ---------- context menu ----------
 static void showContextMenu(QWidget *parent, const QModelIndex &idx, QAbstractItemModel *model, const QPoint &globalPos) {
     const QString path = model->data(idx, DesktopModel::PathRole).toString();
     const QString kind = model->data(idx, DesktopModel::KindRole).toString();
+    const QFileInfo fi(path);
 
-    QMenu m(parent);
-    QAction *open         = m.addAction("Open");
-    QAction *openInColfm  = m.addAction("Open in ColFM");
-    QAction *openWith     = m.addAction("Open With…");
-    QAction *trashAct     = (kind == "trash") ? nullptr : m.addAction("Move to Trash");
-    QAction *revealTerm   = m.addAction("Open Terminal Here");
+    QMenu menu(parent);
 
-    QAction *chosen = m.exec(globalPos);
+    if (kind == QLatin1String("trash")) {
+        menu.addAction(QStringLiteral("Open Trash"), [](){
+            QProcess::startDetached(QStringLiteral("xdg-open"), { QStringLiteral("trash:///") });
+        });
+        menu.addAction(QStringLiteral("Empty Trash"), [](){
+            QProcess::startDetached(QStringLiteral("gio"), { QStringLiteral("trash"), QStringLiteral("--empty") });
+        });
+        menu.exec(globalPos);
+        return;
+    }
+
+    QAction *actOpen   = menu.addAction(QStringLiteral("Open"));
+    QAction *actReveal = menu.addAction(QStringLiteral("Open in ColFM"));
+
+    // Open With…
+    QMenu *openWithMenu = menu.addMenu(QStringLiteral("Open With…"));
+    QMimeDatabase mdb;
+    const QMimeType mt = mdb.mimeTypeForFile(fi);
+    const QStringList apps = getGuiAppsForMime(mt.name());   // from contextmenu.h
+
+    if (apps.isEmpty()) {
+        QAction *fallback = openWithMenu->addAction(QStringLiteral("System Default"));
+        QObject::connect(fallback, &QAction::triggered, [path](){
+            QProcess::startDetached(QStringLiteral("xdg-open"), { path });
+        });
+    } else {
+        for (const QString &app : apps) {
+            QAction *a = openWithMenu->addAction(app);
+            QObject::connect(a, &QAction::triggered, [app, path](){
+                QProcess::startDetached(app, { path });
+            });
+        }
+    }
+
+    QAction *actTrash = (kind == QLatin1String("trash")) ? nullptr : menu.addAction(QStringLiteral("Move to Trash"));
+    QAction *actTerm  = menu.addAction(QStringLiteral("Open Terminal Here"));
+
+    QAction *chosen = menu.exec(globalPos);
     if (!chosen) return;
 
-    if (chosen == open) {
-        if (kind == "dir" || kind == "trash") {
-            const QString exe = QCoreApplication::applicationDirPath() + "/colfm";
-            QProcess::startDetached(exe, { path });
-        } else {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-        }
+    if (chosen == actOpen) {
+        QProcess::startDetached(QStringLiteral("xdg-open"), { path });
         return;
     }
-    if (chosen == openInColfm) {
-        const QString exe = QCoreApplication::applicationDirPath() + "/colfm";
-        QProcess::startDetached(exe, { path });
+    if (chosen == actReveal) {
+        QProcess::startDetached(QStringLiteral("colfm"), { path });
         return;
     }
-    if (chosen == openWith) {
-        QProcess::startDetached("xdg-open", { path });
+    if (actTrash && chosen == actTrash) {
+        QProcess::startDetached(QStringLiteral("gio"), { QStringLiteral("trash"), path });
         return;
     }
-    if (trashAct && chosen == trashAct) {
-        QProcess::startDetached("gio", { "trash", path });
-        return;
-    }
-    if (chosen == revealTerm) {
-        const QString dir = (kind == "file") ? QFileInfo(path).absolutePath() : path;
-        QProcess::startDetached("x-terminal-emulator", { "--working-directory", dir });
+    if (chosen == actTerm) {
+        const QString dir = fi.isDir() ? fi.absoluteFilePath() : fi.absolutePath();
+        QProcess::startDetached(QStringLiteral("x-terminal-emulator"),
+                                { QStringLiteral("--working-directory"), dir });
         return;
     }
 }

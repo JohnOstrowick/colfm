@@ -49,7 +49,6 @@
 #include <QAbstractItemView>
 #include <QItemSelectionModel>
 #include <QMap>
-#include <QPainter>
 
 #include "info.h"
 #include "breadcrumbs.h"
@@ -92,69 +91,13 @@ public:
 };
 
 /* Custom icon provider (tints symlinks; ensures 32px base) */
-static QPixmap boxIcon(const QPixmap &src, int box) {
-    QPixmap out(box, box);
-    out.fill(Qt::transparent);
-    if (src.isNull()) return out;
-    QPixmap scaled = src.scaled(box, box, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    QPainter p(&out); p.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    const int x = (box - scaled.width()) / 2;
-    const int y = (box - scaled.height()) / 2;
-    p.drawPixmap(x, y, scaled);
-    return out;
-}
-/*static QIcon boxedIconFromImage(const QImage &img, int box) {
-    return QIcon(boxIcon(QPixmap::fromImage(img), box));
-}
-
-static QIcon tintAndBox(const QFileInfo &info, int box) {
-    // base pixmap at requested size
-    QPixmap base = QFileIconProvider().icon(info).pixmap(box);
-    if (base.isNull()) return QIcon(QPixmap(box, box)); // empty box
-    QImage img = base.toImage();
-
-    // 1) symlink → teal buff
-    if (info.isSymLink()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-    // 2) executable (non-dir) → subtle green buff
-    if (info.isExecutable() && !info.isDir()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
-    }
-    // 3) label colour from .labelcolor (CSV)
-    LabelManager::readLabelFile(info.dir().absolutePath());
-    const QString lab = LabelManager::getLabel(info.fileName());
-    if (!lab.isEmpty()) {
-        const QColor qc = LabelManager::colourFromName(lab);
-        if (qc.isValid()) {
-            QImage im2 = img;
-            LabelManager::tintImage(im2, qc);          // same blend you use elsewhere
-            return boxedIconFromImage(im2, box);
-        }
-    }
-    // 4) no tint → ensure exact box size
-    return QIcon(boxIcon(base, box));
-}
-    */
 
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
     QIcon icon(const QFileInfo &info) const override {
         QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
-        QImage  img = pix.toImage();
+        QImage img = pix.toImage();
 
         if (info.isSymLink()) {
             for (int y = 0; y < img.height(); ++y)
@@ -163,7 +106,7 @@ public:
                     if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
                     img.setPixelColor(x, y, c);
                 }
-            return QIcon(boxIcon(QPixmap::fromImage(img), kIconSize.width()));                   // <— was QIcon(QPixmap::fromImage(img))
+            return QIcon(QPixmap::fromImage(img));
         }
         if (info.isExecutable() && !info.isDir()) {
             for (int y = 0; y < img.height(); ++y)
@@ -172,26 +115,29 @@ public:
                     if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
                     img.setPixelColor(x, y, c);
                 }
-            return QIcon(boxIcon(QPixmap::fromImage(img), kIconSize.width()));                  // <— was QIcon(QPixmap::fromImage(img))
+            return QIcon(QPixmap::fromImage(img));
         }
-
-        // label colours (uses your existing helpers)
-        LabelManager::readLabelFile(info.dir().absolutePath());
-        const QMap<QString,QString> map = LabelManager::labelMap;
-        const QString colourName = map.value(info.fileName());
-        if (!colourName.isEmpty()) {
-            const QColor accent = LabelManager::colourFromName(colourName);
-            if (accent.isValid()) {
-                QImage img2 = img;
-                LabelManager::tintImage(img2, accent);
-                return QIcon(boxIcon(QPixmap::fromImage(img2), kIconSize.width()));              // <— ensure exact size
+	// added to label colours
+	// Label tint (from .labelcolor), skip links (already tinted teal)
+        {
+            LabelManager::readLabelFile(info.dir().absolutePath());
+	    const QMap<QString,QString> map = LabelManager::labelMap;
+            const QString colourName = map.value(info.fileName());
+            if (!colourName.isEmpty()) {
+                //const QColor accent = colourFromName(colourName);
+		const QColor accent = LabelManager::colourFromName(colourName);
+                if (accent.isValid()) {
+                    QImage img2 = img; // img came from base pixmap earlier
+                    LabelManager::tintImage(img2, accent);
+                    return QIcon(QPixmap::fromImage(img2));
+                }
             }
         }
 
-        // default: still box to exact kIconSize
-        return QIcon(boxIcon(pix, kIconSize.width()));              // <— was QFileIconProvider::icon(info)
+        return QFileIconProvider::icon(info);
     }
 };
+
 
 /* Column view: force 32px for spawned columns */
 class ColumnView32 : public QColumnView {

@@ -21,6 +21,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>          
 #include <QHeaderView>
+#include <QCursor>
 #include <QPixmap>
 #include <QImage>
 #include <QColor>
@@ -48,9 +49,13 @@
 #include <QAbstractItemView>
 #include <QItemSelectionModel>
 #include <QMap>
+
 #include "info.h"
 #include "breadcrumbs.h"
 #include "labels.h"
+
+#include <unistd.h>   // at top of file for getuid()
+
 
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
@@ -306,8 +311,6 @@ public:
         if (backStack.size() > 50) backStack.removeLast();
     }
 
-	#include <QCursor>   // needed for QCursor::pos()
-
     /* ---------------------- Sidebar Builder (single column) ---------------------- */
     #include "sidebar.h"
     
@@ -370,8 +373,6 @@ public:
 
     }
 };
-
-#include <QCursor>   // for QCursor::pos()
 
 QStringList ColFM::selectItems() {
     QStringList paths;
@@ -447,7 +448,6 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "folderize.h"
 #include "archivezip.h"
 #include "search.h"
-// glue: toolbar action → search helper
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {
@@ -461,6 +461,23 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
     app.setWindowIcon(QIcon("icons/app_icon.png"));
-    ColFM w; w.show();
+
+    ColFM w; w.show();   // disabled for smoke test
+
+	// launch one desktop instance per user
+	const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
+	int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
+	if (running != 0) {
+	    QProcess::startDetached(desktopExe, {});
+	}
+
+    /*QTimer::singleShot(0, qApp, []{
+        QWidget *test = new QWidget();
+        test->setWindowTitle("Smoke test");
+        test->resize(200,200);
+        test->show();
+    });
+*/
+
     return app.exec();
 }

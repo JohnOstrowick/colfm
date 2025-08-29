@@ -1,0 +1,261 @@
+include <QtWidgets>
+#include <QtCore>
+#include <QtGui>
+
+#if __has_include(<X11/Xlib.h>)
+  #define HAVE_X11 1
+  #include <X11/Xlib.h>
+  #include <X11/Xatom.h>
+#endif
+
+// ---------- helpers ----------
+static inline QString desktopDir() {
+    QString p = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QFileInfo fi(p);
+    if (fi.isSymLink()) {
+        const QString t = fi.symLinkTarget();
+        if (!t.isEmpty()) return QDir::cleanPath(t);
+    }
+    return p;
+}
+static inline QString trashDir() {
+    return QDir::homePath() + "/.local/share/Trash/files";
+}
+static QPixmap loadBackground(const QRect &screenGeom) {
+    // 1) app-local default
+    QString p = QCoreApplication::applicationDirPath() + "/wallpapers/default.jpg";
+    QPixmap pm;
+    if (QFileInfo::exists(p)) pm.load(p);
+    // 2) ubuntu fallback
+    if (pm.isNull()) pm.load("/usr/share/backgrounds/warty-final-ubuntu.png");
+    // 3) solid color
+    if (pm.isNull()) {
+        pm = QPixmap(screenGeom.size());
+        pm.fill(QColor("#2b2b2b"));
+        return pm;
+    }
+    return pm.scaled(screenGeom.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+}
+
+// ---------- model that appends a pseudo “Trash” item ----------
+class DesktopModel : public QAbstractListModel {
+public:
+    explicit DesktopModel(QObject *parent=nullptr)
+        : QAbstractListModel(parent),
+          fs(new QFileSystemModel(this))
+    {
+        fs->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Readable);
+	root = fs->setRootPath(desktopDir());
+        fs->sort(0, Qt::AscendingOrder);
+        connect(fs, &QFileSystemModel::directoryLoaded, this, [this](const QString &loaded){
+    if (QDir::cleanPath(loaded) == QDir::cleanPath(desktopDir())) {
+        fs->sort(0, Qt::AscendingOrder);
+        if (rowCount() > 0) emit dataChanged(index(0,0), index(rowCount()-1,0));
+        emit layoutChanged();
+    }
+});
+    }
+
+    enum Roles { PathRole = Qt::UserRole + 1, KindRole };
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override {
+        if (parent.isValid()) return 0;
+        return fs->rowCount(root) + 1; // + Trash
+    }
+
+    QVariant data(const QModelIndex &idx, int role) const override {
+        if (!idx.isValid()) return {};
+        const int n = fs->rowCount(root);
+        if (idx.row() < 0 || idx.row() > n) return {};
+        const bool isTrash = (idx.row() == n);
+	    
+
+        if (role == Qt::DisplayRole) {
+            if (isTrash) return QStringLiteral("Trash");
+            const QModelIndex fi = fs->index(idx.row(), 0, root);
+            return fs->fileName(fi);
+        }
+        if (role == Qt::DecorationRole) {
+            if (isTrash) {
+                QIcon ic = QIcon::fromTheme("user-trash");
+                if (ic.isNull()) ic = QIcon::fromTheme("edit-delete");
+                if (ic.isNull()) ic = QApplication::style()->standardIcon(QStyle::SP_TrashIcon);
+                return ic.pixmap(48,48);
+            }
+            const QModelIndex fi = fs->index(idx.row(), 0, root);
+            return fs->fileIcon(fi).pixmap(48,48);
+        }
+        if (role == Qt::ToolTipRole) {
+            return isTrash ? trashDir()
+                           : fs->filePath(fs->index(idx.row(), 0, root));
+        }
+        if (role == PathRole) {
+            return isTrash ? trashDir()
+                           : fs->filePath(fs->index(idx.row(), 0, root));
+        }
+        if (role == KindRole) {
+            if (isTrash) return QStringLiteral("trash");
+            const QModelIndex fi = fs->index(idx.row(), 0, root);
+            return fs->isDir(fi) ? QStringLiteral("dir") : QStringLiteral("file");
+        }
+        return {};
+    }
+
+    void resort() {
+        fs->sort(0, Qt::AscendingOrder);
+        if (rowCount() > 0)
+            emit dataChanged(index(0,0), index(rowCount()-1,0));
+        emit layoutChanged();
+    }
+
+    QFileSystemModel *fs;
+    QModelIndex root;
+};
+
+// ---------- context menu ----------
+static void showContextMenu(QWidget *parent, const QModelIndex &idx, QAbstractItemModel *model, const QPoint &globalPos) {
+    const QString path = model->data(idx, DesktopModel::PathRole).toString();
+    const QString kind = model->data(idx, DesktopModel::KindRole).toString();
+
+    QMenu m(parent);
+    QAction *open         = m.addAction("Open");
+    QAction *openInColfm  = m.addAction("Open in ColFM");
+    QAction *openWith     = m.addAction("Open With…");
+    QAction *trashAct     = (kind == "trash") ? nullptr : m.addAction("Move to Trash");
+    QAction *revealTerm   = m.addAction("Open Terminal Here");
+
+    QAction *chosen = m.exec(globalPos);
+    if (!chosen) return;
+
+    if (chosen == open) {
+        if (kind == "dir" || kind == "trash") {
+            const QString exe = QCoreApplication::applicationDirPath() + "/colfm";
+            QProcess::startDetached(exe, { path });
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        }
+        return;
+    }
+    if (chosen == openInColfm) {
+        const QString exe = QCoreApplication::applicationDirPath() + "/colfm";
+        QProcess::startDetached(exe, { path });
+        return;
+    }
+    if (chosen == openWith) {
+        QProcess::startDetached("xdg-open", { path });
+        return;
+    }
+    if (trashAct && chosen == trashAct) {
+        QProcess::startDetached("gio", { "trash", path });
+        return;
+    }
+    if (chosen == revealTerm) {
+        const QString dir = (kind == "file") ? QFileInfo(path).absolutePath() : path;
+        QProcess::startDetached("x-terminal-emulator", { "--working-directory", dir });
+        return;
+    }
+}
+
+// =================== MAIN ===================
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    // --- your original background window (unchanged logic) ---
+    QWidget w;                                // normal top-level (not Tool)
+    w.setWindowTitle("ColFM Desktop");
+    w.setWindowFlag(Qt::FramelessWindowHint, true);
+    w.setWindowFlag(Qt::WindowStaysOnBottomHint, true);
+    w.setWindowFlag(Qt::WindowDoesNotAcceptFocus, true);
+    w.setAutoFillBackground(true);
+
+    const QRect g = QGuiApplication::primaryScreen()->geometry();
+    QPalette pal = w.palette();
+    pal.setBrush(QPalette::Window, QBrush(loadBackground(g)));
+    w.setPalette(pal);
+
+    // use work area so we don't cover the dock/panel
+    const QRect work = QGuiApplication::primaryScreen()->availableGeometry();
+    w.setGeometry(work);
+    w.show();
+
+#if HAVE_X11
+    // On X11, ask WM to keep it BELOW and out of taskbar
+    Display *d = nullptr;
+    if (QGuiApplication::platformName() == "xcb" && (d = XOpenDisplay(nullptr))) {
+        Window xw = w.winId();
+        Atom net_wm_state = XInternAtom(d, "_NET_WM_STATE", False);
+        Atom skip_taskbar = XInternAtom(d, "_NET_WM_STATE_SKIP_TASKBAR", False);
+        Atom below        = XInternAtom(d, "_NET_WM_STATE_BELOW", False);
+
+        XEvent e; memset(&e, 0, sizeof(e));
+        e.xclient.type = ClientMessage;
+        e.xclient.window = xw;
+        e.xclient.message_type = net_wm_state;
+        e.xclient.format = 32;
+        e.xclient.data.l[0] = 1;                    // _NET_WM_STATE_ADD
+        e.xclient.data.l[1] = skip_taskbar;
+        e.xclient.data.l[2] = below;
+        e.xclient.data.l[3] = 1;                    // normal window
+        e.xclient.data.l[4] = 0;
+        XSendEvent(d, DefaultRootWindow(d), False,
+                   SubstructureRedirectMask | SubstructureNotifyMask, &e);
+        XFlush(d);
+        XCloseDisplay(d);
+    }
+#endif
+
+    w.lower(); // keep it low
+
+    // --- ICON VIEW layered on top of the background window ---
+    auto *model = new DesktopModel(&w);
+    model->resort();
+
+    auto *view = new QListView(&w);
+    view->setModel(model);
+    view->setViewMode(QListView::IconMode);
+    view->setIconSize(QSize(48,48));
+    view->setGridSize(QSize(96,96));
+    view->setResizeMode(QListView::Adjust);
+    view->setMovement(QListView::Static);
+    view->setWrapping(true);
+    view->setSpacing(8);
+    view->setUniformItemSizes(true);
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    
+    // pack from top-right across, then down
+    view->setLayoutDirection(Qt::RightToLeft);
+    view->setTextElideMode(Qt::ElideRight);
+    view->setFlow(QListView::TopToBottom);       // fill down, then new column
+    view->setLayoutDirection(Qt::RightToLeft);   // columns from right to left
+
+    // transparent so the background image shows through
+    view->setStyleSheet("QListView{background:transparent;} QScrollBar{background:transparent;}");
+    view->viewport()->setAutoFillBackground(false);
+
+    // fill inside the background with a small margin
+    view->setGeometry(w.rect().adjusted(16,16,-16,-16));
+    view->show();
+
+    // double-click open behavior
+    QObject::connect(view, &QListView::doubleClicked, view, [model](const QModelIndex &idx){
+        if (!idx.isValid()) return;
+        const QString path = model->data(idx, DesktopModel::PathRole).toString();
+        const QString kind = model->data(idx, DesktopModel::KindRole).toString();
+        if (kind == "dir" || kind == "trash") {
+            const QString exe = QCoreApplication::applicationDirPath() + "/colfm";
+            QProcess::startDetached(exe, { path });
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        }
+    });
+
+    // context menu
+    view->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(view, &QWidget::customContextMenuRequested, view, [view,model](const QPoint &pos){
+        const QModelIndex idx = view->indexAt(pos);
+        if (!idx.isValid()) return;
+        showContextMenu(view, idx, model, view->viewport()->mapToGlobal(pos));
+    });
+
+    return app.exec();
+}

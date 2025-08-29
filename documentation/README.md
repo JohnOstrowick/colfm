@@ -31,6 +31,8 @@ g++ -std=c++17 colfm.cpp -o colfm `pkg-config --cflags --libs Qt6Widgets`
 # Run
 ./colfm
 
+colfm app sub-launches colfm_desktop app which handles desktop icons.
+
 ## If you enjoy this
 
 If you like this, please consider a small donation for me at

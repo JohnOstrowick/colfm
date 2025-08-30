@@ -23,7 +23,9 @@ inline void addIconSizePopup(QMainWindow *win, QToolBar *tb, QAction *toggleHidd
 
     QToolButton *btn = new QToolButton(tb);
     btn->setToolTip("Icon size");
-    btn->setText("Size");
+    btn->setIcon(QIcon("icons/iconsize.png"));
+	btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+	btn->setIconSize(tb->iconSize());
     btn->setPopupMode(QToolButton::InstantPopup);
 
     QMenu *m = new QMenu(btn);

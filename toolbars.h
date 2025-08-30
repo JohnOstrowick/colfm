@@ -23,6 +23,10 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include "iconsize.h"
+#include <QToolButton>
+#include <QMenu>
+#include <QWidgetAction>
+#include "labels.h"
 
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
@@ -84,6 +88,25 @@ inline void ColFM::drawButtons() {
     actNewTerminal->setToolTip("Open Terminal in Current Folder");
 
 	addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
+    
+    // --- Label (swatches) popup, sits next to Size ---
+QToolButton *labelBtn = new QToolButton(tb);
+labelBtn->setIcon(QIcon("icons/label.png"));   // or "icons/label.svg" if you have an SVG
+labelBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+labelBtn->setIconSize(tb->iconSize());
+labelBtn->setToolTip("Set label colour");
+labelBtn->setPopupMode(QToolButton::InstantPopup);
+
+QMenu *labelMenu = new QMenu(labelBtn);
+QWidgetAction *waLabel = new QWidgetAction(labelMenu);
+//waLabel->setDefaultWidget(buildSwatchRow(labelBtn, model, [this](){ return getCWD(); }));
+waLabel->setDefaultWidget(LabelManager::buildSwatchRow(labelBtn, model, [this](){ return getCWD(); }));
+labelMenu->addAction(waLabel);
+labelBtn->setMenu(labelMenu);
+
+// place it right after Size
+tb->addWidget(labelBtn);
+
     // group 5 search
     actSearch = tb->addAction(QIcon("icons/search.png"), "Search");
 

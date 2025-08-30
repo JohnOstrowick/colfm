@@ -312,7 +312,9 @@ public:
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actNewTerminal{};
     QAction *actSearch{}, *actSettings{};
+    // these are declared in their own header files
     //QAction *addIconSizePopup{};
+   //QToolButton *labelBtn{};
     QAbstractItemView *currentView{};
 
     /* added: sidebar + simple back history */

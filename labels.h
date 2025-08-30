@@ -3,6 +3,7 @@
 
 #include <QMap>
 #include <QString>
+#include <QFileSystemModel>
 #include <QColor>
 #include <QFile>
 #include <QTextStream>
@@ -20,6 +21,10 @@
 #include <QMessageBox>
 #include <QItemSelectionModel>
 #include <functional>
+#include <QMenu>
+#include <QToolBar>
+#include <QMainWindow>
+#include <QWidgetAction>
 
 /*
  * LabelManager:
@@ -114,71 +119,107 @@ public:
 	    return QColor(); // invalid
 	}
 
+	// Build the horizontal swatch row once; reuse everywhere (sidebar, menus, etc.)
+	static QWidget* buildSwatchRow(QWidget *parent,
+				       QAbstractItemModel *model,
+				       std::function<QString()> getCWD) {
+	    QWidget *row = new QWidget(parent);
+	    auto *h = new QHBoxLayout(row);
+	    h->setContentsMargins(8, 8, 8, 8);
+	    h->setSpacing(12);
+
+	    auto addSwatch = [&](const QString &name, const QString &hex) {
+		QToolButton *tb = new QToolButton(row);
+		tb->setAutoRaise(true);
+		tb->setCursor(Qt::PointingHandCursor);
+		tb->setFixedSize(24,24);
+		tb->setToolTip(name);
+		tb->setStyleSheet(QString(
+		    "QToolButton { border: 2px solid black; background-color: %1; border-radius: 5px; padding: 5px; }"
+		    "QToolButton:pressed { border-style: inset; }").arg(hex));
+
+		QObject::connect(tb, &QToolButton::clicked, parent, [parent, model, name, getCWD] {
+		    // selection -> files, else use getCWD()
+		    QStringList sel;
+		    if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
+			/*if (av->selectionModel()) {
+			    const auto idxs = av->selectionModel()->selectedIndexes();
+			    for (const QModelIndex &ix : idxs)
+				if (ix.column() == 0)
+				    sel << model->data(ix).toString();
+			}*/
+			if (av->selectionModel()) {
+			    const auto idxs = av->selectionModel()->selectedIndexes();
+			    for (const QModelIndex &ix : idxs) {
+				if (ix.column() != 0) continue;
+				QString p;
+				if (auto *fsm = qobject_cast<QFileSystemModel*>(model)) {
+				    p = fsm->filePath(ix);
+				} else {
+				    // Try absolute path via UserRole+1, else fall back to CWD + display text
+				    p = model->data(ix, Qt::UserRole + 1).toString();
+				    if (p.isEmpty()) {
+					const QString disp = model->data(ix, Qt::DisplayRole).toString();
+					const QString baseDir = QFileInfo(getCWD()).isDir()
+								? getCWD()
+								: QFileInfo(getCWD()).absolutePath();
+					p = baseDir + QLatin1Char('/') + disp;
+				    }
+				}
+				if (!p.isEmpty()) sel << p;
+			    }
+			}
+		    }
+		    const QStringList filesToWrite = sel.isEmpty() ? QStringList{ getCWD() } : sel;
+
+		    for (const QString &file : filesToWrite) {
+			const QString dir  = QFileInfo(file).isDir() ? file : QFileInfo(file).absolutePath();
+			const QString base = QFileInfo(file).fileName();
+			const QString path = dir + "/.labelcolor";
+			QFile f(path);
+			if (f.open(QIODevice::Append | QIODevice::Text)) {
+			    QTextStream out(&f);
+			    out << "\"" << base << "\",\"" << name << "\"\n";
+			} else {
+			    QMessageBox::warning(parent, "Write failed", "Could not open:\n" + path);
+			}
+		    }
+		});
+
+		h->addWidget(tb);
+	    };
+
+	    // Colours (single source of truth)
+	    addSwatch("red",    "#e74c3c");
+	    addSwatch("orange", "#f39c12");
+	    addSwatch("yellow", "#f1c40f");
+	    addSwatch("green",  "#2ecc71");
+	    addSwatch("blue",   "#3498db");
+	    addSwatch("violet", "#8e44ad");
+	    addSwatch("black",  "#000000");
+	    addSwatch("white",  "#ffffff");
+	    addSwatch("grey",   "#7f8c8d");
+
+	    return row;
+	}
+
     // Build colour swatches row (e.g. in sidebar)
-    static void drawSwatches(QTreeWidget *sidebar, QWidget *parent, QAbstractItemModel *model, std::function<QString()> getCWD) {
-        QTreeWidgetItem *swRow = new QTreeWidgetItem(sidebar);
-        swRow->setFlags(Qt::NoItemFlags);
-        QWidget *row = new QWidget(sidebar);
-        auto *h = new QHBoxLayout(row);
-        h->setContentsMargins(8, 8, 8, 8);
-        h->setSpacing(12);
+	// Build colour swatches row (e.g. in sidebar)
+static void drawSwatches(QTreeWidget *sidebar, QWidget *parent,
+                         QAbstractItemModel *model,
+                         std::function<QString()> getCWD)
+{
+Q_UNUSED(parent);
+    QTreeWidgetItem *swRow = new QTreeWidgetItem(sidebar);
+    swRow->setFlags(Qt::NoItemFlags);
+    QWidget *row = buildSwatchRow(sidebar, model, getCWD);
+    sidebar->setItemWidget(swRow, 0, row);
+    swRow->setSizeHint(0, QSize(100, row->sizeHint().height() + 4));
+}
 
-        auto addSwatch = [&](const QString &name, const QString &hex) {
-            QToolButton *tb = new QToolButton(row);
-            tb->setAutoRaise(true);
-            tb->setCursor(Qt::PointingHandCursor);
-            tb->setFixedSize(24,24);
-            tb->setToolTip(name);
-            tb->setStyleSheet(QString("QToolButton { border: 2px solid black; background-color: %1; border-radius: 5px; padding: 5px; }"
-                                      "QToolButton:pressed { border-style: inset; }").arg(hex));
-
-            QObject::connect(tb, &QToolButton::clicked, parent, [parent, model, name, getCWD] {
-                QStringList sel;
-                if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
-                    if (av->selectionModel()) {
-                        const auto idxs = av->selectionModel()->selectedIndexes();
-                        for (const QModelIndex &ix : idxs)
-                            if (ix.column() == 0)
-                                sel << model->data(ix).toString();
-                    }
-                }
-                QStringList filesToWrite = sel.isEmpty() ? QStringList{ getCWD() } : sel;
-
-                for (const QString &file : filesToWrite) {
-                    QString dir = QFileInfo(file).isDir() ? file : QFileInfo(file).absolutePath();
-                    QString base = QFileInfo(file).fileName();
-                    QString path = dir + "/.labelcolor";
-                    QFile f(path);
-                    if (f.open(QIODevice::Append | QIODevice::Text)) {
-                        QTextStream out(&f);
-                        out << "\"" << base << "\",\"" << name << "\"\n";
-                        f.close();
-                    } else {
-                        QMessageBox::warning(parent, "Write failed", "Could not open:\n" + path);
-                    }
-                }
-            });
-
-            h->addWidget(tb);
-        };
-
-        // Colours
-        addSwatch("red",    "#e74c3c");
-        addSwatch("orange", "#f39c12");
-        addSwatch("yellow", "#f1c40f");
-        addSwatch("green",  "#2ecc71");
-        addSwatch("blue",   "#3498db");
-        addSwatch("violet", "#8e44ad");
-        addSwatch("black",  "#000000");
-        addSwatch("white",  "#ffffff");
-        addSwatch("grey",   "#7f8c8d");
-
-        sidebar->setItemWidget(swRow, 0, row);
-        swRow->setSizeHint(0, QSize(100, row->sizeHint().height() + 4));
-    }
 };
 
-// static map definition
-inline QMap<QString, QString> LabelManager::labelMap;
+	// static map definition
+	inline QMap<QString, QString> LabelManager::labelMap;
 
 #endif // LABELS_H

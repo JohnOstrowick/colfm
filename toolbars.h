@@ -27,6 +27,7 @@
 #include <QMenu>
 #include <QWidgetAction>
 #include "labels.h"
+#include "new.h"
 
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
@@ -141,8 +142,8 @@ tb->addWidget(labelBtn);
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
 
-    connect(actNewFolder, &QAction::triggered, this, &ColFM::onNewFolder);
-    connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
+    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+	connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
     connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 
 }

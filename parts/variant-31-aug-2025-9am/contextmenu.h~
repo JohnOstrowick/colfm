@@ -15,13 +15,15 @@
 #include <QStringList>
 #include <QFileSystemModel>
 #include <QWidgetAction>
+#include <QToolButton>
+#include <QHBoxLayout>
+#include <QFile>
+#include <QTextStream>
 #include <QApplication>
 #include <QAbstractItemView>
 #include <QIODevice>
 #include <QLocale>
 #include <functional>
-
-#include "labels.h"   // use the central swatch row from LabelManager
 
 // ------------------------ small helpers ------------------------
 
@@ -68,6 +70,89 @@ inline void launchAppOnPath(const QString &app, const QString &path) {
     else                                   QProcess::startDetached(app, { path });
 }
 
+// -------------------- ContextMenu utility namespace --------------------
+
+namespace ContextMenu {
+
+inline void addLabelSwatchesToMenu(QMenu &menu,
+                                   QWidget *parent,
+                                   QAbstractItemModel *model,
+                                   std::function<QString()> getCWD) {
+    QWidgetAction *swatchAction = new QWidgetAction(&menu);
+    QWidget *row = new QWidget(&menu);
+    QHBoxLayout *h = new QHBoxLayout(row);
+    h->setContentsMargins(8,4,8,4);
+    h->setSpacing(6);
+
+    auto addSwatch = [&](const QString &name, const QString &hex) {
+        QToolButton *tb = new QToolButton(row);
+        tb->setAutoRaise(true);
+        tb->setCursor(Qt::PointingHandCursor);
+        tb->setFixedSize(24,24);
+        tb->setToolTip(name);
+        tb->setStyleSheet(QString(
+            "QToolButton { border: 2px solid black; background-color: %1; border-radius: 5px; padding: 5px; }"
+            "QToolButton:pressed { border-style: inset; }").arg(hex));
+
+        QObject::connect(tb, &QToolButton::pressed, row, [parent, model, name, getCWD] {
+            QString baseDir = getCWD();
+            QStringList targets;
+
+            if (auto *av = qobject_cast<QAbstractItemView*>(QApplication::focusWidget())) {
+                if (av->selectionModel()) {
+                    const auto idxs = av->selectionModel()->selectedIndexes();
+                    for (const QModelIndex &ix : idxs) {
+                        if (ix.column() == 0) {
+                            const QString p = pathFromModelIndex(model, ix);
+                            if (!p.isEmpty()) targets << p;
+                        }
+                    }
+                }
+            }
+            if (targets.isEmpty()) targets << baseDir;
+
+            for (const QString &p : targets) {
+                const QFileInfo fi(p);
+                const QString dir = fi.isDir() ? fi.absoluteFilePath() : fi.absolutePath();
+                const QString itemName = fi.fileName().isEmpty() ? QStringLiteral(".") : fi.fileName();
+                const QString labelFile = dir + QStringLiteral("/.labelcolor");
+
+                QFile f(labelFile);
+                if (f.open(QIODevice::Append | QIODevice::Text)) {
+                    QTextStream out(&f);
+                    out << "\"" << itemName << "\",\"" << name << "\"\n";
+                    f.close();
+                } else {
+                    QMessageBox::warning(parent, "Write failed",
+                                         QStringLiteral("Could not open:\n") + labelFile);
+                }
+            }
+        });
+        h->addWidget(tb);
+    };
+
+    addSwatch("red",    "#e74c3c");
+    addSwatch("orange", "#f39c12");
+    addSwatch("yellow", "#f1c40f");
+    addSwatch("green",  "#2ecc71");
+    addSwatch("blue",   "#3498db");
+    addSwatch("violet", "#8e44ad");
+    addSwatch("black",  "#000000");
+    addSwatch("white",  "#ffffff");
+    addSwatch("grey",   "#7f8c8d");
+
+    swatchAction->setDefaultWidget(row);
+    menu.addSeparator();
+    menu.addAction(swatchAction);
+    for (auto *tb : row->findChildren<QToolButton*>()) {
+	    QObject::connect(tb, &QToolButton::pressed, tb, [m=&menu]{
+		m->close();
+	    });
+	}
+}
+
+} // namespace ContextMenu
+
 // ------------------ Desktop free function (no ColFM) ------------------
 
 inline void showContextMenu(QWidget *parent,
@@ -90,13 +175,7 @@ inline void showContextMenu(QWidget *parent,
         QAction *actEmptyTrash = menu.addAction("Empty Trash");
         QObject::connect(actOpenTrash,  &QAction::triggered, [](){ QProcess::startDetached("gio", { "open", "trash:///" }); });
         QObject::connect(actEmptyTrash, &QAction::triggered, [](){ QProcess::startDetached("gio", { "trash", "--empty" }); });
-
-        // --- Swatches from LabelManager at the end ---
-        QWidgetAction *wa = new QWidgetAction(&menu);
-        wa->setDefaultWidget(LabelManager::buildSwatchRow(&menu, model, [dir]{ return dir; }));
-        menu.addSeparator();
-        menu.addAction(wa);
-
+        ContextMenu::addLabelSwatchesToMenu(menu, parent, model, [&](){ return dir; });
         menu.exec(globalPos);
         return;
     }
@@ -112,8 +191,8 @@ inline void showContextMenu(QWidget *parent,
     QAction *actLink      = menu.addAction("Create Link");
     QAction *actTerminal  = menu.addAction("Open Terminal Here");
     QAction *actNewWin    = menu.addAction("Open in New Window");
-    /* no unused variable warning:
-       menu.addAction("Move all to new folder"); */
+//    QAction *actFolderize = menu.addAction("Move all to new folder");
+menu.addAction(QStringLiteral("Move all to new folder"));
 
     QMenu *openWithMenu = menu.addMenu("Open With…");
     const QString mt = mimeForFilePath(path);
@@ -128,13 +207,7 @@ inline void showContextMenu(QWidget *parent,
         }
     }
 
-    // --- Swatches from LabelManager at the end ---
-    {
-        QWidgetAction *wa = new QWidgetAction(&menu);
-        wa->setDefaultWidget(LabelManager::buildSwatchRow(&menu, model, [dir]{ return dir; }));
-        menu.addSeparator();
-        menu.addAction(wa);
-    }
+    ContextMenu::addLabelSwatchesToMenu(menu, parent, model, [&](){ return dir; });
 
     QAction *chosen = menu.exec(globalPos);
     if (!chosen) return;

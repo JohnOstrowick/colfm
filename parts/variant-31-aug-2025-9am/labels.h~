@@ -25,89 +25,12 @@
 #include <QWidgetAction>
 #include <QAction>
 #include <QMetaObject>
-#include <QPixmap>
-#include <QImage>
-#include <QIcon>
-#include <QMap>
-#include <QSize>
 #include <functional>
+#include <QMap>
+
 
 class LabelManager {
 public:
-    // Single source-of-truth label map (filename -> colour name/hex)
-    inline static QMap<QString, QString> labelMap;
-    inline static std::function<void()> refreshHook;
-
-    // Read .labelcolor into labelMap for a directory
-    static inline void readLabelFile(const QString &dirPath) {
-        labelMap.clear();
-        QFile f(dirPath + QStringLiteral("/.labelcolor"));
-        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-        QTextStream in(&f);
-        while (!in.atEnd()) {
-            QString line = in.readLine().trimmed();
-            if (line.isEmpty()) continue;
-            // Expect CSV: "name","colour"
-            if (!line.startsWith('"')) continue;
-            int sep = line.indexOf("\",\"");
-            if (sep <= 0) continue;
-            QString fname = line.mid(1, sep - 1);
-            QString col = line.mid(sep + 3);
-            if (col.endsWith('"')) col.chop(1);
-            if (!fname.isEmpty() && !col.isEmpty()) {
-                labelMap[fname] = col;
-            }
-        }
-    }
-
-    // Lookup colour string (hex/name) for a file
-    static inline QString getLabel(const QString &fileName) {
-        return labelMap.value(fileName, QString());
-    }
-
-    // Colour mapper (accepts hex or known names)
-    static inline QColor colourFromName(const QString &name) {
-        QColor c(name); // try hex or named colour string
-        if (c.isValid()) return c;
-
-        if (name == QStringLiteral("red"))    return QColor("#e74c3c");
-        if (name == QStringLiteral("orange")) return QColor("#f39c12");
-        if (name == QStringLiteral("yellow")) return QColor("#f1c40f");
-        if (name == QStringLiteral("green"))  return QColor("#2ecc71");
-        if (name == QStringLiteral("blue"))   return QColor("#3498db");
-        if (name == QStringLiteral("violet")) return QColor("#8e44ad");
-        if (name == QStringLiteral("black"))  return QColor("#000000");
-        if (name == QStringLiteral("white"))  return QColor("#ffffff");
-        if (name == QStringLiteral("grey"))   return QColor("#7f8c8d");
-        // "clear" intentionally returns invalid colour (no tint)
-        return QColor();
-    }
-
-    // Tint an image in-place
-    static inline void tintImage(QImage &img, const QColor &c) {
-        if (!c.isValid()) return;
-        for (int y = 0; y < img.height(); ++y) {
-            for (int x = 0; x < img.width(); ++x) {
-                QColor orig = img.pixelColor(x, y);
-                if (orig.alpha() > 0) {
-                    int r = (orig.red()   + c.red())   / 2;
-                    int g = (orig.green() + c.green()) / 2;
-                    int b = (orig.blue()  + c.blue())  / 2;
-                    img.setPixelColor(x, y, QColor(r, g, b, orig.alpha()));
-                }
-            }
-        }
-    }
-
-    // Return a tinted icon from a base icon
-    static inline QIcon tintIcon(const QIcon &base, const QColor &c, int size = 32) {
-        if (!c.isValid()) return base;
-        QPixmap pix = base.pixmap(size, size);
-        QImage img = pix.toImage();
-        tintImage(img, c);
-        return QIcon(QPixmap::fromImage(img));
-    }
-
     // Build the horizontal swatch row once; reuse everywhere (sidebar, toolbar menu, context menu).
     static inline QWidget* buildSwatchRow(QWidget *parent,
                                           QAbstractItemModel *model,
@@ -226,6 +149,13 @@ public:
                     }
                 }
 
+                // Close menu if inside a QMenu, then refresh UI
+                if (auto *m = qobject_cast<QMenu*>(tb->window()))
+                    QTimer::singleShot(0, m, &QMenu::close);
+                if (QWidget *win = tb->window())
+                    QMetaObject::invokeMethod(win, "onRefresh", Qt::QueuedConnection);
+
+                QTimer::singleShot(120, tb, [tb]{ tb->setDown(false); });
             });
 
             h->addWidget(tb);
@@ -239,9 +169,9 @@ public:
         addSwatch(QStringLiteral("blue"),   QStringLiteral("#3498db"));
         addSwatch(QStringLiteral("violet"), QStringLiteral("#8e44ad"));
         addSwatch(QStringLiteral("black"),  QStringLiteral("#000000"));
-	addSwatch(QStringLiteral("grey"),   QStringLiteral("#7f8c8d"));
         addSwatch(QStringLiteral("white"),  QStringLiteral("#ffffff"));
-        addSwatch(QStringLiteral("clear"),  QStringLiteral("#7f8c8d")); // grey X to clear labels
+        addSwatch(QStringLiteral("grey"),   QStringLiteral("#7f8c8d"));
+	addSwatch(QStringLiteral("clear"),  QStringLiteral("#7f8c8d")); // grey X to clear labels
 
         return row;
     }
@@ -281,6 +211,77 @@ public:
 
         Q_UNUSED(win);
     }
-};
 
+    static void tintImage(QImage &img, const QColor &c) {
+	    for (int y = 0; y < img.height(); ++y) {
+		for (int x = 0; x < img.width(); ++x) {
+		    QColor orig = img.pixelColor(x, y);
+		    if (orig.alpha() > 0) {
+			int r = (orig.red()   + c.red())   / 2;
+			int g = (orig.green() + c.green()) / 2;
+			int b = (orig.blue()  + c.blue())  / 2;
+			img.setPixelColor(x, y, QColor(r,g,b, orig.alpha()));
+		    }
+		}
+	    }
+	}
+static void readLabelFile(const QString &dirPath) {
+        labelMap.clear();
+        QFile f(dirPath + "/.labelcolor");
+        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+        QTextStream in(&f);
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.isEmpty()) continue;
+            QStringList parts = line.split("\",\"");
+            if (parts.size() != 2) continue;
+            QString fname = parts[0];
+            fname.remove(0, 1);                     // strip leading quote
+            QString col = parts[1];
+            col.chop(1);                            // strip trailing quote
+            labelMap[fname] = col;
+        }
+    }
+
+// Return colour string (hex) for a file if labelled
+    static QString getLabel(const QString &fileName) {
+        return labelMap.value(fileName, "");
+    }
+
+    // Tint a pixmap with the given QColor
+    static QIcon tintIcon(const QIcon &base, const QColor &c, int size=32) {
+        QPixmap pix = base.pixmap(size, size);
+        QImage img = pix.toImage();
+        for (int y = 0; y < img.height(); ++y) {
+            for (int x = 0; x < img.width(); ++x) {
+                QColor orig = img.pixelColor(x, y);
+                if (orig.alpha() > 0) {
+                    int r = (orig.red()   + c.red())   / 2;
+                    int g = (orig.green() + c.green()) / 2;
+                    int b = (orig.blue()  + c.blue())  / 2;
+                    img.setPixelColor(x, y, QColor(r,g,b, orig.alpha()));
+                }
+            }
+        }
+        return QIcon(QPixmap::fromImage(img));
+    }
+
+static QColor colourFromName(const QString &name) {
+	    QColor c(name);              // try interpret as hex or color stri
+	    if (c.isValid()) return c;
+
+	    if (name == "red")    return QColor("#e74c3c");
+	    if (name == "orange") return QColor("#f39c12");
+	    if (name == "yellow") return QColor("#f1c40f");
+	    if (name == "green")  return QColor("#2ecc71");
+	    if (name == "blue")   return QColor("#3498db");
+	    if (name == "violet") return QColor("#8e44ad");
+	    if (name == "black")  return QColor("#000000");
+	    if (name == "white")  return QColor("#ffffff");
+	    if (name == "grey")   return QColor("#7f8c8d");
+
+	    return QColor(); // invalid
+	}
+inline QMap<QString, QString> LabelManager::labelMap;
+};
 #endif // LABELS_H

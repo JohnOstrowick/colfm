@@ -50,6 +50,8 @@
 #include <QItemSelectionModel>
 #include <QMap>
 #include <QPainter>
+#include <QFileInfo> 
+#include <QString>
 
 #include "info.h"
 #include "breadcrumbs.h"
@@ -58,6 +60,15 @@
 #include "contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
 
+static QString __appCWD = QDir::currentPath();
+
+QString getCWD() {
+    return __appCWD;
+}
+
+void setCWD(const QString &p) {
+    __appCWD = p;
+}
 
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
@@ -196,13 +207,18 @@ public:
 private:
     QSize iconSz = kIconSize;                                        /* added */
 };
+
+QString getCWD();
+
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
         model = new FixedFSModel(this);
         model->setIconProvider(new CustomIconProvider());
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
-        currentRoot = model->setRootPath(QDir::homePath());
+    //    currentRoot = model->setRootPath(QDir::homePath());
+//currentRoot = model->setRootPath(QDir::homePath());
+currentRoot = model->setRootPath(::getCWD());
 
         crumbs = new Breadcrumbs("Path", this);
 	crumbs->setFocusPolicy(Qt::NoFocus);
@@ -480,27 +496,60 @@ bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     return QObject::eventFilter(obj, event);
 }
 
+inline QString resolveStartPath(const QStringList &args) {
+    // Default: current working directory
+    QString path = QDir::homePath();
+
+    if (args.size() > 1) {
+        QFileInfo fi(args.at(1));
+        if (fi.exists()) {
+            if (fi.isDir()) {
+                path = fi.absoluteFilePath();
+            } else {
+                path = fi.absolutePath();  // if it's a file, use parent dir
+            }
+        }
+    }
+    return path;
+}
+
+/*
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
     app.setWindowIcon(QIcon("icons/app_icon.png"));
-
     ColFM w; w.show();   // disabled for smoke test
-
 	// launch one desktop instance per user
 	const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
 	int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
 	if (running != 0) {
 	    QProcess::startDetached(desktopExe, {});
 	}
+    return app.exec();
+}*/
 
-    /*QTimer::singleShot(0, qApp, []{
-        QWidget *test = new QWidget();
-        test->setWindowTitle("Smoke test");
-        test->resize(200,200);
-        test->show();
-    });
-*/
 
+// App-level working path (separate from process CWD)
+//inline QString& __appCWD_ref() {
+  //  static QString cwd = QDir::currentPath();
+   // return cwd;
+//}
+//inline void setCWD(const QString &p) { __appCWD_ref() = p; }
+//inline QString getCWD()              { return __appCWD_ref(); }
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle(new ForceIconStyle(app.style()));
+    app.setWindowIcon(QIcon("icons/app_icon.png"));
+
+    const QString startPath = resolveStartPath(app.arguments());
+    setCWD(startPath);                      // <- tells UI which folder to show
+
+    ColFM w;
+    w.show();   // disabled for smoke test
+
+    const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
+    int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
+    if (running != 0) QProcess::startDetached(desktopExe, {});
     return app.exec();
 }

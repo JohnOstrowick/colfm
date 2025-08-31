@@ -49,13 +49,26 @@
 #include <QAbstractItemView>
 #include <QItemSelectionModel>
 #include <QMap>
+#include <QPainter>
+#include <QFileInfo> 
+#include <QString>
 
 #include "info.h"
 #include "breadcrumbs.h"
 #include "labels.h"
-
+#define COLFM_MAIN 1
+#include "contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
 
+static QString __appCWD = QDir::currentPath();
+
+QString getCWD() {
+    return __appCWD;
+}
+
+void setCWD(const QString &p) {
+    __appCWD = p;
+}
 
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
@@ -91,13 +104,24 @@ public:
 };
 
 /* Custom icon provider (tints symlinks; ensures 32px base) */
+static QPixmap boxIcon(const QPixmap &src, int box) {
+    QPixmap out(box, box);
+    out.fill(Qt::transparent);
+    if (src.isNull()) return out;
+    QPixmap scaled = src.scaled(box, box, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPainter p(&out); p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    const int x = (box - scaled.width()) / 2;
+    const int y = (box - scaled.height()) / 2;
+    p.drawPixmap(x, y, scaled);
+    return out;
+}
 
 class CustomIconProvider : public QFileIconProvider {
 public:
     using QFileIconProvider::QFileIconProvider;
     QIcon icon(const QFileInfo &info) const override {
         QPixmap pix = QFileIconProvider::icon(info).pixmap(kIconSize);
-        QImage img = pix.toImage();
+        QImage  img = pix.toImage();
 
         if (info.isSymLink()) {
             for (int y = 0; y < img.height(); ++y)
@@ -106,7 +130,7 @@ public:
                     if (c.alpha() > 0) c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
                     img.setPixelColor(x, y, c);
                 }
-            return QIcon(QPixmap::fromImage(img));
+            return QIcon(boxIcon(QPixmap::fromImage(img), kIconSize.width()));                   // <— was QIcon(QPixmap::fromImage(img))
         }
         if (info.isExecutable() && !info.isDir()) {
             for (int y = 0; y < img.height(); ++y)
@@ -115,29 +139,26 @@ public:
                     if (c.alpha() > 0) c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
                     img.setPixelColor(x, y, c);
                 }
-            return QIcon(QPixmap::fromImage(img));
+            return QIcon(boxIcon(QPixmap::fromImage(img), kIconSize.width()));                  // <— was QIcon(QPixmap::fromImage(img))
         }
-	// added to label colours
-	// Label tint (from .labelcolor), skip links (already tinted teal)
-        {
-            LabelManager::readLabelFile(info.dir().absolutePath());
-	    const QMap<QString,QString> map = LabelManager::labelMap;
-            const QString colourName = map.value(info.fileName());
-            if (!colourName.isEmpty()) {
-                //const QColor accent = colourFromName(colourName);
-		const QColor accent = LabelManager::colourFromName(colourName);
-                if (accent.isValid()) {
-                    QImage img2 = img; // img came from base pixmap earlier
-                    LabelManager::tintImage(img2, accent);
-                    return QIcon(QPixmap::fromImage(img2));
-                }
+
+        // label colours (uses your existing helpers)
+        LabelManager::readLabelFile(info.dir().absolutePath());
+        const QMap<QString,QString> map = LabelManager::labelMap;
+        const QString colourName = map.value(info.fileName());
+        if (!colourName.isEmpty()) {
+            const QColor accent = LabelManager::colourFromName(colourName);
+            if (accent.isValid()) {
+                QImage img2 = img;
+                LabelManager::tintImage(img2, accent);
+                return QIcon(boxIcon(QPixmap::fromImage(img2), kIconSize.width()));              // <— ensure exact size
             }
         }
 
-        return QFileIconProvider::icon(info);
+        // default: still box to exact kIconSize
+        return QIcon(boxIcon(pix, kIconSize.width()));              // <— was QFileIconProvider::icon(info)
     }
 };
-
 
 /* Column view: force 32px for spawned columns */
 class ColumnView32 : public QColumnView {
@@ -149,6 +170,13 @@ protected:
         if (v) {
             v->setIconSize(kIconSize);
             v->setItemDelegate(new FixedIconDelegate(v));
+            v->setContextMenuPolicy(Qt::CustomContextMenu);
+        QObject::connect(v, &QWidget::customContextMenuRequested, v,
+                         [v](const QPoint &pos) {
+            const QModelIndex idx = v->indexAt(pos);
+            if (!idx.isValid()) return;
+            ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
+        });
         }
         return v;
     }
@@ -179,13 +207,18 @@ public:
 private:
     QSize iconSz = kIconSize;                                        /* added */
 };
+
+QString getCWD();
+
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
         model = new FixedFSModel(this);
         model->setIconProvider(new CustomIconProvider());
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
-        currentRoot = model->setRootPath(QDir::homePath());
+    //    currentRoot = model->setRootPath(QDir::homePath());
+//currentRoot = model->setRootPath(QDir::homePath());
+currentRoot = model->setRootPath(::getCWD());
 
         crumbs = new Breadcrumbs("Path", this);
 	crumbs->setFocusPolicy(Qt::NoFocus);
@@ -217,6 +250,7 @@ public:
 		w->close();
 	});
         resize(1400, 800);
+        LabelManager::refreshHook = [this]{ onRefresh(); };
     }
 
 public:
@@ -295,7 +329,9 @@ public:
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actNewTerminal{};
     QAction *actSearch{}, *actSettings{};
+    // these are declared in their own header files
     //QAction *addIconSizePopup{};
+   //QToolButton *labelBtn{};
     QAbstractItemView *currentView{};
 
     /* added: sidebar + simple back history */
@@ -400,10 +436,6 @@ QStringList ColFM::selectItems() {
 }
 
 
-// context menu
-void ColFM::contextMenuEvent(QContextMenuEvent *event) {
-    showContextMenu(event);
-}
 
 // function to return our CWD anywhere
 QString ColFM::getCWD() {
@@ -444,10 +476,17 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "new.h"
 #include "home.h"
 #include "new_terminal.h"
-#include "contextmenu.h"
 #include "folderize.h"
 #include "archivezip.h"
 #include "search.h"
+
+void ColFM::contextMenuEvent(QContextMenuEvent *event) {
+    if (!currentView || !model) return;
+    const QPoint viewPos = currentView->viewport()->mapFromGlobal(event->globalPos());
+    const QModelIndex idx = currentView->indexAt(viewPos);
+    if (!idx.isValid()) return;
+    ::showContextMenu(currentView, idx, model, event->globalPos());
+}
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {
@@ -457,27 +496,60 @@ bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     return QObject::eventFilter(obj, event);
 }
 
+inline QString resolveStartPath(const QStringList &args) {
+    // Default: current working directory
+    QString path = QDir::homePath();
+
+    if (args.size() > 1) {
+        QFileInfo fi(args.at(1));
+        if (fi.exists()) {
+            if (fi.isDir()) {
+                path = fi.absoluteFilePath();
+            } else {
+                path = fi.absolutePath();  // if it's a file, use parent dir
+            }
+        }
+    }
+    return path;
+}
+
+/*
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
     app.setWindowIcon(QIcon("icons/app_icon.png"));
-
     ColFM w; w.show();   // disabled for smoke test
-
 	// launch one desktop instance per user
 	const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
 	int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
 	if (running != 0) {
 	    QProcess::startDetached(desktopExe, {});
 	}
+    return app.exec();
+}*/
 
-    /*QTimer::singleShot(0, qApp, []{
-        QWidget *test = new QWidget();
-        test->setWindowTitle("Smoke test");
-        test->resize(200,200);
-        test->show();
-    });
-*/
 
+// App-level working path (separate from process CWD)
+//inline QString& __appCWD_ref() {
+  //  static QString cwd = QDir::currentPath();
+   // return cwd;
+//}
+//inline void setCWD(const QString &p) { __appCWD_ref() = p; }
+//inline QString getCWD()              { return __appCWD_ref(); }
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    app.setStyle(new ForceIconStyle(app.style()));
+    app.setWindowIcon(QIcon("icons/app_icon.png"));
+
+    const QString startPath = resolveStartPath(app.arguments());
+    setCWD(startPath);                      // <- tells UI which folder to show
+
+    ColFM w;
+    w.show();   // disabled for smoke test
+
+    const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
+    int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
+    if (running != 0) QProcess::startDetached(desktopExe, {});
     return app.exec();
 }

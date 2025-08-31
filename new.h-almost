@@ -16,9 +16,8 @@
 inline void ColFM::onNewWindow() {
     const QString exe = QCoreApplication::applicationFilePath();
 
+    // 1) Try to derive a path from whichever item-view currently has focus.
     QString dir;
-
-    // Prefer the currently focused item-view's selection
     if (QWidget *fw = QApplication::focusWidget()) {
         if (auto *av = qobject_cast<QAbstractItemView*>(fw)) {
             const QModelIndex idx = av->currentIndex();
@@ -29,17 +28,26 @@ inline void ColFM::onNewWindow() {
         }
     }
 
-    // Fallback to the window's current root
+    // 2) Fallback to the window's current root if no focused selection was usable.
     if (dir.isEmpty()) {
         dir = model->filePath(currentRoot);
+        if (dir.isEmpty())
+            dir = QDir::homePath();
     }
 
-    // Final fallback to home
-    if (dir.isEmpty()) {
-        dir = QDir::homePath();
-    }
+    // Confirm exactly what we’ll pass on the CLI.
+    const QString msg =
+        QStringLiteral("Launch new ColFM instance?\n\nExecutable:\n%1\n\nArgument:\n%2")
+        .arg(exe, dir);
+ //   if (QMessageBox::question(this, QStringLiteral("New Window"), msg,
+  //                            QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok) != QMessageBox::Ok) {
+        return;
+   // }
 
-    QProcess::startDetached(exe, { dir });
+    if (!QProcess::startDetached(exe, { dir })) {
+        QMessageBox::warning(this, QStringLiteral("Launch failed"),
+                             QStringLiteral("Could not start:\n%1\nwith argument:\n%2").arg(exe, dir));
+    }
 }
 
 inline void ColFM::onNewFolder() {

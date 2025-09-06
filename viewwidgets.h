@@ -132,13 +132,16 @@ inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
 inline QWidget* buildIconWidget(const QModelIndex &rootIdx) {
     auto *view = new QListView();
 view->setViewMode(QListView::IconMode);
-    Drag::enableOn(view);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     view->setViewMode(QListView::IconMode);
     view->setResizeMode(QListView::Adjust);
     view->setMovement(QListView::Static);
     view->setUniformItemSizes(false);
+    view->setSelectionBehavior(QAbstractItemView::SelectItems);
+view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+view->setDragEnabled(true);
+Drag::enableOn(view);
 
     view->setModel(model);
     const QModelIndex root = ensureRootIndex(rootIdx);            /* added */

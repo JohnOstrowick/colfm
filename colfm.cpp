@@ -10,9 +10,7 @@
 #include <QFileSystemModel>
 #include <QFileIconProvider>
 #include <QTreeView>
-#include <QListView>
 #include <QColumnView>
-#include <QAbstractItemView>
 #include <QSplitter>
 #include <QDir>
 #include <QIcon>
@@ -46,7 +44,6 @@
 #include <QSaveFile>
 #include <QTextStream>
 #include <QApplication>
-#include <QAbstractItemView>
 #include <QItemSelectionModel>
 #include <QMap>
 #include <QPainter>
@@ -169,10 +166,10 @@ public:
     }
 };
 
-/* Column view: force 32px for spawned columns */
+/* Column vbleiew: force 32px for spawned columns */
 // Generic event-filter that starts a drag with a ghost pixmap for any QAbstractItemView.
 
-class ColumnView32 : public QColumnView {
+/**class ColumnView32 : public QColumnView {
 protected:
     QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
         QAbstractItemView *v = QColumnView::createColumn(rootIndex);
@@ -180,7 +177,7 @@ protected:
             v->setIconSize(kIconSize);
             v->setItemDelegate(new FixedIconDelegate(v));
             v->setContextMenuPolicy(Qt::CustomContextMenu);
-            Drag::enableOn(v);
+	    Drag::enableOn(v);
            QObject::connect(v, &QWidget::customContextMenuRequested, v,
                          [v](const QPoint &pos) {
             const QModelIndex idx = v->indexAt(pos);
@@ -190,45 +187,7 @@ protected:
         }
         return v;
     }
-protected:
-    void startDrag(Qt::DropActions supportedActions) override {
-        QModelIndexList indexes = selectionModel() ? selectionModel()->selectedIndexes()
-                                                   : QModelIndexList{};
-        if (indexes.isEmpty()) {
-            const QModelIndex ci = currentIndex();
-            if (!ci.isValid()) return;
-            indexes << ci;
-        }
-
-        QMimeData *mime = model() ? model()->mimeData(indexes) : nullptr;
-        if (!mime) return;
-
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mime);
-
-        QPixmap pm;
-        const QModelIndex rep = indexes.first();
-        const QVariant deco = model()->data(rep, Qt::DecorationRole);
-        if (deco.canConvert<QIcon>()) {
-            const QIcon ic = qvariant_cast<QIcon>(deco);
-            const QSize sz = iconSize().isValid() ? iconSize() : QSize(64, 64);
-            pm = ic.pixmap(sz);
-        }
-        if (pm.isNull()) {
-            QRect r = visualRect(rep);
-            if (r.isValid()) {
-                r.adjust(-4, -4, 4, 4);
-                pm = viewport()->grab(r);
-            }
-        }
-        if (!pm.isNull()) {
-            drag->setPixmap(pm);
-            drag->setHotSpot(QPoint(pm.width()/2, pm.height()/2));
-        }
-
-        drag->exec(supportedActions, Qt::MoveAction);
-    }
-};
+};*/
 
 class FixedFSModel : public QFileSystemModel {
 public:
@@ -564,7 +523,6 @@ int main(int argc, char *argv[]) {
 
     ColFM w;
     w.show();   // disabled for smoke test
-    Drag::enableRecursively(&w);
 
     const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
     int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});

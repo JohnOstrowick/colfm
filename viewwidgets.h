@@ -12,6 +12,7 @@
 #include <QAbstractItemView>
 #include <QProxyStyle>
 #include <QColor>
+#include "drag.h"
 
 /* added: helper to ensure we always have a valid root index */
 inline QModelIndex ensureRootIndex(const QModelIndex &root) {
@@ -22,6 +23,7 @@ inline QModelIndex ensureRootIndex(const QModelIndex &root) {
 /* ------------------------------ Tree (list) view ------------------------------ */
 inline QWidget* buildTreeWidget(const QModelIndex &rootIdx) {
     auto *view = new QTreeView();
+    Drag::enableOn(view);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection); 
 
     view->setModel(model);
@@ -57,6 +59,26 @@ inline QWidget* buildTreeWidget(const QModelIndex &rootIdx) {
 
     return view;
 }
+
+class ColumnView32 : public QColumnView {
+protected:
+    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
+        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
+        if (v) {
+            v->setIconSize(kIconSize);
+            v->setItemDelegate(new FixedIconDelegate(v));
+            v->setContextMenuPolicy(Qt::CustomContextMenu);
+	    Drag::enableOn(v);
+           QObject::connect(v, &QWidget::customContextMenuRequested, v,
+                         [v](const QPoint &pos) {
+            const QModelIndex idx = v->indexAt(pos);
+            if (!idx.isValid()) return;
+            ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
+        });
+        }
+        return v;
+    }
+};
 
 /* ------------------------------ Column view ------------------------------ */
 inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
@@ -109,6 +131,8 @@ inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
 /* ------------------------------ Icon (grid) view ------------------------------ */
 inline QWidget* buildIconWidget(const QModelIndex &rootIdx) {
     auto *view = new QListView();
+view->setViewMode(QListView::IconMode);
+    Drag::enableOn(view);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     view->setViewMode(QListView::IconMode);

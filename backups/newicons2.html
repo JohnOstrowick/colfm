@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Icon Grid — Deduplicate, Mount iPhone, Cut, Copy, Paste, Undo</title>
+
+  <!-- Font Awesome FREE v6 for the three standard icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css" />
+
+  <style>
+    :root {
+      --icon-size: 144pt;
+      --label-size: 14pt;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 2rem;
+      width: 100%;
+      max-width: 1400px;
+    }
+    .tile {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 18px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    .tile:hover {
+      transform: translateY(-2px);
+      background: #151515;
+      border-color: #2a2a2a;
+    }
+    .tile i {
+      font-size: var(--icon-size);
+      line-height: 1;
+      color: #fff;
+      display: block;
+    }
+    /* Shared SVG styling to match FA weight and colour */
+    .svg-icon {
+      width: var(--icon-size);
+      height: var(--icon-size);
+      display: block;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .label {
+      margin-top: 1rem;
+      font-size: var(--label-size);
+      letter-spacing: 0.3px;
+      opacity: 0.9;
+      text-align: center;
+      user-select: none;
+    }
+    .tile:focus { outline: 3px solid #3a85ff; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid" role="grid" aria-label="Action icons grid">
+      <!-- Deduplicate — two overlapping files with a strike-through X -->
+      <button class="tile" role="gridcell" aria-label="Deduplicate" title="Deduplicate">
+        <svg class="svg-icon" viewBox="0 0 256 256" aria-hidden="true">
+          <!-- back sheet -->
+          <rect x="34" y="32" width="120" height="160" rx="14"></rect>
+          <!-- front sheet -->
+          <rect x="90" y="64" width="132" height="168" rx="14"></rect>
+          <!-- strike X (thicker) -->
+          <g stroke-width="18">
+            <line x1="70" y1="76" x2="220" y2="226"></line>
+            <line x1="220" y1="76" x2="70" y2="226"></line>
+          </g>
+        </svg>
+        <div class="label">Deduplicate</div>
+      </button>
+
+      <!-- Mount iPhone (Font Awesome) -->
+      <button class="tile" role="gridcell" aria-label="Mount iPhone" title="Mount iPhone">
+        <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+        <div class="label">Mount iPhone</div>
+      </button>
+
+      <!-- Cut (Font Awesome) -->
+      <button class="tile" role="gridcell" aria-label="Cut" title="Cut">
+        <i class="fa-solid fa-scissors" aria-hidden="true"></i>
+        <div class="label">Cut</div>
+      </button>
+
+      <!-- Copy — text lines → arrow → text lines -->
+      <button class="tile" role="gridcell" aria-label="Copy" title="Copy">
+        <svg class="svg-icon" viewBox="0 0 256 256" aria-hidden="true">
+          <!-- left text block -->
+          <line x1="24"  y1="64"  x2="116" y2="64"></line>
+          <line x1="24"  y1="112" x2="116" y2="112"></line>
+          <line x1="24"  y1="160" x2="116" y2="160"></line>
+          <!-- arrow -->
+          <line x1="124" y1="112" x2="156" y2="112"></line>
+          <polyline points="144,96 172,112 144,128"></polyline>
+          <!-- right text block -->
+          <line x1="180" y1="64"  x2="232" y2="64"></line>
+          <line x1="180" y1="112" x2="232" y2="112"></line>
+          <line x1="180" y1="160" x2="232" y2="160"></line>
+        </svg>
+        <div class="label">Copy</div>
+      </button>
+
+      <!-- Paste — glue jar -->
+      <button class="tile" role="gridcell" aria-label="Paste" title="Paste">
+        <svg class="svg-icon" viewBox="0 0 256 256" aria-hidden="true">
+          <!-- lid -->
+          <rect x="72" y="36" width="112" height="24" rx="6"></rect>
+          <!-- neck -->
+          <rect x="92" y="60" width="72" height="18" rx="6"></rect>
+          <!-- jar body -->
+          <rect x="56" y="80" width="144" height="144" rx="28"></rect>
+          <!-- label outline -->
+          <rect x="84" y="124" width="88" height="56" rx="10"></rect>
+          <!-- glue droplet on label -->
+          <path d="M128 128
+                   c 14 22 -6 26 -6 36
+                   a 6 6 0 0 0 12 0
+                   c 0 -10 -20 -14 -6 -36z"></path>
+        </svg>
+        <div class="label">Paste</div>
+      </button>
+
+      <!-- Undo (Font Awesome) -->
+      <button class="tile" role="gridcell" aria-label="Undo" title="Undo">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        <div class="label">Undo</div>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

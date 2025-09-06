@@ -17,3 +17,109 @@ Features (queued)
 - Drag between two open instances
 - Add control X C V Z
 - Add cut/copy/paste/undo buttons in toolbar
+
+RM-015 (P1) — Toolbar Hamburger Menu Redesign (mirrors Context Menu)
+
+📂 File
+
+New Folder
+
+Rename
+
+Duplicate
+
+Move (dialog for target folder)
+
+Cut / Copy / Paste
+
+Make Linkfile
+
+🗑️ Trash
+
+Move to Trash
+
+Empty Trash
+
+Restore from Trash
+
+View Trash
+
+🔍 View
+
+Icon Size picker
+
+Icon View
+
+List View
+
+Column View
+
+Toggle Hidden Files
+
+Sort by → (Name / Date / Size / Type)
+
+🎨 Labels & Info
+
+Colour Label swatches (incl. “clear label”)
+
+Get Info (styled window)
+
+Calculate Size
+
+🗜️ Archiving & Tools
+
+Archive (zip)
+
+Unarchive (zip)
+
+Archive (gzip)
+
+Unarchive (gzip)
+
+Folderize
+
+Deduplicate
+
+💽 Disks
+
+Mount Disk (backend: fdisk -l → pick device)
+
+Mount iPhone
+
+Mount Android
+
+Unmount/Eject Disk
+
+Erase Disk (formats: vfat, hfs+, ntfs, dos, ext4, zfs)
+
+Make ISO
+
+Mount ISO
+
+➡️ Go
+
+Home
+
+Desktop
+
+Documents
+
+Downloads
+
+Trash
+
+Available Drives (auto-populated)
+
+🐧 Linux
+
+Force Quit
+
+Process Manager (GUI shell for top, expandable with CPU/network/IO load views)
+
+Shutdown
+
+Restart
+
+Logout
+
+Suspend Session

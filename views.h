@@ -168,3 +168,24 @@ Drag::enableOn(view);
 
     return view;
 }
+
+inline QListView* makeIconView(QWidget *parent, QAbstractItemModel *model) {
+    auto *view = new QListView(parent);
+    view->setModel(model);
+    view->setViewMode(QListView::IconMode);
+    view->setLayoutDirection(Qt::LeftToRight);
+    view->setSelectionBehavior(QAbstractItemView::SelectItems);
+    view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    view->setIconSize(QSize(48,48));
+    view->setWordWrap(true);
+    view->setTextElideMode(Qt::ElideNone);
+    view->setGridSize(QSize(view->iconSize().width() + 60,
+                            view->iconSize().height() + view->fontMetrics().lineSpacing()*3 + 24));
+    view->setResizeMode(QListView::Adjust);
+    view->setMovement(QListView::Static);
+    view->setWrapping(true);
+    view->setSpacing(8);
+    view->setUniformItemSizes(false);
+    Drag::enableOn(view);
+    return view;
+}

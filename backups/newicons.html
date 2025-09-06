@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Icon Grid — Deduplicate, Mount iPhone, Cut, Copy, Paste, Undo</title>
+
+  <!-- Font Awesome FREE v6 (no SRI; loads reliably) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css" />
+
+  <style>
+    :root { --icon-size: 144pt; --label-size: 14pt; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: #000; color: #fff; font-family: Arial, Helvetica, sans-serif; }
+    .wrap { min-height: 100%; display: grid; place-items: center; padding: 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 2rem; width: 100%; max-width: 1400px; }
+    .tile {
+      background: #111; border: 1px solid #222; border-radius: 18px; padding: 1.5rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    .tile:hover { transform: translateY(-2px); background: #151515; border-color: #2a2a2a; }
+    .tile i { font-size: var(--icon-size); line-height: 1; color: #fff; display: block; }
+    .label { margin-top: 1rem; font-size: var(--label-size); letter-spacing: .3px; opacity: .9; text-align: center; user-select: none; }
+    .tile:focus { outline: 3px solid #3a85ff; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid" role="grid" aria-label="Action icons grid">
+      <!-- Deduplicate -->
+      <button class="tile" role="gridcell" aria-label="Deduplicate" title="Deduplicate">
+        <i class="fa-solid fa-broom" aria-hidden="true"></i>
+        <div class="label">Deduplicate</div>
+      </button>
+
+      <!-- Mount iPhone -->
+      <button class="tile" role="gridcell" aria-label="Mount iPhone" title="Mount iPhone">
+        <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+        <div class="label">Mount iPhone</div>
+      </button>
+
+      <!-- Cut -->
+      <button class="tile" role="gridcell" aria-label="Cut" title="Cut">
+        <i class="fa-solid fa-scissors" aria-hidden="true"></i>
+        <div class="label">Cut</div>
+      </button>
+
+      <!-- Copy -->
+      <button class="tile" role="gridcell" aria-label="Copy" title="Copy">
+        <i class="fa-solid fa-copy" aria-hidden="true"></i>
+        <div class="label">Copy</div>
+      </button>
+
+      <!-- Paste -->
+      <button class="tile" role="gridcell" aria-label="Paste" title="Paste">
+        <i class="fa-solid fa-clipboard" aria-hidden="true"></i>
+        <div class="label">Paste</div>
+      </button>
+
+      <!-- Undo -->
+      <button class="tile" role="gridcell" aria-label="Undo" title="Undo">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        <div class="label">Undo</div>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

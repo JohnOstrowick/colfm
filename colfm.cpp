@@ -166,29 +166,6 @@ public:
     }
 };
 
-/* Column vbleiew: force 32px for spawned columns */
-// Generic event-filter that starts a drag with a ghost pixmap for any QAbstractItemView.
-
-/**class ColumnView32 : public QColumnView {
-protected:
-    QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
-        QAbstractItemView *v = QColumnView::createColumn(rootIndex);
-        if (v) {
-            v->setIconSize(kIconSize);
-            v->setItemDelegate(new FixedIconDelegate(v));
-            v->setContextMenuPolicy(Qt::CustomContextMenu);
-	    Drag::enableOn(v);
-           QObject::connect(v, &QWidget::customContextMenuRequested, v,
-                         [v](const QPoint &pos) {
-            const QModelIndex idx = v->indexAt(pos);
-            if (!idx.isValid()) return;
-            ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
-        });
-        }
-        return v;
-    }
-};*/
-
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
@@ -212,7 +189,7 @@ public:
         return QFileSystemModel::data(index, role);
     }
 private:
-    QSize iconSz = kIconSize;                                        /* added */
+    QSize iconSz = kIconSize; 
 };
 
 QString getCWD();
@@ -339,7 +316,7 @@ public:
     QTreeWidget *sidebar{};                     /* added */
     QStringList backStack;                      /* added */
 
-    #include "viewwidgets.h"
+    #include "views.h"
 
     QString getCWD();
 

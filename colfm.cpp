@@ -52,10 +52,19 @@
 #include <QPainter>
 #include <QFileInfo> 
 #include <QString>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QDrag>
+#include <QMimeData>
+#include <QPixmap>
+
 
 #include "info.h"
 #include "breadcrumbs.h"
 #include "labels.h"
+#include "move.h"
+#include "drag.h"
+
 #define COLFM_MAIN 1
 #include "contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
@@ -161,9 +170,9 @@ public:
 };
 
 /* Column view: force 32px for spawned columns */
+// Generic event-filter that starts a drag with a ghost pixmap for any QAbstractItemView.
+
 class ColumnView32 : public QColumnView {
-public:
-    using QColumnView::QColumnView;
 protected:
     QAbstractItemView* createColumn(const QModelIndex &rootIndex) override {
         QAbstractItemView *v = QColumnView::createColumn(rootIndex);
@@ -171,7 +180,8 @@ protected:
             v->setIconSize(kIconSize);
             v->setItemDelegate(new FixedIconDelegate(v));
             v->setContextMenuPolicy(Qt::CustomContextMenu);
-        QObject::connect(v, &QWidget::customContextMenuRequested, v,
+            Drag::enableOn(v);
+           QObject::connect(v, &QWidget::customContextMenuRequested, v,
                          [v](const QPoint &pos) {
             const QModelIndex idx = v->indexAt(pos);
             if (!idx.isValid()) return;
@@ -179,6 +189,44 @@ protected:
         });
         }
         return v;
+    }
+protected:
+    void startDrag(Qt::DropActions supportedActions) override {
+        QModelIndexList indexes = selectionModel() ? selectionModel()->selectedIndexes()
+                                                   : QModelIndexList{};
+        if (indexes.isEmpty()) {
+            const QModelIndex ci = currentIndex();
+            if (!ci.isValid()) return;
+            indexes << ci;
+        }
+
+        QMimeData *mime = model() ? model()->mimeData(indexes) : nullptr;
+        if (!mime) return;
+
+        QDrag *drag = new QDrag(this);
+        drag->setMimeData(mime);
+
+        QPixmap pm;
+        const QModelIndex rep = indexes.first();
+        const QVariant deco = model()->data(rep, Qt::DecorationRole);
+        if (deco.canConvert<QIcon>()) {
+            const QIcon ic = qvariant_cast<QIcon>(deco);
+            const QSize sz = iconSize().isValid() ? iconSize() : QSize(64, 64);
+            pm = ic.pixmap(sz);
+        }
+        if (pm.isNull()) {
+            QRect r = visualRect(rep);
+            if (r.isValid()) {
+                r.adjust(-4, -4, 4, 4);
+                pm = viewport()->grab(r);
+            }
+        }
+        if (!pm.isNull()) {
+            drag->setPixmap(pm);
+            drag->setHotSpot(QPoint(pm.width()/2, pm.height()/2));
+        }
+
+        drag->exec(supportedActions, Qt::MoveAction);
     }
 };
 
@@ -216,9 +264,7 @@ public:
         model = new FixedFSModel(this);
         model->setIconProvider(new CustomIconProvider());
         model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
-    //    currentRoot = model->setRootPath(QDir::homePath());
-//currentRoot = model->setRootPath(QDir::homePath());
-currentRoot = model->setRootPath(::getCWD());
+        currentRoot = model->setRootPath(::getCWD());
 
         crumbs = new Breadcrumbs("Path", this);
 	crumbs->setFocusPolicy(Qt::NoFocus);
@@ -233,12 +279,10 @@ currentRoot = model->setRootPath(::getCWD());
         addToolBar(Qt::TopToolBarArea, tb);
 
         drawButtons();
-	//addIconSizePopup();
         addToolBar(Qt::TopToolBarArea, crumbs);
 
         setViewMode(ViewMode::Tree);
         setWindowTitle("ColFM — Multi-View File Manager");
-	//qApp->installEventFilter(this);
 	this->installEventFilter(this);
 	QTimer::singleShot(0, this, [this]{
 	    if (auto v = findChild<QAbstractItemView*>())
@@ -257,7 +301,6 @@ public:
     QStringList selectItems();
     void drawButtons();
     void onFolderize();
-    //void addIconSizePopup();
     void onRefresh();
 
     void onMoveToTrash();
@@ -278,7 +321,6 @@ public:
     void onCreateSoftlink();
     void onZip();
     void onUnZip();
-    //void addIconSizePopup();
 
     void onToggleHidden();
     void onSettings(); 
@@ -464,7 +506,6 @@ void ColFM::previewFile(const QModelIndex &idx) {
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
 #include "rename.h"
-#include "move.h"
 #include "duplicate.h"
 #include "keys.h"
 #include "toolbars.h"
@@ -513,30 +554,6 @@ inline QString resolveStartPath(const QStringList &args) {
     return path;
 }
 
-/*
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    app.setStyle(new ForceIconStyle(app.style()));
-    app.setWindowIcon(QIcon("icons/app_icon.png"));
-    ColFM w; w.show();   // disabled for smoke test
-	// launch one desktop instance per user
-	const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
-	int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
-	if (running != 0) {
-	    QProcess::startDetached(desktopExe, {});
-	}
-    return app.exec();
-}*/
-
-
-// App-level working path (separate from process CWD)
-//inline QString& __appCWD_ref() {
-  //  static QString cwd = QDir::currentPath();
-   // return cwd;
-//}
-//inline void setCWD(const QString &p) { __appCWD_ref() = p; }
-//inline QString getCWD()              { return __appCWD_ref(); }
-
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
@@ -547,9 +564,15 @@ int main(int argc, char *argv[]) {
 
     ColFM w;
     w.show();   // disabled for smoke test
+    Drag::enableRecursively(&w);
 
     const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
     int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
     if (running != 0) QProcess::startDetached(desktopExe, {});
     return app.exec();
+}
+
+// Step 2 — free helper to invoke the Move… dialog without adding class members
+void ColFM::onMoveButton() {
+    Move::promptAndMove(selectItems(), this);
 }

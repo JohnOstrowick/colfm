@@ -2,6 +2,7 @@
 #include <QtCore>
 #include <QtGui>
 #include "contextmenu.h"
+#include "drag.h"
 #if __has_include(<X11/Xlib.h>)
   #define HAVE_X11 1
   #include <X11/Xlib.h>
@@ -220,6 +221,7 @@ int main(int argc, char *argv[]) {
     view->setSpacing(8);
     view->setUniformItemSizes(true);
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	Drag::enableOn(view);
 
     view->setFlow(QListView::TopToBottom);
     view->setLayoutDirection(Qt::RightToLeft);

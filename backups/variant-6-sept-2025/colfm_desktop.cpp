@@ -11,14 +11,13 @@
 
 // ---------- helpers ----------
 static inline QString desktopDir() {
-    //QString p = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    //QFileInfo fi(p);
-    //if (fi.isSymLink()) {
-    //    const QString t = fi.symLinkTarget();
-    //    if (!t.isEmpty()) return QDir::cleanPath(t);
-    //}
-    //return p;
-    return QDir::homePath() + "/Desktop";
+    QString p = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QFileInfo fi(p);
+    if (fi.isSymLink()) {
+        const QString t = fi.symLinkTarget();
+        if (!t.isEmpty()) return QDir::cleanPath(t);
+    }
+    return p;
 }
 
 static inline QString trashDir() {
@@ -212,20 +211,16 @@ int main(int argc, char *argv[]) {
     model->rebuild();
 
     auto *view = new QListView(&w);
-view->setModel(model);
-view->setViewMode(QListView::IconMode);
-view->setIconSize(QSize(48,48));
-view->setWordWrap(true);
-view->setTextElideMode(Qt::ElideNone);
-// width ≈ icon + padding, height allows for ~2 lines of text
-view->setGridSize(QSize(view->iconSize().width() + 80,
-                        view->iconSize().height() + view->fontMetrics().lineSpacing()*2 + 40));
-view->setResizeMode(QListView::Adjust);
-view->setMovement(QListView::Static);
-view->setWrapping(true);
-view->setSpacing(8);
-view->setUniformItemSizes(false);//untidy but shows full filename
-view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    view->setModel(model);
+    view->setViewMode(QListView::IconMode);
+    view->setIconSize(QSize(48,48));
+    view->setGridSize(QSize(96,96));
+    view->setResizeMode(QListView::Adjust);
+    view->setMovement(QListView::Static);
+    view->setWrapping(true);
+    view->setSpacing(8);
+    view->setUniformItemSizes(true);
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	Drag::enableOn(view);
 
     view->setFlow(QListView::TopToBottom);
@@ -234,7 +229,7 @@ view->setEditTriggers(QAbstractItemView::NoEditTriggers);
     view->setStyleSheet("QListView{background:transparent;} QScrollBar{background:transparent;}");
     view->viewport()->setAutoFillBackground(false);
 
-    view->setGeometry(w.rect().adjusted(16,16,-40,-16));
+    view->setGeometry(w.rect().adjusted(16,16,-16,-16));
     view->show();
 
     auto *tick = new QTimer(&w);

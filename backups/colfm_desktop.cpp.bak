@@ -1,10 +1,9 @@
 #include <QtWidgets>
 #include <QtCore>
 #include <QtGui>
-#include "helpers/contextmenu.h"
-#include "helpers/drag.h"
-#include "helpers/iconview_factory.h"
-#include "helpers/icons_qicon.h"
+#include "contextmenu.h"
+#include "drag.h"
+#include "iconview_factory.h"
 #if __has_include(<X11/Xlib.h>)
   #define HAVE_X11 1
   #include <X11/Xlib.h>
@@ -86,7 +85,7 @@ static inline QString trashDir() {
     return QDir::homePath() + "/.local/share/Trash/files";
 }
 
-#include "helpers/labels.h"
+#include "labels.h"
 
 static QPixmap boxIcon(const QPixmap &src, int box) {
     QPixmap out(box, box);
@@ -191,9 +190,7 @@ public:
         }
 
         // Trash pseudo-item
-        //QImage trashImg(":/icons/trash.png");
-        QImage trashImg;
-trashImg.loadFromData(IconsData::bytesMap().value("trash.png"), "PNG");
+        QImage trashImg(":/icons/trash.png");
         if (!trashImg.isNull()) {
             auto *trash = new QStandardItem(boxedIconFromImage(trashImg, 48), "Trash");
             trash->setEditable(false);

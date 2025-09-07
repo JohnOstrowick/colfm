@@ -196,6 +196,7 @@ private:
         return {};
     }
 
+// make a png preview of the file
     bool renderPdfFirstPageToPng(const QString &pdfPath, QString *outPngPath) {
         // Uses poppler-utils (pdftoppm) if available.
         const QString base = QDir::tempPath() + "/colfm_pdf_"

@@ -14,6 +14,7 @@
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QItemSelectionModel>
+#include "icons_qicon.h"
 
 inline void populateSidebar() {
     if (!sidebar) return;
@@ -41,16 +42,16 @@ inline void populateSidebar() {
         h->setContentsMargins(8, 6, 8, 6);
         h->setSpacing(6);
 
-        QLabel *ic = new QLabel(row);
-        QPixmap pm;
-        if (label == "Home")                         pm = QPixmap("icons/home.png");
-        else if (label == "Desktop")                 pm = QPixmap("icons/desktop.png");
-        else if (label == "Downloads")               pm = QPixmap("icons/downloads.png");
-        else if (isDrive)                            pm = QPixmap("icons/disk.png");
-        else if (path.endsWith("/.local/share/Trash/files")) pm = QPixmap("icons/open_trash.png");
-        else              pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
-        ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        h->addWidget(ic, 0, Qt::AlignVCenter);
+QLabel *ic = new QLabel(row);
+QPixmap pm;
+if (label == "Home")                         pm = IconsData::getIcon("home.png").pixmap(24,24);
+else if (label == "Desktop")                 pm = IconsData::getIcon("desktop.png").pixmap(24,24);
+else if (label == "Downloads")               pm = IconsData::getIcon("downloads.png").pixmap(24,24);
+else if (isDrive)                            pm = IconsData::getIcon("disk.png").pixmap(24,24);
+else if (path.endsWith("/.local/share/Trash/files")) pm = IconsData::getIcon("open_trash.png").pixmap(24,24);
+else              pm = this->style()->standardIcon(QStyle::SP_DirIcon).pixmap(24,24);
+ic->setPixmap(pm.scaled(24,24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+h->addWidget(ic, 0, Qt::AlignVCenter);
 
         QLabel *lab = new QLabel(label, row);
         lab->setStyleSheet("color:#ddd; font-size:14px; letter-spacing:0.4px;");

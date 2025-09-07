@@ -56,16 +56,15 @@
 #include <QPixmap>
 
 
-#include "helpers/info.h"
-#include "helpers/breadcrumbs.h"
-#include "helpers/labels.h"
-#include "helpers/move.h"
-#include "helpers/drag.h"
+#include "info.h"
+#include "breadcrumbs.h"
+#include "labels.h"
+#include "move.h"
+#include "drag.h"
 
 #define COLFM_MAIN 1
-#include "helpers/contextmenu.h"
+#include "contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
-#include "helpers/icons_qicon.h"
 
 static QString __appCWD = QDir::currentPath();
 
@@ -317,7 +316,7 @@ public:
     QTreeWidget *sidebar{};                     /* added */
     QStringList backStack;                      /* added */
 
-    #include "helpers/views.h"
+    #include "views.h"
 
     QString getCWD();
 
@@ -327,7 +326,7 @@ public:
     }
 
     /* ---------------------- Sidebar Builder (single column) ---------------------- */
-    #include "helpers/sidebar.h"
+    #include "sidebar.h"
     
     void setViewMode(ViewMode m) {
         mode = m;
@@ -442,21 +441,21 @@ void ColFM::previewFile(const QModelIndex &idx) {
 
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
 
-#include "helpers/rename.h"
-#include "helpers/duplicate.h"
-#include "helpers/keys.h"
-#include "helpers/toolbars.h"
-#include "helpers/handleopen.h"
-#include "helpers/settings.h"
-#include "helpers/progress.h"
-#include "helpers/trash.h"
-#include "helpers/link.h"
-#include "helpers/new.h"
-#include "helpers/home.h"
-#include "helpers/new_terminal.h"
-#include "helpers/folderize.h"
-#include "helpers/archivezip.h"
-#include "helpers/search.h"
+#include "rename.h"
+#include "duplicate.h"
+#include "keys.h"
+#include "toolbars.h"
+#include "handleopen.h"
+#include "settings.h"
+#include "progress.h"
+#include "trash.h"
+#include "link.h"
+#include "new.h"
+#include "home.h"
+#include "new_terminal.h"
+#include "folderize.h"
+#include "archivezip.h"
+#include "search.h"
 
 void ColFM::contextMenuEvent(QContextMenuEvent *event) {
     if (!currentView || !model) return;
@@ -494,8 +493,7 @@ inline QString resolveStartPath(const QStringList &args) {
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setStyle(new ForceIconStyle(app.style()));
-    //app.setWindowIcon(QIcon("icons/app_icon.png"));
-    app.setWindowIcon(IconsData::getIcon("app_icon.png"));
+    app.setWindowIcon(QIcon("icons/app_icon.png"));
 
     const QString startPath = resolveStartPath(app.arguments());
     setCWD(startPath);                      // <- tells UI which folder to show

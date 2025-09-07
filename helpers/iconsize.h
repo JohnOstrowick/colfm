@@ -14,6 +14,7 @@
 #include <QString>
 #include <QFileSystemModel>
 #include <functional>
+#include "icons_qicon.h"
 
 inline void addIconSizePopup(QMainWindow *win, QToolBar *tb, QAction *toggleHiddenBtn, QFileSystemModel *model, std::function<void()> onRefresh) {
     QAction *insertBefore = nullptr;
@@ -22,10 +23,12 @@ inline void addIconSizePopup(QMainWindow *win, QToolBar *tb, QAction *toggleHidd
     if (pos >= 0 && pos + 1 < acts.size()) insertBefore = acts.at(pos + 1);
 
     QToolButton *btn = new QToolButton(tb);
-    btn->setToolTip("Icon size");
-    btn->setIcon(QIcon("icons/iconsize.png"));
-	btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-	btn->setIconSize(tb->iconSize());
+    //btn->setToolTip("Icon size");
+    btn->setIcon(IconsData::getIcon("iconsize.png"));
+    //btn->setIcon(QIcon("icons/iconsize.png"));
+    btn->setIcon(IconsData::getIcon("iconsize.png"));
+    btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    btn->setIconSize(tb->iconSize());
     btn->setPopupMode(QToolButton::InstantPopup);
 
     QMenu *m = new QMenu(btn);

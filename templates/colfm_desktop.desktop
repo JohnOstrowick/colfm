@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ColFM Desktop
+Exec=/home/john/Github/_linux/colfm/colfm_desktop %U
+Icon=/home/john/Github/_linux/colfm/icons/app_icon.png
+StartupWMClass=colfm
+Terminal=false
+Categories=Utility;FileManager;

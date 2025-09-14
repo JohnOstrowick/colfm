@@ -37,43 +37,29 @@ inline void ColFM::drawButtons() {
     tb->clear();
     // group 1
 
-	//actAppIcon    = tb->addAction(IconsData::getIcon("app_icon.png"), "Application");  
-	 //   actAppIcon->setToolTip("Application menu or actions");
-	//
-	// make the menu do something
-	// create a tool button with an icon and a popup menu
-//	QToolButton *btnAppIcon = new QToolButton(tb);
-//	btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
-//	btnAppIcon->setToolTip("System actions");
-//	btnAppIcon->setPopupMode(QToolButton::InstantPopup);
-
-	// build the application menu
-//	QMenu *appMenu = new QMenu(btnAppIcon);
-// build the application menu
-//actAppIcon = tb->addAction(IconsData::getIcon("app_icon.png"), "Application");
+//actAppIcon    = tb->addAction(IconsData::getIcon("app_icon.png"), "Application");  
  //   actAppIcon->setToolTip("Application menu or actions");
+//
+// make the menu do something
 // create a tool button with an icon and a popup menu
 QToolButton *btnAppIcon = new QToolButton(tb);
 btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
-btnAppIcon->setToolTip("Application menu or actions");
+btnAppIcon->setToolTip("System actions");
 btnAppIcon->setPopupMode(QToolButton::InstantPopup);
 
 // build the application menu
 QMenu *appMenu = new QMenu(btnAppIcon);
-appMenu->addAction("Shutdown",         [this]{ onAppIcon("Shutdown"); });
-appMenu->addAction("Reboot",           [this]{ onAppIcon("Reboot"); });
+appMenu->addAction("Shutdown");
+appMenu->addAction("Reboot");
 appMenu->addSeparator();
-appMenu->addAction("Force Quit",       [this]{ onAppIcon("Force Quit"); });
-appMenu->addAction("Process Manager",  [this]{ onAppIcon("Process Manager"); });
+appMenu->addAction("Force Quit");
+appMenu->addAction("Process Manager");
 appMenu->addSeparator();
-appMenu->addAction("Lock Session", [this]{ lockSession(); });
+appMenu->addAction("Lock Session");
 
 btnAppIcon->setMenu(appMenu);
 tb->addWidget(btnAppIcon);
-
 // end app menu
-
-	// end app menu
 
     actUp         = tb->addAction(IconsData::getIcon("up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
     actRefresh    = tb->addAction(IconsData::getIcon("refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
@@ -139,7 +125,7 @@ tb->addWidget(btnAppIcon);
         Search::doSearch(this);
     });
     // Wire up
-    //connect(actAppIcon, &QAction::triggered, this, &ColFM::onAppIcon);
+    connect(actAppIcon, &QAction::triggered, this, &ColFM::onAppIcon);
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
     connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);

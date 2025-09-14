@@ -237,10 +237,7 @@ public:
 public:
     QStringList selectItems();
     void drawButtons();
-    void onAppIcon(const QString &msg);
-
-         void lockSession();
-
+    void onAppIcon();
     void onFolderize();
     void onRefresh();
 

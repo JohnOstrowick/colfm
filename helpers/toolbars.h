@@ -52,6 +52,11 @@ appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
 	appMenu->addSeparator();
 	appMenu->addAction("Lock Session", [this]{ lockSession(); });
 
+actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "New Terminal", this);
+actNewTerminal->setToolTip("Open Terminal in Current Folder");
+connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+appMenu->addAction(actNewTerminal);
+
 	btnAppIcon->setMenu(appMenu);
 	tb->addWidget(btnAppIcon);
 
@@ -97,8 +102,8 @@ appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
     actNewFolder->setToolTip("Create a new folder");
     actNewWindow = tb->addAction(IconsData::getIcon("newwindow.png"), "New Window");
     actNewWindow->setToolTip("Open a new browser window");
-    actNewTerminal = tb->addAction(IconsData::getIcon("terminal.png"), "New Terminal");
-    actNewTerminal->setToolTip("Open Terminal in Current Folder");
+//    actNewTerminal = tb->addAction(IconsData::getIcon("terminal.png"), "New Terminal");
+ //   actNewTerminal->setToolTip("Open Terminal in Current Folder");
     addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
     // --- Label (swatches) popup, sits next to Size ---
     QToolButton *labelBtn = new QToolButton(tb);
@@ -146,7 +151,6 @@ appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
     connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
-    connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 }
 // ---- Handlers (single definitions) ----
 // others are in their relevantly named files

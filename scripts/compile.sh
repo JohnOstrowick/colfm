@@ -3,7 +3,6 @@
 echo killing instances
 killall colfm
 killall colfm_desktop
-sleep 5
 echo "building main app"
 g++ -std=c++17 -Wall -Wextra -O2 \
     colfm.cpp \

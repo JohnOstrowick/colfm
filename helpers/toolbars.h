@@ -31,6 +31,7 @@
 #include "icons_qicon.h"
 // ----- ColFM methods (single definitions) -----
 #include "info.h"
+#include "link.h"
 namespace Search { void doSearch(ColFM *); }
 
 inline void ColFM::drawButtons() {
@@ -44,24 +45,79 @@ inline void ColFM::drawButtons() {
 
 	// build the application menu
 	QMenu *appMenu = new QMenu(btnAppIcon);
-appMenu->addAction("Shutdown",         [this]{ shutdownNow(); });
-appMenu->addAction("Reboot",           [this]{ rebootNow(); });
-appMenu->addSeparator();
-appMenu->addAction("Force Quit",       [this]{ forceQuitApp(); });
-appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
+	appMenu->addAction("Shutdown",         [this]{ shutdownNow(); });
+	appMenu->addAction("Reboot",           [this]{ rebootNow(); });
+	appMenu->addSeparator();
+	appMenu->addAction("Force Quit",       [this]{ forceQuitApp(); });
+	appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
 	appMenu->addSeparator();
 	appMenu->addAction("Lock Session", [this]{ lockSession(); });
 
-actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "New Terminal", this);
-actNewTerminal->setToolTip("Open Terminal in Current Folder");
-connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
-appMenu->addAction(actNewTerminal);
+	actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "New Terminal", this);
+	actNewTerminal->setToolTip("Open Terminal in Current Folder");
+	connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+	appMenu->addAction(actNewTerminal);
 
 	btnAppIcon->setMenu(appMenu);
 	tb->addWidget(btnAppIcon);
 
 
 	// end app menu
+
+
+// file menu
+
+// group 2 — File menu (placeholder only for now)
+QToolButton *btnFileMenu = new QToolButton(tb);
+btnFileMenu->setText("File");
+btnFileMenu->setToolTip("File operations");
+btnFileMenu->setPopupMode(QToolButton::InstantPopup);
+
+// build the File menu (placeholder entries)
+QMenu *fileMenu = new QMenu(btnFileMenu);
+
+// new folder
+actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+actNewFolder->setToolTip("Create a new folder");
+connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+fileMenu->addAction(actNewFolder);
+
+// Rename
+actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+actRename->setToolTip("Rename selected item");
+connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+fileMenu->addAction(actRename);
+
+// open
+actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+actOpen->setToolTip("Open selected file or folder");
+connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+fileMenu->addAction(actOpen);
+
+// duplicate
+actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+actDuplicate->setToolTip("Make a copy of the selected file or folder");
+connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+fileMenu->addAction(actDuplicate);
+
+// move
+actMove = new QAction(IconsData::getIcon("move.png"), "Move", this);
+actMove->setToolTip("Move file or folder to another location");
+connect(actMove, &QAction::triggered, this, &ColFM::onMoveButton);
+fileMenu->addAction(actMove);
+
+// softlink
+actLink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+actLink->setToolTip("Create a soft link to the selected item");
+connect(actLink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+fileMenu->addAction(actLink);
+
+
+//stuff
+btnFileMenu->setMenu(fileMenu);
+tb->addWidget(btnFileMenu);
+
+// end file menu
 
     actUp         = tb->addAction(IconsData::getIcon("up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
     actRefresh    = tb->addAction(IconsData::getIcon("refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
@@ -77,14 +133,14 @@ appMenu->addAction(actNewTerminal);
     actRestoreFromTrash->setToolTip("Move selected items out of Trash");
     tb->addSeparator();
     // group 3
-    actOpen       = tb->addAction(IconsData::getIcon("open.png"),          "Open");         actOpen->setToolTip("Open item");
+    //actOpen       = tb->addAction(IconsData::getIcon("open.png"),          "Open");         actOpen->setToolTip("Open item");
     actInfo       = tb->addAction(IconsData::getIcon("info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
-    actRename     = tb->addAction(IconsData::getIcon("rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
-    actMove       = tb->addAction(IconsData::getIcon("move.png"),          "Move");             actMove->setToolTip("Move selected item");
+//    actRename     = tb->addAction(IconsData::getIcon("rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
+    //actMove       = tb->addAction(IconsData::getIcon("move.png"),          "Move");             actMove->setToolTip("Move selected item");
     actFolderize = tb->addAction(IconsData::getIcon("folderize.png"), "Folderize");
     actFolderize->setToolTip("Place selected items into a new folder");
-    actDuplicate  = tb->addAction(IconsData::getIcon("duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
-    actLink       = tb->addAction(IconsData::getIcon("softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
+    //actDuplicate  = tb->addAction(IconsData::getIcon("duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
+   // actLink       = tb->addAction(IconsData::getIcon("softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
     tb->addSeparator();
     actZip = tb->addAction(IconsData::getIcon("zip.png"), "Archive");
     actZip->setToolTip("Create archive from selected files");
@@ -98,8 +154,8 @@ appMenu->addAction(actNewTerminal);
     settingsBtn     = tb->addAction(IconsData::getIcon("settings.png"),      "Settings");         settingsBtn->setToolTip("Open Settings dialog");
     // (Icon size popup — to be added later)
     tb->addSeparator();
-    actNewFolder = tb->addAction(IconsData::getIcon("newfolder.png"), "New Folder");
-    actNewFolder->setToolTip("Create a new folder");
+//    actNewFolder = tb->addAction(IconsData::getIcon("newfolder.png"), "New Folder");
+  //  actNewFolder->setToolTip("Create a new folder");
     actNewWindow = tb->addAction(IconsData::getIcon("newwindow.png"), "New Window");
     actNewWindow->setToolTip("Open a new browser window");
 //    actNewTerminal = tb->addAction(IconsData::getIcon("terminal.png"), "New Terminal");
@@ -131,17 +187,17 @@ appMenu->addAction(actNewTerminal);
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
     connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
     connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
-    connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
+//    connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
     connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
     connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
-    connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
-    connect(actMove,          &QAction::triggered, this, &ColFM::onMoveButton);
+//    connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
+//    connect(actMove,          &QAction::triggered, this, &ColFM::onMoveButton);
     connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
-    connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
-    connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
+//    connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
+//    connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
     connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
@@ -149,7 +205,7 @@ appMenu->addAction(actNewTerminal);
     connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
     connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
-    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+//    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
     connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
 }
 // ---- Handlers (single definitions) ----

@@ -238,11 +238,15 @@ public:
     QStringList selectItems();
     void drawButtons();
     void onAppIcon(const QString &msg);
-
-         void lockSession();
-
     void onFolderize();
     void onRefresh();
+
+// app icon defintions/declarations
+void shutdownNow(); 
+void rebootNow(); 
+void forceQuitApp(); 
+void openProcessManager(); 
+void lockSession(); 
 
     void onMoveToTrash();
     void onEmptyTrash();

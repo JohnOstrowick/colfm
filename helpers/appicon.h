@@ -20,4 +20,21 @@ inline void ColFM::lockSession() {
     QMessageBox::warning(this, "Lock Failed", "Could not lock session: no known locker succeeded.");
 }
 
+inline void ColFM::shutdownNow() {
+    QProcess::startDetached("shutdown -h now");
+}
+
+inline void ColFM::rebootNow() {
+    QProcess::startDetached("shutdown -r now");
+}
+
+inline void ColFM::forceQuitApp() {
+    QProcess::startDetached("xkill");
+}
+
+inline void ColFM::openProcessManager() {
+    QProcess::startDetached("gnome-system-monitor");
+}
+
+
 #endif // APPICON_H

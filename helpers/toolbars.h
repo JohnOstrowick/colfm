@@ -36,42 +36,25 @@ namespace Search { void doSearch(ColFM *); }
 inline void ColFM::drawButtons() {
     tb->clear();
     // group 1
-
-	//actAppIcon    = tb->addAction(IconsData::getIcon("app_icon.png"), "Application");  
-	 //   actAppIcon->setToolTip("Application menu or actions");
-	//
-	// make the menu do something
 	// create a tool button with an icon and a popup menu
-//	QToolButton *btnAppIcon = new QToolButton(tb);
-//	btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
-//	btnAppIcon->setToolTip("System actions");
-//	btnAppIcon->setPopupMode(QToolButton::InstantPopup);
+	QToolButton *btnAppIcon = new QToolButton(tb);
+	btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
+	btnAppIcon->setToolTip("Application menu or actions");
+	btnAppIcon->setPopupMode(QToolButton::InstantPopup);
 
 	// build the application menu
-//	QMenu *appMenu = new QMenu(btnAppIcon);
-// build the application menu
-//actAppIcon = tb->addAction(IconsData::getIcon("app_icon.png"), "Application");
- //   actAppIcon->setToolTip("Application menu or actions");
-// create a tool button with an icon and a popup menu
-QToolButton *btnAppIcon = new QToolButton(tb);
-btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
-btnAppIcon->setToolTip("Application menu or actions");
-btnAppIcon->setPopupMode(QToolButton::InstantPopup);
-
-// build the application menu
-QMenu *appMenu = new QMenu(btnAppIcon);
-appMenu->addAction("Shutdown",         [this]{ onAppIcon("Shutdown"); });
-appMenu->addAction("Reboot",           [this]{ onAppIcon("Reboot"); });
+	QMenu *appMenu = new QMenu(btnAppIcon);
+appMenu->addAction("Shutdown",         [this]{ shutdownNow(); });
+appMenu->addAction("Reboot",           [this]{ rebootNow(); });
 appMenu->addSeparator();
-appMenu->addAction("Force Quit",       [this]{ onAppIcon("Force Quit"); });
-appMenu->addAction("Process Manager",  [this]{ onAppIcon("Process Manager"); });
-appMenu->addSeparator();
-appMenu->addAction("Lock Session", [this]{ lockSession(); });
+appMenu->addAction("Force Quit",       [this]{ forceQuitApp(); });
+appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
+	appMenu->addSeparator();
+	appMenu->addAction("Lock Session", [this]{ lockSession(); });
 
-btnAppIcon->setMenu(appMenu);
-tb->addWidget(btnAppIcon);
+	btnAppIcon->setMenu(appMenu);
+	tb->addWidget(btnAppIcon);
 
-// end app menu
 
 	// end app menu
 

@@ -237,6 +237,7 @@ public:
 public:
     QStringList selectItems();
     void drawButtons();
+    void onAppIcon();
     void onFolderize();
     void onRefresh();
 
@@ -298,7 +299,7 @@ public:
 
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
-    QAction *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
+    QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};
     QAction *actZip{},*actUnZip{};
@@ -457,6 +458,7 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "helpers/folderize.h"
 #include "helpers/archivezip.h"
 #include "helpers/search.h"
+#include "helpers/appicon.h"
 
 void ColFM::contextMenuEvent(QContextMenuEvent *event) {
     if (!currentView || !model) return;

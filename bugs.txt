@@ -1,0 +1,329 @@
+colfm: no process found
+colfm_desktop: no process found
+In file included from helpers/toolbars.h:29,
+                 from colfm.cpp:458:
+helpers/iconsize.h:9:13: error: variable or field ‘addIconSizePopup’ declared void
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |             ^~~~~~~~~~~~~~~~
+helpers/iconsize.h:9:30: error: ‘viewMenu’ was not declared in this scope
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                              ^~~~~~~~
+helpers/iconsize.h:9:73: error: ‘activeView’ was not declared in this scope
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                                                                         ^~~~~~~~~~
+helpers/iconsize.h:9:89: error: invalid use of ‘this’ at top level
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                                                                                         ^~~~
+helpers/iconsize.h: In lambda function:
+helpers/iconsize.h:9:96: error: ‘onRefresh’ was not declared in this scope
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                                                                                                ^~~~~~~~~
+In file included from helpers/toolbars.h:31:
+helpers/new.h:16:31: error: qualified-id in declaration before ‘(’ token
+   16 | inline void ColFM::onNewWindow() {
+      |                               ^
+helpers/new.h:45:31: error: qualified-id in declaration before ‘(’ token
+   45 | inline void ColFM::onNewFolder() {
+      |                               ^
+In file included from helpers/toolbars.h:35:
+helpers/link.h:9:36: error: qualified-id in declaration before ‘(’ token
+    9 | inline void ColFM::onCreateSoftlink() {
+      |                                    ^
+helpers/toolbars.h:36:1: error: ‘namespace’ definition is not allowed here
+   36 | namespace Search { void doSearch(ColFM *); }
+      | ^~~~~~~~~
+helpers/toolbars.h:38:31: error: qualified-id in declaration before ‘(’ token
+   38 | inline void ColFM::drawButtons() {
+      |                               ^
+helpers/toolbars.h:271:29: error: qualified-id in declaration before ‘(’ token
+  271 | inline void ColFM::onRefresh() {
+      |                             ^
+helpers/toolbars.h:279:24: error: qualified-id in declaration before ‘(’ token
+  279 | inline void ColFM::onUp() {
+      |                        ^
+helpers/toolbars.h:288:26: error: qualified-id in declaration before ‘(’ token
+  288 | inline void ColFM::onOpen()                   { const QModelIndex idx = currentIndex(); if (idx.isValid()) openFile(idx); }
+      |                          ^
+helpers/toolbars.h:289:26: error: qualified-id in declaration before ‘(’ token
+  289 | inline void ColFM::onInfo() {
+      |                          ^
+helpers/toolbars.h:299:26: error: qualified-id in declaration before ‘(’ token
+  299 | inline void ColFM::onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+      |                          ^
+helpers/toolbars.h:300:34: error: qualified-id in declaration before ‘(’ token
+  300 | inline void ColFM::onToggleHidden() {
+      |                                  ^
+helpers/toolbars.h:312:30: error: qualified-id in declaration before ‘(’ token
+  312 | inline void ColFM::onViewTree()   { setViewMode(ViewMode::Tree); }
+      |                              ^
+helpers/toolbars.h:313:32: error: qualified-id in declaration before ‘(’ token
+  313 | inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
+      |                                ^
+helpers/toolbars.h:314:30: error: qualified-id in declaration before ‘(’ token
+  314 | inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }
+      |                              ^
+helpers/toolbars.h:316:51: error: a function-definition is not allowed here before ‘{’ token
+  316 | inline QString _volDbPath(const QString &volPath) {
+      |                                                   ^
+helpers/toolbars.h:322:73: error: a function-definition is not allowed here before ‘{’ token
+  322 | inline bool _ensureVolDb(const QString &volPath, int maxAgeSecs = 3600) { // 1h freshness
+      |                                                                         ^
+In file included from colfm.cpp:459:
+helpers/handleopen.h:13:39: error: qualified-id in declaration before ‘(’ token
+   13 | inline QModelIndex ColFM::currentIndex() const {
+      |                                       ^
+helpers/handleopen.h:26:27: error: qualified-id in declaration before ‘(’ token
+   26 | inline void ColFM::openApp(const QString &path) {
+      |                           ^
+helpers/handleopen.h:31:28: error: qualified-id in declaration before ‘(’ token
+   31 | inline void ColFM::openFile(const QModelIndex &idx) {
+      |                            ^
+helpers/handleopen.h:62:32: error: qualified-id in declaration before ‘(’ token
+   62 | inline void ColFM::openSelected() {
+      |                                ^
+helpers/handleopen.h:67:28: error: qualified-id in declaration before ‘(’ token
+   67 | inline void ColFM::openPath(const QString &absPath) {
+      |                            ^
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtCore/qnamespace.h:9,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h:9,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringview.h:8,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qchar.h:651,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h:14,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreapplication.h:8,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qapplication.h:8,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication:1,
+                 from colfm.cpp:1:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:121:30: error: local class ‘class<lambda()>::QSpinBox’ shall not have static data member ‘const QMetaObject <lambda()>::QSpinBox::staticMetaObject’ [-fpermissive]
+  121 |     static const QMetaObject staticMetaObject; \
+      |                              ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qspinbox.h:17:5: note: in expansion of macro ‘Q_OBJECT’
+   17 |     Q_OBJECT
+      |     ^~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:121:30: error: local class ‘class<lambda()>::QDoubleSpinBox’ shall not have static data member ‘const QMetaObject <lambda()>::QDoubleSpinBox::staticMetaObject’ [-fpermissive]
+  121 |     static const QMetaObject staticMetaObject; \
+      |                              ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qspinbox.h:83:5: note: in expansion of macro ‘Q_OBJECT’
+   83 |     Q_OBJECT
+      |     ^~~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtCore/QSettings:1,
+                 from helpers/settings.h:10,
+                 from colfm.cpp:460:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:26:40: error: invalid use of incomplete type ‘class<lambda()>::QObject’
+   26 | class Q_CORE_EXPORT QSettings : public QObject
+      |                                        ^~~~~~~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtGui/QDesktopServices:1,
+                 from helpers/handleopen.h:4:
+/usr/include/x86_64-linux-gnu/qt6/QtGui/qdesktopservices.h:16:7: note: forward declaration of ‘class<lambda()>::QObject’
+   16 | class QObject;
+      |       ^~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:121:30: error: local class ‘class<lambda()>::QSettings’ shall not have static data member ‘const QMetaObject <lambda()>::QSettings::staticMetaObject’ [-fpermissive]
+  121 |     static const QMetaObject staticMetaObject; \
+      |                              ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:32:5: note: in expansion of macro ‘Q_OBJECT’
+   32 |     Q_OBJECT
+      |     ^~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:66:41: error: cannot define friend function ‘qt_getEnumMetaObject’ in a local class definition
+   66 |     friend constexpr const QMetaObject *qt_getEnumMetaObject(ENUM) noexcept { return &staticMetaObject; } \
+      |                                         ^~~~~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:45:5: note: in expansion of macro ‘Q_ENUM’
+   45 |     Q_ENUM(Status)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:67:34: error: cannot define friend function ‘qt_getEnumName’ in a local class definition
+   67 |     friend constexpr const char *qt_getEnumName(ENUM) noexcept { return #ENUM; }
+      |                                  ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:45:5: note: in expansion of macro ‘Q_ENUM’
+   45 |     Q_ENUM(Status)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:66:41: error: cannot define friend function ‘qt_getEnumMetaObject’ in a local class definition
+   66 |     friend constexpr const QMetaObject *qt_getEnumMetaObject(ENUM) noexcept { return &staticMetaObject; } \
+      |                                         ^~~~~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:82:5: note: in expansion of macro ‘Q_ENUM’
+   82 |     Q_ENUM(Format)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:67:34: error: cannot define friend function ‘qt_getEnumName’ in a local class definition
+   67 |     friend constexpr const char *qt_getEnumName(ENUM) noexcept { return #ENUM; }
+      |                                  ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:82:5: note: in expansion of macro ‘Q_ENUM’
+   82 |     Q_ENUM(Format)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:66:41: error: cannot define friend function ‘qt_getEnumMetaObject’ in a local class definition
+   66 |     friend constexpr const QMetaObject *qt_getEnumMetaObject(ENUM) noexcept { return &staticMetaObject; } \
+      |                                         ^~~~~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:90:5: note: in expansion of macro ‘Q_ENUM’
+   90 |     Q_ENUM(Scope)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:67:34: error: cannot define friend function ‘qt_getEnumName’ in a local class definition
+   67 |     friend constexpr const char *qt_getEnumName(ENUM) noexcept { return #ENUM; }
+      |                                  ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:90:5: note: in expansion of macro ‘Q_ENUM’
+   90 |     Q_ENUM(Scope)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:180:10: error: ‘bool<lambda()>::QSettings::event(QEvent*)’ marked ‘override’, but does not override
+  180 |     bool event(QEvent *event) override;
+      |          ^~~~~
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtGui/qtguiglobal.h:7,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h:7,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qapplication.h:7:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h: In member function ‘<lambda()>::QSettingsPrivate*<lambda()>::QSettings::d_func()’:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qglobal.h:1251:83: error: ‘d_ptr’ was not declared in this scope
+ 1251 |     { Q_CAST_IGNORE_ALIGN(return reinterpret_cast<Class##Private *>(qGetPtrHelper(d_ptr));) } \
+      |                                                                                   ^~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qglobal.h:1248:90: note: in definition of macro ‘Q_CAST_IGNORE_ALIGN’
+ 1248 | #define Q_CAST_IGNORE_ALIGN(body) QT_WARNING_PUSH QT_WARNING_DISABLE_GCC("-Wcast-align") body QT_WARNING_POP
+      |                                                                                          ^~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:36:5: note: in expansion of macro ‘Q_DECLARE_PRIVATE’
+   36 |     Q_DECLARE_PRIVATE(QSettings)
+      |     ^~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h: In member function ‘const<lambda()>::QSettingsPrivate*<lambda()>::QSettings::d_func() const’:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qglobal.h:1253:89: error: ‘d_ptr’ was not declared in this scope
+ 1253 |     { Q_CAST_IGNORE_ALIGN(return reinterpret_cast<const Class##Private *>(qGetPtrHelper(d_ptr));) } \
+      |                                                                                         ^~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qglobal.h:1248:90: note: in definition of macro ‘Q_CAST_IGNORE_ALIGN’
+ 1248 | #define Q_CAST_IGNORE_ALIGN(body) QT_WARNING_PUSH QT_WARNING_DISABLE_GCC("-Wcast-align") body QT_WARNING_POP
+      |                                                                                          ^~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:36:5: note: in expansion of macro ‘Q_DECLARE_PRIVATE’
+   36 |     Q_DECLARE_PRIVATE(QSettings)
+      |     ^~~~~~~~~~~~~~~~~
+helpers/settings.h: In lambda function:
+helpers/settings.h:13:30: error: qualified-id in declaration before ‘(’ token
+   13 | inline void ColFM::writePrefs(int folderMB, int iconSize, int viewMode) {
+      |                              ^
+helpers/settings.h:21:29: error: qualified-id in declaration before ‘(’ token
+   21 | inline void ColFM::readPrefs(int &folderMB, int &iconSize, int &viewMode) {
+      |                             ^
+helpers/settings.h:29:30: error: qualified-id in declaration before ‘(’ token
+   29 | inline void ColFM::onSettings() {
+      |                              ^
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:121:30: error: local class ‘class<lambda()>::QProgressBar’ shall not have static data member ‘const QMetaObject <lambda()>::QProgressBar::staticMetaObject’ [-fpermissive]
+  121 |     static const QMetaObject staticMetaObject; \
+      |                              ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qprogressbar.h:19:5: note: in expansion of macro ‘Q_OBJECT’
+   19 |     Q_OBJECT
+      |     ^~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:66:41: error: cannot define friend function ‘qt_getEnumMetaObject’ in a local class definition
+   66 |     friend constexpr const QMetaObject *qt_getEnumMetaObject(ENUM) noexcept { return &staticMetaObject; } \
+      |                                         ^~~~~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qprogressbar.h:33:5: note: in expansion of macro ‘Q_ENUM’
+   33 |     Q_ENUM(Direction)
+      |     ^~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:67:34: error: cannot define friend function ‘qt_getEnumName’ in a local class definition
+   67 |     friend constexpr const char *qt_getEnumName(ENUM) noexcept { return #ENUM; }
+      |                                  ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h:68:30: note: in expansion of macro ‘Q_ENUM_IMPL’
+   68 | #define Q_ENUM(x) Q_ENUMS(x) Q_ENUM_IMPL(x)
+      |                              ^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qprogressbar.h:33:5: note: in expansion of macro ‘Q_ENUM’
+   33 |     Q_ENUM(Direction)
+      |     ^~~~~~
+In file included from colfm.cpp:461:
+helpers/progress.h:9:30: error: qualified-id in declaration before ‘(’ token
+    9 | inline void ColFM::onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel) {
+      |                              ^
+In file included from colfm.cpp:462:
+helpers/trash.h:6:33: error: qualified-id in declaration before ‘(’ token
+    6 | inline void ColFM::onMoveToTrash() {
+      |                                 ^
+helpers/trash.h:32:38: error: qualified-id in declaration before ‘(’ token
+   32 | inline void ColFM::onRestoreFromTrash() {
+      |                                      ^
+helpers/trash.h:58:32: error: qualified-id in declaration before ‘(’ token
+   58 | inline void ColFM::onEmptyTrash() {
+      |                                ^
+helpers/trash.h:89:31: error: qualified-id in declaration before ‘(’ token
+   89 | inline void ColFM::onOpenTrash() {
+      |                               ^
+In file included from colfm.cpp:465:
+helpers/home.h:7:28: error: qualified-id in declaration before ‘(’ token
+    7 | inline void ColFM::onGoHome() {
+      |                            ^
+In file included from colfm.cpp:466:
+helpers/new_terminal.h:7:33: error: qualified-id in declaration before ‘(’ token
+    7 | inline void ColFM::onNewTerminal() {
+      |                                 ^
+In file included from colfm.cpp:467:
+helpers/folderize.h:9:31: error: qualified-id in declaration before ‘(’ token
+    9 | inline void ColFM::onFolderize() {
+      |                               ^
+In file included from colfm.cpp:468:
+helpers/archivezip.h:13:50: error: a function-definition is not allowed here before ‘{’ token
+   13 | inline bool isToolAvailable(const QString &tool) {
+      |                                                  ^
+helpers/archivezip.h:20:25: error: qualified-id in declaration before ‘(’ token
+   20 | inline void ColFM::onZip() {
+      |                         ^
+helpers/archivezip.h:103:27: error: qualified-id in declaration before ‘(’ token
+  103 | inline void ColFM::onUnZip() {
+      |                           ^
+In file included from colfm.cpp:469:
+helpers/search.h:21:1: error: ‘namespace’ definition is not allowed here
+   21 | namespace Search {
+      | ^~~~~~~~~
+In file included from colfm.cpp:470:
+helpers/appicon.h:6:29: error: qualified-id in declaration before ‘(’ token
+    6 | inline void ColFM::onAppIcon(const QString &msg) {
+      |                             ^
+helpers/appicon.h:10:31: error: qualified-id in declaration before ‘(’ token
+   10 | inline void ColFM::lockSession() {
+      |                               ^
+helpers/appicon.h:23:31: error: qualified-id in declaration before ‘(’ token
+   23 | inline void ColFM::shutdownNow() {
+      |                               ^
+helpers/appicon.h:27:29: error: qualified-id in declaration before ‘(’ token
+   27 | inline void ColFM::rebootNow() {
+      |                             ^
+helpers/appicon.h:31:32: error: qualified-id in declaration before ‘(’ token
+   31 | inline void ColFM::forceQuitApp() {
+      |                                ^
+helpers/appicon.h:35:38: error: qualified-id in declaration before ‘(’ token
+   35 | inline void ColFM::openProcessManager() {
+      |                                      ^
+colfm.cpp:472:29: error: qualified-id in declaration before ‘(’ token
+  472 | void ColFM::contextMenuEvent(QContextMenuEvent *event) {
+      |                             ^
+colfm.cpp:480:24: error: qualified-id in declaration before ‘(’ token
+  480 | bool ColFM::eventFilter(QObject *obj, QEvent *event) {
+      |                        ^
+colfm.cpp:488:58: error: a function-definition is not allowed here before ‘{’ token
+  488 | inline QString resolveStartPath(const QStringList &args) {
+      |                                                          ^
+colfm.cpp:505:34: error: a function-definition is not allowed here before ‘{’ token
+  505 | int main(int argc, char *argv[]) {
+      |                                  ^
+colfm.cpp:524:25: error: qualified-id in declaration before ‘(’ token
+  524 | void ColFM::onMoveButton() {
+      |                         ^
+colfm.cpp:526:2: error: expected ‘}’ at end of input
+  526 | }
+      |  ^
+helpers/iconsize.h:9:94: note: to match this ‘{’
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                                                                                              ^
+colfm.cpp: At global scope:
+colfm.cpp:526:2: error: expected ‘)’ at end of input
+  526 | }
+      |  ^
+      |  )
+helpers/iconsize.h:9:29: note: to match this ‘(’
+    9 | inline void addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(activeView()), [this]{ onRefresh())) {
+      |                             ^

@@ -261,6 +261,13 @@ void lockSession();
     void onMove();
     void onMoveButton();
 
+void onBack();
+void onGoDesktop();
+void onGoDocuments();
+void onGoDownloads();
+void onGoPictures();
+void onGoMedia();
+
     void onDuplicate();
     void onGoHome();
     void onCreateSoftlink();
@@ -307,6 +314,7 @@ void lockSession();
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
+    QAction *actBack{}, *actGoDesktop{}, *actGoDocuments{}, *actGoDownloads{}, *actGoPictures{}, *actGoMedia{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};
     QAction *actZip{},*actUnZip{};

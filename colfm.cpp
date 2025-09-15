@@ -312,6 +312,8 @@ void lockSession();
     QAction *actZip{},*actUnZip{};
     QAction *treeBtn{}, *columnBtn{}, *iconBtn{}, *toggleHiddenBtn{}, *settingsBtn{};
     QAction *actEmptyTrash{};
+    QAction *actIconSize{};
+    QAction *actToggleHidden{};
     QAction *actGoHome{};
     QAction *actNewFolder{}, *actNewWindow{};
     QAction *actNewTerminal{};

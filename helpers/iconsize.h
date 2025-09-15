@@ -1,87 +1,43 @@
 #ifndef ICONSIZE_H
 #define ICONSIZE_H
 
-#include <QToolButton>
-#include <QToolBar>
 #include <QMenu>
-#include <QAction>
-#include <QStyledItemDelegate>
-#include <QStyleOptionViewItem>
-#include <QAbstractItemView>
-#include <QStatusBar>
-#include <QMainWindow>
+#include <QActionGroup>
+#include <QIcon>
 #include <QSize>
-#include <QString>
-#include <QFileSystemModel>
-#include <functional>
-#include "icons_qicon.h"
+#include <QDebug>
+#include "icons_data.h"
 
-inline void addIconSizePopup(QMainWindow *win, QToolBar *tb, QAction *toggleHiddenBtn, QFileSystemModel *model, std::function<void()> onRefresh) {
-    QAction *insertBefore = nullptr;
-    const auto acts = tb->actions();
-    int pos = acts.indexOf(toggleHiddenBtn);  // <- FIX: use the QAction* directly
-    if (pos >= 0 && pos + 1 < acts.size()) insertBefore = acts.at(pos + 1);
+inline void addIconSizePopup(QMenu *parentMenu, std::function<void()> onRefresh) {
+    // icon size submenu
+    QMenu *iconSizeMenu = viewMenu->addMenu(IconsData::getIcon("iconsize.png"), "Icon Size");
 
-    QToolButton *btn = new QToolButton(tb);
-    //btn->setToolTip("Icon size");
-    btn->setIcon(IconsData::getIcon("iconsize.png"));
-    //btn->setIcon(QIcon("icons/iconsize.png"));
-    btn->setIcon(IconsData::getIcon("iconsize.png"));
-    btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    btn->setIconSize(tb->iconSize());
-    btn->setPopupMode(QToolButton::InstantPopup);
+    QActionGroup *iconSizeGroup = new QActionGroup(viewMenu);
+    iconSizeGroup->setExclusive(true);
 
-    QMenu *m = new QMenu(btn);
-    btn->setMenu(m);
+    QAction *smallIcons = iconSizeMenu->addAction("Small");
+    smallIcons->setCheckable(true);
+    smallIcons->setData(16);
+    iconSizeGroup->addAction(smallIcons);
 
-    auto addSizeAction = [&](int s){
-        QAction *a = m->addAction(QString::number(s));
-        a->setCheckable(true);
-        if (s == 32) a->setChecked(true);
-        QObject::connect(a, &QAction::triggered, win, [=]{
-            for (QAction *x : m->actions()) x->setChecked(false);
-            for (QAction *x : m->actions()) if (x->text().toInt() == s) { x->setChecked(true); break; }
+    QAction *mediumIcons = iconSizeMenu->addAction("Medium");
+    mediumIcons->setCheckable(true);
+    mediumIcons->setData(32);
+    iconSizeGroup->addAction(mediumIcons);
 
-            const QSize newSz(s, s);
-            if (auto f = dynamic_cast<FixedFSModel*>(model)) {
-                f->setIconSize(newSz);
-            }
+    QAction *largeIcons = iconSizeMenu->addAction("Large");
+    largeIcons->setCheckable(true);
+    largeIcons->setData(48);
+    iconSizeGroup->addAction(largeIcons);
 
-            onRefresh();
+    mediumIcons->setChecked(true); // default selected
 
-            class LocalAdjDelegate : public QStyledItemDelegate {
-            public:
-                explicit LocalAdjDelegate(const QSize &sz, QObject *parent=nullptr)
-                    : QStyledItemDelegate(parent), dec(sz) {}
-                void initStyleOption(QStyleOptionViewItem *opt, const QModelIndex &idx) const override {
-                    QStyledItemDelegate::initStyleOption(opt, idx);
-                    opt->decorationSize = dec;
-                }
-            private:
-                QSize dec;
-            };
-
-            if (auto root = win->centralWidget()) {
-                const auto views = root->findChildren<QAbstractItemView*>();
-                for (QAbstractItemView *v : views) {
-                    v->setIconSize(newSz);
-                    v->setItemDelegate(new LocalAdjDelegate(newSz, v));
-                    v->viewport()->update();
-                }
-            }
-
-            if (win->statusBar()) win->statusBar()->showMessage(QString("Icon size: %1").arg(s), 1200);
-        });
-    };
-
-    addSizeAction(16);
-    addSizeAction(24);
-    addSizeAction(32);
-    addSizeAction(48);
-    addSizeAction(64);
-    addSizeAction(128);
-
-    if (insertBefore) tb->insertWidget(insertBefore, btn);
-    else              tb->addWidget(btn);
+    QObject::connect(iconSizeGroup, &QActionGroup::triggered, viewMenu, [=](QAction *action) {
+        int px = action->data().toInt();
+        qDebug() << "[IconSize] Setting icon size to:" << px << "px";
+        // You must implement `setIconSize(QSize)` on the icon view in the main class
+        iconView->setIconSize(QSize(px, px));
+    });
 }
+
 #endif // ICONSIZE_H

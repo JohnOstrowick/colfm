@@ -22,11 +22,10 @@
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QActionGroup>
+#include "iconsize.h"
 #include <QToolButton>
 #include <QMenu>
 #include <QWidgetAction>
-#include "iconsize.h"
 #include "labels.h"
 #include "new.h"
 #include "icons_qicon.h"
@@ -36,7 +35,6 @@
 namespace Search { void doSearch(ColFM *); }
 
 inline void ColFM::drawButtons() {
-
     tb->clear();
     // group 1
 	// create a tool button with an icon and a popup menu
@@ -67,50 +65,52 @@ inline void ColFM::drawButtons() {
 	// end app menu
 
 
-// group 2 — File menu 
-	QToolButton *btnFileMenu = new QToolButton(tb);
-	btnFileMenu->setText("File");
-	btnFileMenu->setToolTip("File operations");
-	btnFileMenu->setPopupMode(QToolButton::InstantPopup);
+// file menu
 
-	// build the File menu
-	QMenu *fileMenu = new QMenu(btnFileMenu);
+// group 2 — File menu (placeholder only for now)
+QToolButton *btnFileMenu = new QToolButton(tb);
+btnFileMenu->setText("File");
+btnFileMenu->setToolTip("File operations");
+btnFileMenu->setPopupMode(QToolButton::InstantPopup);
 
-	// new folder
-	actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
-	actNewFolder->setToolTip("Create a new folder");
-	connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
-	fileMenu->addAction(actNewFolder);
+// build the File menu (placeholder entries)
+QMenu *fileMenu = new QMenu(btnFileMenu);
 
-	// Rename
-	actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
-	actRename->setToolTip("Rename selected item");
-	connect(actRename, &QAction::triggered, this, &ColFM::onRename);
-	fileMenu->addAction(actRename);
+// new folder
+actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+actNewFolder->setToolTip("Create a new folder");
+connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+fileMenu->addAction(actNewFolder);
 
-	// open
-	actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
-	actOpen->setToolTip("Open selected file or folder");
-	connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
-	fileMenu->addAction(actOpen);
+// Rename
+actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+actRename->setToolTip("Rename selected item");
+connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+fileMenu->addAction(actRename);
 
-	// duplicate
-	actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
-	actDuplicate->setToolTip("Make a copy of the selected file or folder");
-	connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
-	fileMenu->addAction(actDuplicate);
+// open
+actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+actOpen->setToolTip("Open selected file or folder");
+connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+fileMenu->addAction(actOpen);
 
-	// move
-	actMove = new QAction(IconsData::getIcon("move.png"), "Move", this);
-	actMove->setToolTip("Move file or folder to another location");
-	connect(actMove, &QAction::triggered, this, &ColFM::onMoveButton);
-	fileMenu->addAction(actMove);
+// duplicate
+actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+actDuplicate->setToolTip("Make a copy of the selected file or folder");
+connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+fileMenu->addAction(actDuplicate);
 
-	// softlink
-	actLink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
-	actLink->setToolTip("Create a soft link to the selected item");
-	connect(actLink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
-	fileMenu->addAction(actLink);
+// move
+actMove = new QAction(IconsData::getIcon("move.png"), "Move", this);
+actMove->setToolTip("Move file or folder to another location");
+connect(actMove, &QAction::triggered, this, &ColFM::onMoveButton);
+fileMenu->addAction(actMove);
+
+// softlink
+actLink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+actLink->setToolTip("Create a soft link to the selected item");
+connect(actLink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+fileMenu->addAction(actLink);
 
 
 //stuff
@@ -119,64 +119,9 @@ tb->addWidget(btnFileMenu);
 
 // end file menu
 
-// group 3 - view menu
-// group: view
-	QToolButton *btnViewMenu = new QToolButton(tb);
-	btnViewMenu->setText("View");
-	btnViewMenu->setToolTip("View and layout options");
-	btnViewMenu->setPopupMode(QToolButton::InstantPopup);
-
-	QMenu *viewMenu = new QMenu(btnViewMenu);
-
-	// View mode actions
-	viewMenu->addAction(IconsData::getIcon("view_columns.png"), "View as Columns", [this] {
-	    setViewMode(ViewMode::Column);
-	});
-	viewMenu->addAction(IconsData::getIcon("view_icons.png"), "View as Icons", [this] {
-	    setViewMode(ViewMode::Icon);
-	});
-	viewMenu->addAction(IconsData::getIcon("view_tree.png"), "View as List", [this] {
-	    setViewMode(ViewMode::Tree);
-	});
-
-	viewMenu->addSeparator();
-
-actToggleHidden = new QAction(IconsData::getIcon("eye-slash.png"), "Show Hidden Files", this);
-actToggleHidden->setCheckable(true);
-connect(actToggleHidden, &QAction::triggered, this, &ColFM::onToggleHidden);
-    
-
-	// Hidden files
-	viewMenu->addAction(IconsData::getIcon("eye.png"), "Show Hidden Files", [this] {
-	    onToggleHidden();
-	});
-	viewMenu->addAction(IconsData::getIcon("eye-slash.png"), "Hide Hidden Files", [this] {
-	    onToggleHidden();
-	});
-
-	viewMenu->addSeparator();
-
-	// Refresh
-	viewMenu->addAction(IconsData::getIcon("refresh.png"), "Refresh", [this] {
-	    onRefresh();
-	});
-
-	// Open New Window
-	viewMenu->addAction(IconsData::getIcon("newwindow.png"), "Open New Window", [this] {
-	    onNewWindow();
-	});
-
-// icon size
-addIconSizePopup(viewMenu, [this]{ onRefresh(); });
-
-// close off view menu
-btnViewMenu->setMenu(viewMenu);
-tb->addWidget(btnViewMenu);
-// end view menu
-
     actUp         = tb->addAction(IconsData::getIcon("up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
-//    actRefresh    = tb->addAction(IconsData::getIcon("refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
- //   tb->addSeparator();
+    actRefresh    = tb->addAction(IconsData::getIcon("refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
+    tb->addSeparator();
     actGoHome = tb->addAction(IconsData::getIcon("home.png"), "Go to Home");
     actGoHome->setToolTip("Go to your home directory");
     // group 2
@@ -186,7 +131,7 @@ tb->addWidget(btnViewMenu);
     actEmptyTrash = tb->addAction(IconsData::getIcon("empty_trash.png"),   "Empty Trash");      actEmptyTrash->setToolTip("Empty the Trash");
     actRestoreFromTrash = tb->addAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash");
     actRestoreFromTrash->setToolTip("Move selected items out of Trash");
- //   tb->addSeparator();
+    tb->addSeparator();
     // group 3
     //actOpen       = tb->addAction(IconsData::getIcon("open.png"),          "Open");         actOpen->setToolTip("Open item");
     actInfo       = tb->addAction(IconsData::getIcon("info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
@@ -196,31 +141,31 @@ tb->addWidget(btnViewMenu);
     actFolderize->setToolTip("Place selected items into a new folder");
     //actDuplicate  = tb->addAction(IconsData::getIcon("duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
    // actLink       = tb->addAction(IconsData::getIcon("softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
-  //  tb->addSeparator();
+    tb->addSeparator();
     actZip = tb->addAction(IconsData::getIcon("zip.png"), "Archive");
     actZip->setToolTip("Create archive from selected files");
     actUnZip = tb->addAction(IconsData::getIcon("unzip.png"), "Extract");
     actUnZip->setToolTip("Extract archive contents into folder");
     // group 4
-   // treeBtn         = tb->addAction(IconsData::getIcon("view_tree.png"),     "List View");        treeBtn->setToolTip("Switch to Tree/List view");
-    //columnBtn       = tb->addAction(IconsData::getIcon("view_columns.png"),  "Column View");      columnBtn->setToolTip("Switch to Column view");
-    //iconBtn         = tb->addAction(IconsData::getIcon("view_icons.png"),    "Icon View");        iconBtn->setToolTip("Switch to Icon view");
-    //toggleHiddenBtn = tb->addAction(IconsData::getIcon("eye-slash.png"),     "Show Hidden");      toggleHiddenBtn->setToolTip("Toggle hidden files");
+    treeBtn         = tb->addAction(IconsData::getIcon("view_tree.png"),     "List View");        treeBtn->setToolTip("Switch to Tree/List view");
+    columnBtn       = tb->addAction(IconsData::getIcon("view_columns.png"),  "Column View");      columnBtn->setToolTip("Switch to Column view");
+    iconBtn         = tb->addAction(IconsData::getIcon("view_icons.png"),    "Icon View");        iconBtn->setToolTip("Switch to Icon view");
+    toggleHiddenBtn = tb->addAction(IconsData::getIcon("eye-slash.png"),     "Show Hidden");      toggleHiddenBtn->setToolTip("Toggle hidden files");
     settingsBtn     = tb->addAction(IconsData::getIcon("settings.png"),      "Settings");         settingsBtn->setToolTip("Open Settings dialog");
     // (Icon size popup — to be added later)
     tb->addSeparator();
 //    actNewFolder = tb->addAction(IconsData::getIcon("newfolder.png"), "New Folder");
   //  actNewFolder->setToolTip("Create a new folder");
-    //actNewWindow = tb->addAction(IconsData::getIcon("newwindow.png"), "New Window");
-    //actNewWindow->setToolTip("Open a new browser window");
+    actNewWindow = tb->addAction(IconsData::getIcon("newwindow.png"), "New Window");
+    actNewWindow->setToolTip("Open a new browser window");
 //    actNewTerminal = tb->addAction(IconsData::getIcon("terminal.png"), "New Terminal");
  //   actNewTerminal->setToolTip("Open Terminal in Current Folder");
-   // addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
+    addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
     // --- Label (swatches) popup, sits next to Size ---
     QToolButton *labelBtn = new QToolButton(tb);
     labelBtn->setIcon(IconsData::getIcon("label.png"));   // or "icons/label.svg" if you have an SVG
     labelBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    //labelBtn->setIconSize(tb->iconSize());
+    labelBtn->setIconSize(tb->iconSize());
     labelBtn->setToolTip("Set label colour");
     labelBtn->setPopupMode(QToolButton::InstantPopup);
 
@@ -241,7 +186,7 @@ tb->addWidget(btnViewMenu);
     //connect(actAppIcon, &QAction::triggered, this, &ColFM::onAppIcon);
     connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
     connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
-    //connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
+    connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
 //    connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
     connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
     connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
@@ -255,13 +200,13 @@ tb->addWidget(btnViewMenu);
 //    connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
-    //connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
-    //connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);
-    //connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
-   // connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
+    connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
+    connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);
+    connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
+    connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
     connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
 //    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
-    //connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
+    connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
 }
 // ---- Handlers (single definitions) ----
 // others are in their relevantly named files

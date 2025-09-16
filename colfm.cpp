@@ -55,7 +55,6 @@
 #include <QMimeData>
 #include <QPixmap>
 
-
 #include "helpers/info.h"
 #include "helpers/breadcrumbs.h"
 #include "helpers/labels.h"
@@ -241,12 +240,12 @@ public:
     void onFolderize();
     void onRefresh();
 
-// app icon defintions/declarations
-void shutdownNow(); 
-void rebootNow(); 
-void forceQuitApp(); 
-void openProcessManager(); 
-void lockSession(); 
+	// app icon defintions/declarations
+	void shutdownNow(); 
+	void rebootNow(); 
+	void forceQuitApp(); 
+	void openProcessManager(); 
+	void lockSession(); 
 
     void onMoveToTrash();
     void onEmptyTrash();
@@ -254,6 +253,8 @@ void lockSession();
     void onRestoreFromTrash();
 
     void onUp();
+    void onChDir(const QString&);
+
     void onOpen();
     void openWith(const QString &filePath);
     void onInfo();
@@ -261,12 +262,17 @@ void lockSession();
     void onMove();
     void onMoveButton();
 
-void onBack();
-void onGoDesktop();
-void onGoDocuments();
-void onGoDownloads();
-void onGoPictures();
-void onGoMedia();
+	void onBack();
+	void onGoDesktop();
+	void onGoDocuments();
+	void onGoDownloads();
+	void onGoPictures();
+	void onGoMedia();
+
+	void onCut();
+	void onCopy();
+	void onPaste();
+	void onUndo();
 
     void onDuplicate();
     void onGoHome();
@@ -314,6 +320,7 @@ void onGoMedia();
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
+    QAction *actCut{}, *actCopy{}, *actPaste{}, *actUndo{};
     QAction *actBack{}, *actGoDesktop{}, *actGoDocuments{}, *actGoDownloads{}, *actGoPictures{}, *actGoMedia{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};

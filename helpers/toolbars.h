@@ -38,7 +38,8 @@ namespace Search { void doSearch(ColFM *); }
 inline void ColFM::drawButtons() {
 
     tb->clear();
-    // group 1
+
+// group 1 - appmenu
 	// create a tool button with an icon and a popup menu
 	QToolButton *btnAppIcon = new QToolButton(tb);
 	btnAppIcon->setIcon(IconsData::getIcon("app_icon.png"));
@@ -55,26 +56,23 @@ inline void ColFM::drawButtons() {
 	appMenu->addSeparator();
 	appMenu->addAction("Lock Session", [this]{ lockSession(); });
 
-// new terminal
+	// new terminal
 	actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "New Terminal", this);
 	actNewTerminal->setToolTip("Open Terminal in Current Folder");
 	connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
 	appMenu->addAction(actNewTerminal);
 
-// add settings
+	// add settings
 
-actSettings = new QAction(IconsData::getIcon("settings.png"), "Settings", this);
-actSettings->setToolTip("Open Settings dialog");
-connect(actSettings, &QAction::triggered, this, &ColFM::onSettings);
-appMenu->addAction(actSettings);
+	actSettings = new QAction(IconsData::getIcon("settings.png"), "Settings", this);
+	actSettings->setToolTip("Open Settings dialog");
+	connect(actSettings, &QAction::triggered, this, &ColFM::onSettings);
+	appMenu->addAction(actSettings);
 
-// wrap it up
+	// wrap it up
 	btnAppIcon->setMenu(appMenu);
 	tb->addWidget(btnAppIcon);
-
-
-	// end app menu
-
+// end app menu
 
 // group 2 — File menu 
 	QToolButton *btnFileMenu = new QToolButton(tb);
@@ -121,15 +119,111 @@ appMenu->addAction(actSettings);
 	connect(actLink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
 	fileMenu->addAction(actLink);
 
-
-//stuff
-btnFileMenu->setMenu(fileMenu);
-tb->addWidget(btnFileMenu);
+	//wrap it up
+	btnFileMenu->setMenu(fileMenu);
+	tb->addWidget(btnFileMenu);
 
 // end file menu
 
-// group 3 - view menu
-// group: view
+// group 3 — Edit menu
+	QToolButton *btnEditMenu = new QToolButton(tb);
+	btnEditMenu->setText("Edit");
+	btnEditMenu->setToolTip("Edit operations");
+	btnEditMenu->setPopupMode(QToolButton::InstantPopup);
+
+	// build the Edit menu
+	QMenu *editMenu = new QMenu(btnEditMenu);
+
+	// Cut
+	actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+	actCut->setToolTip("Cut selected items");
+	connect(actCut, &QAction::triggered, this, &ColFM::onCut);
+	editMenu->addAction(actCut);
+
+	// Copy
+	actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+	actCopy->setToolTip("Copy selected items");
+	connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
+	editMenu->addAction(actCopy);
+
+	// Paste
+	actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+	actPaste->setToolTip("Paste items");
+	connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
+	editMenu->addAction(actPaste);
+
+	// Undo
+	actUndo = new QAction(IconsData::getIcon("undo.png"), "Undo", this);
+	actUndo->setToolTip("Undo last action");
+	connect(actUndo, &QAction::triggered, this, &ColFM::onUndo);
+	editMenu->addAction(actUndo);
+
+	// attach the menu
+	btnEditMenu->setMenu(editMenu);
+	tb->addWidget(btnEditMenu);
+// group 3 end - edit menu
+
+// group 4 — Properties menu
+	QToolButton *btnPropertiesMenu = new QToolButton(tb);
+	btnPropertiesMenu->setText("Properties");
+	btnPropertiesMenu->setToolTip("File properties and labels");
+	btnPropertiesMenu->setPopupMode(QToolButton::InstantPopup);
+
+	// build the Properties menu
+	QMenu *propertiesMenu = new QMenu(btnPropertiesMenu);
+
+	// Get Info
+	actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+	actInfo->setToolTip("Show file information and preview");
+	connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+	propertiesMenu->addAction(actInfo);
+
+	// Colour Labels submenu
+	QMenu *labelMenu = new QMenu("Labels", propertiesMenu);
+	QWidgetAction *waLabel = new QWidgetAction(labelMenu);
+	waLabel->setDefaultWidget(LabelManager::buildSwatchRow(btnPropertiesMenu, model, [this](){ return getCWD(); }));
+	labelMenu->addAction(waLabel);
+	propertiesMenu->addMenu(labelMenu);
+
+	// attach the menu
+	btnPropertiesMenu->setMenu(propertiesMenu);
+	tb->addWidget(btnPropertiesMenu);
+
+// end of properties menu
+
+// group 5 — Archiving menu
+	QToolButton *btnArchiveMenu = new QToolButton(tb);
+	btnArchiveMenu->setText("Archive");
+	btnArchiveMenu->setToolTip("Archiving operations");
+	btnArchiveMenu->setPopupMode(QToolButton::InstantPopup);
+
+	// build the Archiving menu
+	QMenu *archiveMenu = new QMenu(btnArchiveMenu);
+
+	// Folderize
+	actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+	actFolderize->setToolTip("Place selected items into a new folder");
+	connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+	archiveMenu->addAction(actFolderize);
+
+	// Zip (Archive)
+	actZip = new QAction(IconsData::getIcon("zip.png"), "Archive", this);
+	actZip->setToolTip("Create archive from selected files");
+	connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+	archiveMenu->addAction(actZip);
+
+	// UnZip (Extract)
+	actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract", this);
+	actUnZip->setToolTip("Extract archive contents into folder");
+	connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+	archiveMenu->addAction(actUnZip);
+
+	// attach the menu
+	btnArchiveMenu->setMenu(archiveMenu);
+	tb->addWidget(btnArchiveMenu);
+// end of archive menu
+
+// group 6 - view menu
 	QToolButton *btnViewMenu = new QToolButton(tb);
 	btnViewMenu->setText("View");
 	btnViewMenu->setToolTip("View and layout options");
@@ -150,11 +244,10 @@ tb->addWidget(btnFileMenu);
 
 	viewMenu->addSeparator();
 
-actToggleHidden = new QAction(IconsData::getIcon("eye-slash.png"), "Show Hidden Files", this);
-actToggleHidden->setCheckable(true);
-connect(actToggleHidden, &QAction::triggered, this, &ColFM::onToggleHidden);
-    
-
+	actToggleHidden = new QAction(IconsData::getIcon("eye-slash.png"), "Show Hidden Files", this);
+	actToggleHidden->setCheckable(true);
+	connect(actToggleHidden, &QAction::triggered, this, &ColFM::onToggleHidden);
+		
 	// Hidden files
 	viewMenu->addAction(IconsData::getIcon("eye.png"), "Show Hidden Files", [this] {
 	    onToggleHidden();
@@ -175,18 +268,15 @@ connect(actToggleHidden, &QAction::triggered, this, &ColFM::onToggleHidden);
 	    onNewWindow();
 	});
 
-// icon size
-addIconSizePopup(viewMenu, [this]{ onRefresh(); });
-//addIconSizePopup(viewMenu, iconView, [this]{ onRefresh(); });
-//addIconSizePopup(viewMenu, currentView(), [this]{ onRefresh(); });
-//addIconSizePopup(viewMenu, qobject_cast<QAbstractItemView*>(this->views->activeView()), [this]{ onRefresh(); });
-
-// close off view menu
-btnViewMenu->setMenu(viewMenu);
-tb->addWidget(btnViewMenu);
+	// icon size
+	addIconSizePopup(viewMenu, [this]{ onRefresh(); });
+	
+	// close off view menu
+	btnViewMenu->setMenu(viewMenu);
+	tb->addWidget(btnViewMenu);
 // end view menu
 
-// group 3 — Trash menu
+// group 7 — Trash menu
 	QToolButton *btnTrashMenu = new QToolButton(tb);
 	btnTrashMenu->setText("Trash");
 	btnTrashMenu->setToolTip("Trash operations");
@@ -219,12 +309,12 @@ tb->addWidget(btnViewMenu);
 	connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
 	trashMenu->addAction(actEmptyTrash);
 
-// attach the menu
-btnTrashMenu->setMenu(trashMenu);
-tb->addWidget(btnTrashMenu);
+	// attach the menu
+	btnTrashMenu->setMenu(trashMenu);
+	tb->addWidget(btnTrashMenu);
 // end trash menu
 
-// group 4 — Go menu
+// group 8 — Go menu
 	QToolButton *btnGoMenu = new QToolButton(tb);
 	btnGoMenu->setText("Go");
 	btnGoMenu->setToolTip("Navigation");
@@ -287,168 +377,26 @@ tb->addWidget(btnTrashMenu);
 	connect(actOpenTrash, &QAction::triggered, this, &ColFM::onOpenTrash);
 	goMenu->addAction(actOpenTrash);
 
-// attach the menu
-btnGoMenu->setMenu(goMenu);
-tb->addWidget(btnGoMenu);
+	// attach the menu
+	btnGoMenu->setMenu(goMenu);
+	tb->addWidget(btnGoMenu);
 // end go menu
 
-// group 5 — Properties menu
-QToolButton *btnPropertiesMenu = new QToolButton(tb);
-btnPropertiesMenu->setText("Properties");
-btnPropertiesMenu->setToolTip("File properties and labels");
-btnPropertiesMenu->setPopupMode(QToolButton::InstantPopup);
-
-// build the Properties menu
-QMenu *propertiesMenu = new QMenu(btnPropertiesMenu);
-
-// Get Info
-actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
-actInfo->setToolTip("Show file information and preview");
-connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
-propertiesMenu->addAction(actInfo);
-
-// Colour Labels submenu
-QMenu *labelMenu = new QMenu("Labels", propertiesMenu);
-QWidgetAction *waLabel = new QWidgetAction(labelMenu);
-waLabel->setDefaultWidget(LabelManager::buildSwatchRow(btnPropertiesMenu, model, [this](){ return getCWD(); }));
-labelMenu->addAction(waLabel);
-propertiesMenu->addMenu(labelMenu);
-
-// attach the menu
-btnPropertiesMenu->setMenu(propertiesMenu);
-tb->addWidget(btnPropertiesMenu);
-
-// end of properties menu
-
-
-// group 6 — Archiving menu
-QToolButton *btnArchiveMenu = new QToolButton(tb);
-btnArchiveMenu->setText("Archive");
-btnArchiveMenu->setToolTip("Archiving operations");
-btnArchiveMenu->setPopupMode(QToolButton::InstantPopup);
-
-// build the Archiving menu
-QMenu *archiveMenu = new QMenu(btnArchiveMenu);
-
-// Folderize
-actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
-actFolderize->setToolTip("Place selected items into a new folder");
-connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
-archiveMenu->addAction(actFolderize);
-
-// Zip (Archive)
-actZip = new QAction(IconsData::getIcon("zip.png"), "Archive", this);
-actZip->setToolTip("Create archive from selected files");
-connect(actZip, &QAction::triggered, this, &ColFM::onZip);
-archiveMenu->addAction(actZip);
-
-// UnZip (Extract)
-actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract", this);
-actUnZip->setToolTip("Extract archive contents into folder");
-connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
-archiveMenu->addAction(actUnZip);
-
-// attach the menu
-btnArchiveMenu->setMenu(archiveMenu);
-tb->addWidget(btnArchiveMenu);
-// end of archive menu
-
-    //actUp         = tb->addAction(IconsData::getIcon("up_level.png"),      "Go Up a Level");    actUp->setToolTip("Go to parent folder");
-//    actRefresh    = tb->addAction(IconsData::getIcon("refresh.png"),       "Refresh");          actRefresh->setToolTip("Reload current folder");
- //   tb->addSeparator();
-    //actGoHome = tb->addAction(IconsData::getIcon("home.png"), "Go to Home");
-    //actGoHome->setToolTip("Go to your home directory");
-    // group 2
-    //actOpenTrash  = tb->addAction(IconsData::getIcon("open_trash.png"),    "Open Trash");       actOpenTrash->setToolTip("Open the Trash folder");
-    //actTrash      = tb->addAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash");    actTrash->setToolTip("Move selected items to Trash");
-    // (Move out of Trash — to be added later)
-    //actEmptyTrash = tb->addAction(IconsData::getIcon("empty_trash.png"),   "Empty Trash");      actEmptyTrash->setToolTip("Empty the Trash");
-    //actRestoreFromTrash = tb->addAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash");
-    //actRestoreFromTrash->setToolTip("Move selected items out of Trash");
- //   tb->addSeparator();
-    // group 3
-    //actOpen       = tb->addAction(IconsData::getIcon("open.png"),          "Open");         actOpen->setToolTip("Open item");
-    //actInfo       = tb->addAction(IconsData::getIcon("info.png"),          "Get Info");         actInfo->setToolTip("Show file information and preview");
-//    actRename     = tb->addAction(IconsData::getIcon("rename.png"),        "Rename");           actRename->setToolTip("Rename selected item");
-    //actMove       = tb->addAction(IconsData::getIcon("move.png"),          "Move");             actMove->setToolTip("Move selected item");
-    //actFolderize = tb->addAction(IconsData::getIcon("folderize.png"), "Folderize");
-    //actFolderize->setToolTip("Place selected items into a new folder");
-    //actDuplicate  = tb->addAction(IconsData::getIcon("duplicate.png"),     "Duplicate");        actDuplicate->setToolTip("Copy / duplicate selected item");
-   // actLink       = tb->addAction(IconsData::getIcon("softlink.png"),      "Make Linkfile");    actLink->setToolTip("Create a symbolic link");
-  //  tb->addSeparator();
-    //actZip = tb->addAction(IconsData::getIcon("zip.png"), "Archive");
-    //actZip->setToolTip("Create archive from selected files");
-    //actUnZip = tb->addAction(IconsData::getIcon("unzip.png"), "Extract");
-    //actUnZip->setToolTip("Extract archive contents into folder");
-    // group 4
-   // treeBtn         = tb->addAction(IconsData::getIcon("view_tree.png"),     "List View");        treeBtn->setToolTip("Switch to Tree/List view");
-    //columnBtn       = tb->addAction(IconsData::getIcon("view_columns.png"),  "Column View");      columnBtn->setToolTip("Switch to Column view");
-    //iconBtn         = tb->addAction(IconsData::getIcon("view_icons.png"),    "Icon View");        iconBtn->setToolTip("Switch to Icon view");
-    //toggleHiddenBtn = tb->addAction(IconsData::getIcon("eye-slash.png"),     "Show Hidden");      toggleHiddenBtn->setToolTip("Toggle hidden files");
-    //settingsBtn     = tb->addAction(IconsData::getIcon("settings.png"),      "Settings");         settingsBtn->setToolTip("Open Settings dialog");
-    // (Icon size popup — to be added later)
-    //tb->addSeparator();
-//    actNewFolder = tb->addAction(IconsData::getIcon("newfolder.png"), "New Folder");
-  //  actNewFolder->setToolTip("Create a new folder");
-    //actNewWindow = tb->addAction(IconsData::getIcon("newwindow.png"), "New Window");
-    //actNewWindow->setToolTip("Open a new browser window");
-//    actNewTerminal = tb->addAction(IconsData::getIcon("terminal.png"), "New Terminal");
- //   actNewTerminal->setToolTip("Open Terminal in Current Folder");
-   // addIconSizePopup(this, tb, toggleHiddenBtn, model, [this]{ onRefresh(); });
-    // --- Label (swatches) popup, sits next to Size ---
-    //QToolButton *labelBtn = new QToolButton(tb);
-    //labelBtn->setIcon(IconsData::getIcon("label.png"));   // or "icons/label.svg" if you have an SVG
-    //labelBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    //labelBtn->setToolTip("Set label colour");
-    //labelBtn->setPopupMode(QToolButton::InstantPopup);
-
-    //QMenu *labelMenu = new QMenu(labelBtn);
-    //QWidgetAction *waLabel = new QWidgetAction(labelMenu);
-    //waLabel->setDefaultWidget(LabelManager::buildSwatchRow(labelBtn, model, [this](){ return getCWD(); }));
-    //labelMenu->addAction(waLabel);
-    //labelBtn->setMenu(labelMenu);
-    // place it right after Size
-    //tb->addWidget(labelBtn);
-
-    // group 5 search
+// group 9 search
     actSearch = tb->addAction(IconsData::getIcon("search.png"), "Search");
     connect(actSearch, &QAction::triggered, this, [this]() {
         Search::doSearch(this);
     });
-    // Wire up
-    //connect(actAppIcon, &QAction::triggered, this, &ColFM::onAppIcon);
-    //connect(actUp,            &QAction::triggered, this, &ColFM::onUp);
-    //connect(actGoHome, &QAction::triggered, this, &ColFM::onGoHome);
-    //connect(actRefresh,       &QAction::triggered, this, &ColFM::onRefresh);
-//    connect(actOpen,            &QAction::triggered, this, &ColFM::onOpen);
-    //connect(actTrash,         &QAction::triggered, this, &ColFM::onMoveToTrash);
-    //connect(actOpenTrash,     &QAction::triggered, this, &ColFM::onOpenTrash);
-    //connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
-    //connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
-    //connect(actInfo,          &QAction::triggered, this, &ColFM::onInfo);
-//    connect(actRename,        &QAction::triggered, this, &ColFM::onRename);
-//    connect(actMove,          &QAction::triggered, this, &ColFM::onMoveButton);
-    //connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
-//    connect(actDuplicate,     &QAction::triggered, this, &ColFM::onDuplicate);
-//    connect(actLink,          &QAction::triggered, this, &ColFM::onCreateSoftlink);
-    //connect(actZip, &QAction::triggered, this, &ColFM::onZip);
-    //connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
-    //connect(toggleHiddenBtn,  &QAction::triggered, this, &ColFM::onToggleHidden);
-    //connect(treeBtn,          &QAction::triggered, this, &ColFM::onViewTree);
-    //connect(columnBtn,        &QAction::triggered, this, &ColFM::onViewColumn);
-   // connect(iconBtn,          &QAction::triggered, this, &ColFM::onViewIcon);
-    //connect(settingsBtn,      &QAction::triggered, this, &ColFM::onSettings);
-//    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
-    //connect(actNewWindow, &QAction::triggered, this, &ColFM::onNewWindow);
-}
+// end search function
+	
 // ---- Handlers (single definitions) ----
+};
 
 inline void ColFM::onBack()        { statusBar()->showMessage("TODO: Back", 2000); }
-inline void ColFM::onGoDesktop()   { statusBar()->showMessage("TODO: Go Desktop", 2000); }
-inline void ColFM::onGoDocuments() { statusBar()->showMessage("TODO: Go Documents", 2000); }
-inline void ColFM::onGoDownloads() { statusBar()->showMessage("TODO: Go Downloads", 2000); }
-inline void ColFM::onGoPictures()  { statusBar()->showMessage("TODO: Go Pictures", 2000); }
-inline void ColFM::onGoMedia()     { statusBar()->showMessage("TODO: Go Media", 2000); }
+inline void ColFM::onCut()         { statusBar()->showMessage("TODO: Cut", 2000); }
+inline void ColFM::onCopy()        { statusBar()->showMessage("TODO: Copy", 2000); }
+inline void ColFM::onPaste()       { statusBar()->showMessage("TODO: Paste", 2000); }
+inline void ColFM::onUndo()        { statusBar()->showMessage("TODO: Undo", 2000); }
 
 // others are in their relevantly named files
 inline void ColFM::onRefresh() {
@@ -468,6 +416,20 @@ inline void ColFM::onUp() {
     if (crumbs) crumbs->setPath(up);
     setViewMode(mode);
 }
+
+inline void ColFM::onChDir(const QString &path) {
+    if (!QDir(path).exists()) return;
+    currentRoot = model->index(path);
+    if (crumbs) crumbs->setPath(path);
+    setViewMode(mode);
+}
+
+inline void ColFM::onGoDesktop()   { onChDir(QDir::homePath() + "/Desktop"); }
+inline void ColFM::onGoDocuments() { onChDir(QDir::homePath() + "/Documents"); }
+inline void ColFM::onGoDownloads() { onChDir(QDir::homePath() + "/Downloads"); }
+inline void ColFM::onGoPictures()  { onChDir(QDir::homePath() + "/Pictures"); }
+inline void ColFM::onGoMedia()     { onChDir("/media"); }
+
 inline void ColFM::onOpen()                   { const QModelIndex idx = currentIndex(); if (idx.isValid()) openFile(idx); }
 inline void ColFM::onInfo() {
     QModelIndex idx = currentIndex();

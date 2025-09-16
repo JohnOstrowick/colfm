@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>System Menu Icons</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Font Awesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --tile: 256px;    /* square tile size for clean crops */
+      --icon: 72pt;     /* requested icon size */
+      --gap: 24px;      /* spacing between tiles */
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(var(--tile), 1fr));
+      gap: var(--gap);
+      place-items: center;
+      padding: var(--gap);
+      box-sizing: border-box;
+    }
+    .icon {
+      width: var(--tile);
+      height: var(--tile);
+      display: grid;
+      place-items: center;
+      background: #000;      /* solid black box for clean screenshots */
+      border-radius: 12px;   /* soften edges (optional) */
+    }
+    .icon i {
+      font-size: var(--icon);
+      color: #fff;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Shutdown -->
+    <div class="icon" data-name="shutdown">
+      <i class="fa-solid fa-power-off" aria-hidden="true"></i>
+    </div>
+
+    <!-- Reboot -->
+    <div class="icon" data-name="reboot">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+    </div>
+
+    <!-- Force Quit -->
+    <div class="icon" data-name="force-quit">
+      <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
+    </div>
+
+    <!-- Process Manager -->
+    <div class="icon" data-name="process-manager">
+      <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+    </div>
+
+    <!-- Lock Session -->
+    <div class="icon" data-name="lock-session">
+      <i class="fa-solid fa-lock" aria-hidden="true"></i>
+    </div>
+  </div>
+</body>
+</html>

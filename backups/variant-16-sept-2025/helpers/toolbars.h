@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QAction>
 #include <QApplication>
 #include <QCheckBox>
@@ -36,7 +35,6 @@
 #include "link.h"
 namespace Search { void doSearch(ColFM *); }
 #include "views.h"
-#include "editmenu.h"
 inline void ColFM::drawButtons() {
 
     tb->clear();
@@ -50,13 +48,13 @@ inline void ColFM::drawButtons() {
 
 	// build the application menu
 	QMenu *appMenu = new QMenu(btnAppIcon);
-	appMenu->addAction(IconsData::getIcon("shutdown.png"), "Shutdown", [this]{ shutdownNow(); });
-	appMenu->addAction(IconsData::getIcon("reboot.png"), "Reboot", [this]{ rebootNow(); });
+	appMenu->addAction("Shutdown",         [this]{ shutdownNow(); });
+	appMenu->addAction("Reboot",           [this]{ rebootNow(); });
 	appMenu->addSeparator();
-	appMenu->addAction(IconsData::getIcon("force_quit.png"), "Force Quit", [this]{ forceQuitApp(); });
-	appMenu->addAction(IconsData::getIcon("process_manager.png"), "Process Manager", [this]{ openProcessManager(); });
+	appMenu->addAction("Force Quit",       [this]{ forceQuitApp(); });
+	appMenu->addAction("Process Manager",  [this]{ openProcessManager(); });
 	appMenu->addSeparator();
-	appMenu->addAction(IconsData::getIcon("lock_session.png"), "Lock Session", [this]{ lockSession(); });
+	appMenu->addAction("Lock Session", [this]{ lockSession(); });
 
 	// new terminal
 	actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "New Terminal", this);
@@ -139,47 +137,26 @@ inline void ColFM::drawButtons() {
 	// Cut
 	actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
 	actCut->setToolTip("Cut selected items");
-	//connect(actCut, &QAction::triggered, this, &ColFM::onCut);
+	connect(actCut, &QAction::triggered, this, &ColFM::onCut);
 	editMenu->addAction(actCut);
 
 	// Copy
 	actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
 	actCopy->setToolTip("Copy selected items");
-	//connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
+	connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
 	editMenu->addAction(actCopy);
 
 	// Paste
 	actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
 	actPaste->setToolTip("Paste items");
-	//connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
+	connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
 	editMenu->addAction(actPaste);
 
 	// Undo
 	actUndo = new QAction(IconsData::getIcon("undo.png"), "Undo", this);
 	actUndo->setToolTip("Undo last action");
-	//connect(actUndo, &QAction::triggered, this, &ColFM::onUndo);
+	connect(actUndo, &QAction::triggered, this, &ColFM::onUndo);
 	editMenu->addAction(actUndo);
-
-		// ---- Handlers (single definitions) ----
-	connect(actCut, &QAction::triggered, this, [this] {
-		QModelIndex idx = currentIndex();
-		if (idx.isValid())
-			onCut(model->filePath(idx));
-	});
-
-	connect(actCopy, &QAction::triggered, this, [this] {
-		QModelIndex idx = currentIndex();
-		if (idx.isValid())
-			onCopy(model->filePath(idx));
-	});
-
-	connect(actPaste, &QAction::triggered, this, [this] {
-		onPaste(model->filePath(currentRoot));
-	});
-
-	connect(actUndo, &QAction::triggered, this, [this] {
-		onUndo();
-	});
 
 	// attach the menu
 	btnEditMenu->setMenu(editMenu);
@@ -202,21 +179,11 @@ inline void ColFM::drawButtons() {
 	propertiesMenu->addAction(actInfo);
 
 	// Colour Labels submenu
-/*	QMenu *labelMenu = new QMenu("Labels", propertiesMenu);
-	QMenu *labelMenu = new QMenu(IconsData::getIcon("labels.png"), "Labels", propertiesMenu);
-	QWidgetAction *waLabel = new QWidgetAction(labelMenu);
-	waLabel->setDefaultWidget(LabelManager::buildSwatchRow(btnPropertiesMenu, model, [this](){ return getCWD(); }));
-	labelMenu->addAction(waLabel);
-	propertiesMenu->addMenu(labelMenu);*/
-	// Colour Labels submenu
-	// Colour Labels submenu
 	QMenu *labelMenu = new QMenu("Labels", propertiesMenu);
-	labelMenu->setIcon(IconsData::getIcon("label.png"));
 	QWidgetAction *waLabel = new QWidgetAction(labelMenu);
 	waLabel->setDefaultWidget(LabelManager::buildSwatchRow(btnPropertiesMenu, model, [this](){ return getCWD(); }));
 	labelMenu->addAction(waLabel);
 	propertiesMenu->addMenu(labelMenu);
-
 
 	// attach the menu
 	btnPropertiesMenu->setMenu(propertiesMenu);
@@ -387,7 +354,7 @@ inline void ColFM::drawButtons() {
 	goMenu->addAction(actGoDocuments);
 
 	// Downloads
-	actGoDownloads = new QAction(IconsData::getIcon("downloads.png"), "Downloads", this);
+	actGoDownloads = new QAction(IconsData::getIcon("download.png"), "Downloads", this);
 	actGoDownloads->setToolTip("Go to Downloads");
 	connect(actGoDownloads, &QAction::triggered, this, &ColFM::onGoDownloads);
 	goMenu->addAction(actGoDownloads);
@@ -422,14 +389,16 @@ inline void ColFM::drawButtons() {
     });
 // end search function
 	
-
+// ---- Handlers (single definitions) ----
 };
 
-// others are in their relevantly named files
-void ColFM::onBack() {
-    statusBar()->showMessage("TODO: Back", 2000);
-}
+inline void ColFM::onBack()        { statusBar()->showMessage("TODO: Back", 2000); }
+inline void ColFM::onCut()         { statusBar()->showMessage("TODO: Cut", 2000); }
+inline void ColFM::onCopy()        { statusBar()->showMessage("TODO: Copy", 2000); }
+inline void ColFM::onPaste()       { statusBar()->showMessage("TODO: Paste", 2000); }
+inline void ColFM::onUndo()        { statusBar()->showMessage("TODO: Undo", 2000); }
 
+// others are in their relevantly named files
 inline void ColFM::onRefresh() {
     model->setIconProvider(new CustomIconProvider());  // rebuild icons (incl. folder label colours)
     const QString path = model->filePath(currentRoot);
@@ -485,8 +454,6 @@ inline void ColFM::onToggleHidden() {
     model->setFilter(f);
     setViewMode(mode);
 }
-
-
 inline void ColFM::onViewTree()   { setViewMode(ViewMode::Tree); }
 inline void ColFM::onViewColumn() { setViewMode(ViewMode::Column); }
 inline void ColFM::onViewIcon()   { setViewMode(ViewMode::Icon); }

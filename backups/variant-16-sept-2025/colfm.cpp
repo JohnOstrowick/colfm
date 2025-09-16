@@ -252,12 +252,6 @@ public:
     void onOpenTrash();
     void onRestoreFromTrash();
 
-
-void onCut(const QString &path);
-void onCopy(const QString &path);
-void onPaste(const QString &targetDir);
-//void onUndo();
-
     void onUp();
     void onChDir(const QString&);
 
@@ -325,9 +319,9 @@ void onPaste(const QString &targetDir);
 
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
-    QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{}, *actBack{};
+    QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{};
     QAction *actCut{}, *actCopy{}, *actPaste{}, *actUndo{};
-    QAction *actGoDesktop{}, *actGoDocuments{}, *actGoDownloads{}, *actGoPictures{}, *actGoMedia{};
+    QAction *actBack{}, *actGoDesktop{}, *actGoDocuments{}, *actGoDownloads{}, *actGoPictures{}, *actGoMedia{};
     QAction *actRestoreFromTrash{};
     QAction *actOpen{}, *actClose{}, *actInfo{}, *actRename{}, *actMove{}, *actFolderize{}, *actDuplicate{}, *actLink{};
     QAction *actZip{},*actUnZip{};

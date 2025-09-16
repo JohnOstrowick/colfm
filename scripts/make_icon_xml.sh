@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 { 
   printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
   printf '%s\n' '<icons>'
@@ -8,4 +11,6 @@
       "$name" "$(base64 -w0 "$f")"
   done
   printf '%s\n' '</icons>'
-} > ../icons/icons.xml
+} > ./icons/icons.xml
+
+bash ./scripts/make_icons_data_blob.sh

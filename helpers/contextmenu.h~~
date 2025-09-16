@@ -1,0 +1,120 @@
+#pragma once
+#include <QMenu>
+#include <QWidgetAction>
+#include "icons_data.h"
+#include "labels.h"
+#include "new.h"
+#include "rename.h"
+#include "handleopen.h"
+#include "duplicate.h"
+#include "link.h"
+#include "editmenu.h"
+#include "trash.h"
+#include "archivezip.h"
+#include "info.h"
+#include "new_terminal.h"
+
+inline void ColFM::setupContextMenu(QWidget *parent) {
+    // Create the context menu
+    QMenu *contextMenu = new QMenu(parent);
+
+    // --- File ops ---
+    QMenu *fileMenu = contextMenu->addMenu(IconsData::getIcon("newfolder.png"), "File");
+    actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+    connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+    fileMenu->addAction(actNewFolder);
+
+    actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+    connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+    fileMenu->addAction(actOpen);
+
+    actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+    connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+    fileMenu->addAction(actRename);
+
+    actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+    connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+    fileMenu->addAction(actDuplicate);
+
+    actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+    connect(actSoftlink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+    fileMenu->addAction(actSoftlink);
+
+    // --- Edit ops ---
+    QMenu *editMenu = contextMenu->addMenu(IconsData::getIcon("cut.png"), "Edit");
+
+    actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+    connect(actCut, &QAction::triggered, this, [this] {
+        QModelIndex idx = currentIndex();
+        if (idx.isValid()) onCut(model->filePath(idx));
+    });
+    editMenu->addAction(actCut);
+
+    actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+    connect(actCopy, &QAction::triggered, this, [this] {
+        QModelIndex idx = currentIndex();
+        if (idx.isValid()) onCopy(model->filePath(idx));
+    });
+    editMenu->addAction(actCopy);
+
+    actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+    connect(actPaste, &QAction::triggered, this, [this] {
+        onPaste(model->filePath(currentRoot));
+    });
+    editMenu->addAction(actPaste);
+
+    // --- Trash ops ---
+    QMenu *trashMenu = contextMenu->addMenu(IconsData::getIcon("open_trash.png"), "Trash");
+
+    actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+    connect(actTrash, &QAction::triggered, this, &ColFM::onMoveToTrash);
+    trashMenu->addAction(actTrash);
+
+    actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+    connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+    trashMenu->addAction(actRestoreFromTrash);
+
+    actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+    connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+    trashMenu->addAction(actEmptyTrash);
+
+    // --- Archiving ---
+    QMenu *archiveMenu = contextMenu->addMenu(IconsData::getIcon("zip.png"), "Archiving");
+
+    actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+    connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+    archiveMenu->addAction(actFolderize);
+
+    actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+    connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+    archiveMenu->addAction(actZip);
+
+    actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+    connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+    archiveMenu->addAction(actUnZip);
+
+    // --- Properties ---
+    QMenu *propsMenu = contextMenu->addMenu(IconsData::getIcon("info.png"), "Properties");
+
+    actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+    connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+    propsMenu->addAction(actInfo);
+
+    // Colour Labels submenu at end
+    QMenu *labelMenu = new QMenu(IconsData::getIcon("label.png"), "Labels", propsMenu);
+    QWidgetAction *waLabel = new QWidgetAction(labelMenu);
+    waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+    labelMenu->addAction(waLabel);
+    propsMenu->addMenu(labelMenu);
+
+    // --- System convenience ---
+    actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+    connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+    contextMenu->addAction(actNewTerminal);
+
+    // Hook up right-click
+    parent->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(parent, &QWidget::customContextMenuRequested, this, [contextMenu](const QPoint &pos) {
+        contextMenu->exec(QCursor::pos());
+    });
+}

@@ -9,7 +9,7 @@
 //inline void addIconSizePopup(QMenu *viewMenu, QAbstractItemView *viewWidget, std::function<void()> onRefresh) {
 inline void addIconSizePopup(QMenu *viewMenu, std::function<void()> onRefresh) {
     QMenu *iconSizeMenu = viewMenu->addMenu(IconsData::getIcon("iconsize.png"), "Icon Size");
-
+(void)onRefresh;
     QActionGroup *iconSizeGroup = new QActionGroup(viewMenu);
     iconSizeGroup->setExclusive(true);
 

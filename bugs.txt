@@ -1,213 +1,1586 @@
 colfm: no process found
 colfm_desktop: no process found
-colfm.cpp:281:14: error: ‘void ColFM::onUndo()’ cannot be overloaded with ‘void ColFM::onUndo()’
-  281 |         void onUndo();
-      |              ^~~~~~
-colfm.cpp:259:6: note: previous declaration ‘void ColFM::onUndo()’
-  259 | void onUndo();
-      |      ^~~~~~
-In file included from helpers/toolbars.h:30,
-                 from colfm.cpp:479:
-helpers/iconsize.h: In function ‘void addIconSizePopup(QMenu*, std::function<void()>)’:
-helpers/iconsize.h:10:69: warning: unused parameter ‘onRefresh’ [-Wunused-parameter]
-   10 | inline void addIconSizePopup(QMenu *viewMenu, std::function<void()> onRefresh) {
-      |                                               ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~
-helpers/toolbars.h: In member function ‘void ColFM::drawButtons()’:
-helpers/toolbars.h:142:16: error: no matching function for call to ‘ColFM::connect(QAction*&, void (QAction::*)(bool), ColFM*, <unresolved overloaded function type>)’
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from /usr/include/x86_64-linux-gnu/qt6/QtCore/qeventloop.h:7,
-                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreapplication.h:11,
-                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qapplication.h:8,
-                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication:1,
-                 from colfm.cpp:1:
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note: candidate: ‘template<class Func1, class Func2> static QMetaObject::Connection QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const typename QtPrivate::FunctionPointer<Func2>::Object*, Func2, Qt::ConnectionType)’
-  201 |     static inline QMetaObject::Connection connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal,
+In file included from helpers/contextmenu.h:6,
+                 from colfm.cpp:65:
+helpers/new.h:16:13: error: ‘ColFM’ has not been declared
+   16 | inline void ColFM::onNewWindow() {
+      |             ^~~~~
+helpers/new.h: In function ‘void onNewWindow()’:
+helpers/new.h:26:37: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   26 |                 const QFileInfo sfi(model->filePath(idx));
+      |                                     ^~~~~
+      |                                     modfl
+helpers/new.h:34:15: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   34 |         dir = model->filePath(currentRoot);
+      |               ^~~~~
+      |               modfl
+helpers/new.h:34:31: error: ‘currentRoot’ was not declared in this scope
+   34 |         dir = model->filePath(currentRoot);
+      |                               ^~~~~~~~~~~
+helpers/new.h: At global scope:
+helpers/new.h:45:13: error: ‘ColFM’ has not been declared
+   45 | inline void ColFM::onNewFolder() {
+      |             ^~~~~
+helpers/new.h: In function ‘void onNewFolder()’:
+helpers/new.h:47:26: error: ‘QInputDialog’ has not been declared
+   47 |     QString folderName = QInputDialog::getText(this, "Create Folder", "New folder name:", QLineEdit::Normal, "new_folder", &ok);
+      |                          ^~~~~~~~~~~~
+helpers/new.h:47:48: error: invalid use of ‘this’ in non-member function
+   47 |     QString folderName = QInputDialog::getText(this, "Create Folder", "New folder name:", QLineEdit::Normal, "new_folder", &ok);
+      |                                                ^~~~
+helpers/new.h:49:29: error: ‘ColFM’ has not been declared
+   49 |         const QString cwd = ColFM::getCWD();
+      |                             ^~~~~
+helpers/new.h:54:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   54 |         statusBar()->showMessage("Folder created: " + folderName, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/new.h:56:30: error: invalid use of ‘this’ in non-member function
+   56 |         QMessageBox::warning(this, "Error", "Could not create folder.");
+      |                              ^~~~
+In file included from helpers/contextmenu.h:7:
+helpers/rename.h: At global scope:
+helpers/rename.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onRename() {
+      |             ^~~~~
+helpers/rename.h: In function ‘void onRename()’:
+helpers/rename.h:10:23: error: ‘currentIndex’ was not declared in this scope
+   10 |     QModelIndex idx = currentIndex();
+      |                       ^~~~~~~~~~~~
+helpers/rename.h:11:27: error: ‘currentView’ was not declared in this scope
+   11 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+helpers/rename.h:17:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   17 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/rename.h:23:9: error: invalid use of ‘this’ in non-member function
+   23 |         this,
+      |         ^~~~
+helpers/rename.h:37:38: error: invalid use of ‘this’ in non-member function
+   37 |                 QMessageBox::warning(this, "Rename Failed", "A file or folder with that name already exists.");
+      |                                      ^~~~
+helpers/rename.h:43:39: error: invalid use of ‘this’ in non-member function
+   43 |                 QMessageBox::critical(this, "Rename Failed", "Unable to rename item.");
+      |                                       ^~~~
+helpers/rename.h:45:17: error: ‘onRefresh’ was not declared in this scope
+   45 |                 onRefresh();
+      |                 ^~~~~~~~~
+helpers/rename.h: At global scope:
+helpers/rename.h:52:6: error: ‘ColFM’ has not been declared
+   52 | void ColFM::onRenameSelected(const QString &path) {
+      |      ^~~~~
+helpers/rename.h: In function ‘void onRenameSelected(const QString&)’:
+helpers/rename.h:58:9: error: invalid use of ‘this’ in non-member function
+   58 |         this,
+      |         ^~~~
+helpers/rename.h:67:34: error: invalid use of ‘this’ in non-member function
+   67 |         QMessageBox::information(this, "Rename", "You entered: " + newName);
+      |                                  ^~~~
+In file included from helpers/contextmenu.h:8:
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:13:20: error: ‘ColFM’ has not been declared
+   13 | inline QModelIndex ColFM::currentIndex() const {
+      |                    ^~~~~
+helpers/handleopen.h:13:42: error: non-member function ‘QModelIndex currentIndex()’ cannot have cv-qualifier
+   13 | inline QModelIndex ColFM::currentIndex() const {
+      |                                          ^~~~~
+helpers/handleopen.h: In function ‘QModelIndex currentIndex()’:
+helpers/handleopen.h:14:10: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   14 |     if (!currentView) return QModelIndex();
+      |          ^~~~~~~~~~~
+      |          currentIndex
+helpers/handleopen.h:15:17: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   15 |     auto *sel = currentView->selectionModel();
+      |                 ^~~~~~~~~~~
+      |                 currentIndex
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:26:13: error: ‘ColFM’ has not been declared
+   26 | inline void ColFM::openApp(const QString &path) {
+      |             ^~~~~
+helpers/handleopen.h:31:13: error: ‘ColFM’ has not been declared
+   31 | inline void ColFM::openFile(const QModelIndex &idx) {
+      |             ^~~~~
+helpers/handleopen.h: In function ‘void openFile(const QModelIndex&)’:
+helpers/handleopen.h:34:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   34 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/handleopen.h:38:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   38 |         statusBar()->showMessage("File not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/handleopen.h:44:9: error: ‘currentRoot’ was not declared in this scope
+   44 |         currentRoot = idx;                  // remember where we are
+      |         ^~~~~~~~~~~
+helpers/handleopen.h:45:13: error: ‘crumbs’ was not declared in this scope
+   45 |         if (crumbs) crumbs->setPath(path);  // update breadcrumbs
+      |             ^~~~~~
+helpers/handleopen.h:46:21: error: ‘mode’ was not declared in this scope; did you mean ‘modf’?
+   46 |         setViewMode(mode);                  // rebuild view at new root
+      |                     ^~~~
+      |                     modf
+helpers/handleopen.h:46:9: error: ‘setViewMode’ was not declared in this scope
+   46 |         setViewMode(mode);                  // rebuild view at new root
+      |         ^~~~~~~~~~~
+helpers/handleopen.h:58:14: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   58 |     if (!ok) statusBar()->showMessage("Could not open", 2000);
+      |              ^~~~~~~~~
+      |              QStatusBar
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:62:13: error: ‘ColFM’ has not been declared
+   62 | inline void ColFM::openSelected() {
+      |             ^~~~~
+helpers/handleopen.h:67:13: error: ‘ColFM’ has not been declared
+   67 | inline void ColFM::openPath(const QString &absPath) {
+      |             ^~~~~
+helpers/handleopen.h: In function ‘void openPath(const QString&)’:
+helpers/handleopen.h:69:29: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   69 |     const QModelIndex idx = model->index(absPath);
+      |                             ^~~~~
+      |                             modfl
+In file included from helpers/contextmenu.h:9:
+helpers/duplicate.h: At global scope:
+helpers/duplicate.h:48:13: error: ‘ColFM’ has not been declared
+   48 | inline void ColFM::onDuplicate() {
+      |             ^~~~~
+helpers/duplicate.h: In function ‘void onDuplicate()’:
+helpers/duplicate.h:50:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   50 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/duplicate.h:56:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   56 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/duplicate.h:80:5: error: ‘readPrefs’ was not declared in this scope
+   80 |     readPrefs(thresholdMB, dummy1, dummy2);
+      |     ^~~~~~~~~
+helpers/duplicate.h:94:30: error: invalid use of ‘this’ in non-member function
+   94 |     QMessageBox::information(this, "Debug", "Folder size: " + QString::number(sz));
+      |                              ^~~~
+helpers/duplicate.h:103:69: error: invalid use of ‘this’ in non-member function
+  103 |         progress = new QProgressDialog("Copying...", nullptr, 0, 0, this);
+      |                                                                     ^~~~
+helpers/duplicate.h:118:9: error: invalid use of ‘this’ in non-member function
+  118 |         this,
+      |         ^~~~
+helpers/duplicate.h:130:35: error: invalid use of ‘this’ in non-member function
+  130 |             QMessageBox::critical(this, "Duplicate Failed", "Could not create destination folder.");
+      |                                   ^~~~
+helpers/duplicate.h:141:31: error: invalid use of ‘this’ in non-member function
+  141 |         QMessageBox::critical(this, "Duplicate Failed", "Could not complete copy.");
+      |                               ^~~~
+helpers/duplicate.h:143:9: error: ‘onRefresh’ was not declared in this scope
+  143 |         onRefresh();
+      |         ^~~~~~~~~
+In file included from helpers/contextmenu.h:10:
+helpers/link.h: At global scope:
+helpers/link.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onCreateSoftlink() {
+      |             ^~~~~
+helpers/link.h: In function ‘void onCreateSoftlink()’:
+helpers/link.h:11:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   11 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/link.h:17:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   17 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/link.h:23:9: error: invalid use of ‘this’ in non-member function
+   23 |         this,
+      |         ^~~~
+helpers/link.h:39:31: error: invalid use of ‘this’ in non-member function
+   39 |         QMessageBox::critical(this, "Link Failed", "Could not create symbolic link.");
+      |                               ^~~~
+helpers/link.h:41:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   41 |         statusBar()->showMessage("Symbolic link created", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/link.h:42:9: error: ‘onRefresh’ was not declared in this scope
+   42 |         onRefresh();
+      |         ^~~~~~~~~
+In file included from helpers/contextmenu.h:11:
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onCut(const QString &path) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onCut(const QString&)’:
+helpers/editmenu.h:11:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   11 |     statusBar()->showMessage("Cut: " + path, 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:16:13: error: ‘ColFM’ has not been declared
+   16 | inline void ColFM::onCopy(const QString &path) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onCopy(const QString&)’:
+helpers/editmenu.h:18:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   18 |     statusBar()->showMessage("Copied: " + path, 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:22:13: error: ‘ColFM’ has not been declared
+   22 | inline void ColFM::onPaste(const QString &targetDir) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onPaste(const QString&)’:
+helpers/editmenu.h:25:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   25 |         statusBar()->showMessage("Clipboard empty", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:31:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   31 |         statusBar()->showMessage("Paste failed: " + src, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:33:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   33 |         statusBar()->showMessage("Pasted into: " + targetDir, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:36:5: error: ‘onRefresh’ was not declared in this scope
+   36 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:40:13: error: ‘ColFM’ has not been declared
+   40 | inline void ColFM::onUndo() {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onUndo()’:
+helpers/editmenu.h:41:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   41 |     statusBar()->showMessage("Undo not yet implemented", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+In file included from helpers/contextmenu.h:12:
+helpers/trash.h: At global scope:
+helpers/trash.h:6:13: error: ‘ColFM’ has not been declared
+    6 | inline void ColFM::onMoveToTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onMoveToTrash()’:
+helpers/trash.h:8:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+    8 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/trash.h:14:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   14 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/trash.h:19:30: error: invalid use of ‘this’ in non-member function
+   19 |         QMessageBox::warning(this, "Move to Trash", "Item already exists in Trash.");
+      |                              ^~~~
+helpers/trash.h:24:31: error: invalid use of ‘this’ in non-member function
+   24 |         QMessageBox::critical(this, "Move to Trash", "Failed to move item to Trash.");
+      |                               ^~~~
+helpers/trash.h:28:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   28 |     statusBar()->showMessage("Item moved to Trash", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/trash.h:29:5: error: ‘onRefresh’ was not declared in this scope
+   29 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:32:13: error: ‘ColFM’ has not been declared
+   32 | inline void ColFM::onRestoreFromTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onRestoreFromTrash()’:
+helpers/trash.h:34:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   34 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/trash.h:40:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   40 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/trash.h:45:30: error: invalid use of ‘this’ in non-member function
+   45 |         QMessageBox::warning(this, "Restore from Trash", "Item already exists on Desktop.");
+      |                              ^~~~
+helpers/trash.h:50:31: error: invalid use of ‘this’ in non-member function
+   50 |         QMessageBox::critical(this, "Restore from Trash", "Failed to restore item.");
+      |                               ^~~~
+helpers/trash.h:54:30: error: invalid use of ‘this’ in non-member function
+   54 |     QMessageBox::information(this, "Restore", "Item restored to Desktop.");
+      |                              ^~~~
+helpers/trash.h:55:5: error: ‘onRefresh’ was not declared in this scope
+   55 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:58:13: error: ‘ColFM’ has not been declared
+   58 | inline void ColFM::onEmptyTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onEmptyTrash()’:
+helpers/trash.h:62:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   62 |         statusBar()->showMessage("Trash folder not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/trash.h:67:9: error: invalid use of ‘this’ in non-member function
+   67 |         this,
+      |         ^~~~
+helpers/trash.h:85:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   85 |     statusBar()->showMessage("Trash emptied", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/trash.h:86:5: error: ‘onRefresh’ was not declared in this scope
+   86 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:89:13: error: ‘ColFM’ has not been declared
+   89 | inline void ColFM::onOpenTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onOpenTrash()’:
+helpers/trash.h:92:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   92 |         statusBar()->showMessage("Trash folder not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/trash.h:95:5: error: ‘currentRoot’ was not declared in this scope
+   95 |     currentRoot = model->setRootPath(trash);        // used currently
+      |     ^~~~~~~~~~~
+helpers/trash.h:95:19: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   95 |     currentRoot = model->setRootPath(trash);        // used currently
+      |                   ^~~~~
+      |                   modfl
+helpers/trash.h:97:9: error: ‘crumbs’ was not declared in this scope
+   97 |     if (crumbs) crumbs->setPath(trash);
+      |         ^~~~~~
+helpers/trash.h:98:17: error: ‘mode’ was not declared in this scope; did you mean ‘modf’?
+   98 |     setViewMode(mode);
+      |                 ^~~~
+      |                 modf
+helpers/trash.h:98:5: error: ‘setViewMode’ was not declared in this scope
+   98 |     setViewMode(mode);
+      |     ^~~~~~~~~~~
+In file included from helpers/archivezip.h:10,
+                 from helpers/contextmenu.h:13:
+helpers/folderize.h: At global scope:
+helpers/folderize.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onFolderize() {
+      |             ^~~~~
+helpers/folderize.h: In function ‘void onFolderize()’:
+helpers/folderize.h:10:33: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   10 |     QModelIndexList selection = currentView->selectionModel()->selectedRows();
+      |                                 ^~~~~~~~~~~
+      |                                 currentIndex
+helpers/folderize.h:12:34: error: invalid use of ‘this’ in non-member function
+   12 |         QMessageBox::information(this, "No selection", "Please select one or more items to folderize.");
+      |                                  ^~~~
+helpers/folderize.h:17:48: error: invalid use of ‘this’ in non-member function
+   17 |     QString folderName = QInputDialog::getText(this, "Folderize",
+      |                                                ^~~~
+helpers/folderize.h:26:27: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   26 |     QString currentPath = model->filePath(index);
+      |                           ^~~~~
+      |                           modfl
+helpers/folderize.h:29:30: error: invalid use of ‘this’ in non-member function
+   29 |         QMessageBox::warning(this, "Error", "Current directory is not accessible.");
+      |                              ^~~~
+helpers/folderize.h:36:30: error: invalid use of ‘this’ in non-member function
+   36 |         QMessageBox::warning(this, "Error", "Could not create folder: " + newFolderPath);
+      |                              ^~~~
+helpers/folderize.h:48:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   48 |     statusBar()->showMessage(QString("Moved %1 item(s) to %2").arg(selection.size()).arg(folderName), 3000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/folderize.h:49:5: error: ‘onRefresh’ was not declared in this scope
+   49 |     onRefresh();
+      |     ^~~~~~~~~
+In file included from helpers/archivezip.h:11:
+helpers/progress.h: At global scope:
+helpers/progress.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel) {
+      |             ^~~~~
+helpers/progress.h: In function ‘void onProgress(QObject*, QColor, QColor, int, int, bool)’:
+helpers/progress.h:13:17: error: invalid use of ‘this’ in non-member function
+   13 |     QDialog dlg(this);
+      |                 ^~~~
+helpers/archivezip.h: At global scope:
+helpers/archivezip.h:20:13: error: ‘ColFM’ has not been declared
+   20 | inline void ColFM::onZip() {
+      |             ^~~~~
+helpers/archivezip.h: In function ‘void onZip()’:
+helpers/archivezip.h:21:18: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   21 |     auto items = currentView->selectionModel()->selectedRows();
+      |                  ^~~~~~~~~~~
+      |                  currentIndex
+helpers/archivezip.h:23:30: error: invalid use of ‘this’ in non-member function
+   23 |         QMessageBox::warning(this, "Archive", "No files selected.");
+      |                              ^~~~
+helpers/archivezip.h:33:31: error: invalid use of ‘this’ in non-member function
+   33 |         QMessageBox::critical(this, "Error", "No supported compression tools found.");
+      |                               ^~~~
+helpers/archivezip.h:37:44: error: invalid use of ‘this’ in non-member function
+   37 |     QString format = QInputDialog::getItem(this, "Choose Format", "Archive format:", formats, 0, false);
+      |                                            ^~~~
+helpers/archivezip.h:40:19: error: ‘ColFM’ has not been declared
+   40 |     QString cwd = ColFM::getCWD();
+      |                   ^~~~~
+helpers/archivezip.h:61:24: error: invalid use of ‘this’ in non-member function
+   61 |             onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 240, 18, true);
+      |                        ^~~~
+helpers/archivezip.h:75:34: error: invalid use of ‘this’ in non-member function
+   75 |         QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
+      |                                  ^~~~
+helpers/archivezip.h:95:34: error: invalid use of ‘this’ in non-member function
+   95 |         QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
+      |                                  ^~~~
+helpers/archivezip.h:98:16: error: invalid use of ‘this’ in non-member function
+   98 |     onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 0, 0, false);
+      |                ^~~~
+helpers/archivezip.h:99:5: error: ‘onRefresh’ was not declared in this scope
+   99 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/archivezip.h:100:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+  100 |     statusBar()->showMessage("Archive created: " + archiveTarget, 3000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/archivezip.h: At global scope:
+helpers/archivezip.h:103:13: error: ‘ColFM’ has not been declared
+  103 | inline void ColFM::onUnZip() {
+      |             ^~~~~
+helpers/archivezip.h: In function ‘void onUnZip()’:
+helpers/archivezip.h:104:18: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+  104 |     auto items = currentView->selectionModel()->selectedRows();
+      |                  ^~~~~~~~~~~
+      |                  currentIndex
+helpers/archivezip.h:106:30: error: invalid use of ‘this’ in non-member function
+  106 |         QMessageBox::warning(this, "Extract", "No archive selected.");
+      |                              ^~~~
+helpers/archivezip.h:110:19: error: ‘ColFM’ has not been declared
+  110 |     QString cwd = ColFM::getCWD();
+      |                   ^~~~~
+helpers/archivezip.h:130:34: error: invalid use of ‘this’ in non-member function
+  130 |             QMessageBox::warning(this, "Unknown Format", "Cannot extract: " + src);
+      |                                  ^~~~
+helpers/archivezip.h:135:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+  135 |         statusBar()->showMessage("Extracted to " + dest, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/archivezip.h:138:5: error: ‘onRefresh’ was not declared in this scope
+  138 |     onRefresh();
+      |     ^~~~~~~~~
+In file included from helpers/contextmenu.h:15:
+helpers/new_terminal.h: At global scope:
+helpers/new_terminal.h:7:13: error: ‘ColFM’ has not been declared
+    7 | inline void ColFM::onNewTerminal() {
+      |             ^~~~~
+helpers/new_terminal.h: In function ‘void onNewTerminal()’:
+helpers/new_terminal.h:8:23: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+    8 |     QModelIndex idx = currentView ? currentView->rootIndex() : QModelIndex();
+      |                       ^~~~~~~~~~~
+      |                       currentIndex
+helpers/new_terminal.h:9:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+    9 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/new_terminal.h:15:31: error: invalid use of ‘this’ in non-member function
+   15 |         QMessageBox::critical(this, "Error", "Could not launch gnome-terminal.");
+      |                               ^~~~
+helpers/contextmenu.h: At global scope:
+helpers/contextmenu.h:17:13: error: ‘ColFM’ has not been declared
+   17 | inline void ColFM::setupContextMenu(QWidget *parent) {
+      |             ^~~~~
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:22:55: error: ‘getIcon’ is not a member of ‘IconsData’
+   22 |     QMenu *fileMenu = contextMenu->addMenu(IconsData::getIcon("newfolder.png"), "File");
+      |                                                       ^~~~~~~
+helpers/contextmenu.h:23:5: error: ‘actNewFolder’ was not declared in this scope; did you mean ‘onNewFolder’?
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+      |     ^~~~~~~~~~~~
+      |     onNewFolder
+helpers/contextmenu.h:23:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
       |                                           ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:142:16: note:   couldn’t deduce template parameter ‘Func2’
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  233 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:142:16: note:   candidate expects 3 arguments, 4 provided
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<(((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0) && (! QtPrivate::FunctionPointer<Func2>::IsPointerToMemberFunction)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  242 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:142:16: note:   couldn’t deduce template parameter ‘Func2’
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  276 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:142:16: note:   candidate expects 3 arguments, 4 provided
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  287 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:142:16: note:   couldn’t deduce template parameter ‘Func2’
-  142 |         connect(actCut, &QAction::triggered, this, &ColFM::onCut);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const char*, const QObject*, const char*, Qt::ConnectionType)’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:79: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                                                   ~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const QMetaMethod&, const QObject*, const QMetaMethod&, Qt::ConnectionType)’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:86: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const QMetaMethod&’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                                                   ~~~~~~~~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:32: note: candidate: ‘QMetaObject::Connection QObject::connect(const QObject*, const char*, const char*, Qt::ConnectionType) const’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:85: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                                                         ~~~~~~~~~~~~^~~~~~~
-helpers/toolbars.h:148:16: error: no matching function for call to ‘ColFM::connect(QAction*&, void (QAction::*)(bool), ColFM*, <unresolved overloaded function type>)’
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note: candidate: ‘template<class Func1, class Func2> static QMetaObject::Connection QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const typename QtPrivate::FunctionPointer<Func2>::Object*, Func2, Qt::ConnectionType)’
-  201 |     static inline QMetaObject::Connection connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal,
+helpers/contextmenu.h:23:83: error: invalid use of ‘this’ in non-member function
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+      |                                                                                   ^~~~
+helpers/contextmenu.h:24:48: error: invalid use of ‘this’ in non-member function
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |                                                ^~~~
+helpers/contextmenu.h:24:55: error: invalid use of ‘this’ in non-member function
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |                                                       ^~~~
+helpers/contextmenu.h:24:5: error: ‘connect’ was not declared in this scope; did you mean ‘const’?
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |     ^~~~~~~
+      |     const
+helpers/contextmenu.h:27:5: error: ‘actOpen’ was not declared in this scope
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |     ^~~~~~~
+helpers/contextmenu.h:27:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:27:67: error: invalid use of ‘this’ in non-member function
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |                                                                   ^~~~
+helpers/contextmenu.h:28:43: error: invalid use of ‘this’ in non-member function
+   28 |     connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+      |                                           ^~~~
+helpers/contextmenu.h:28:50: error: ‘ColFM’ has not been declared
+   28 |     connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+      |                                                  ^~~~~
+helpers/contextmenu.h:31:5: error: ‘actRename’ was not declared in this scope; did you mean ‘onRename’?
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |     ^~~~~~~~~
+      |     onRename
+helpers/contextmenu.h:31:40: error: ‘getIcon’ is not a member of ‘IconsData’
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |                                        ^~~~~~~
+helpers/contextmenu.h:31:73: error: invalid use of ‘this’ in non-member function
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |                                                                         ^~~~
+helpers/contextmenu.h:32:45: error: invalid use of ‘this’ in non-member function
+   32 |     connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+      |                                             ^~~~
+helpers/contextmenu.h:32:52: error: ‘ColFM’ has not been declared
+   32 |     connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+      |                                                    ^~~~~
+helpers/contextmenu.h:35:5: error: ‘actDuplicate’ was not declared in this scope; did you mean ‘onDuplicate’?
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+      |     ^~~~~~~~~~~~
+      |     onDuplicate
+helpers/contextmenu.h:35:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
       |                                           ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:148:16: note:   couldn’t deduce template parameter ‘Func2’
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  233 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:148:16: note:   candidate expects 3 arguments, 4 provided
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<(((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0) && (! QtPrivate::FunctionPointer<Func2>::IsPointerToMemberFunction)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  242 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:148:16: note:   couldn’t deduce template parameter ‘Func2’
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  276 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:148:16: note:   candidate expects 3 arguments, 4 provided
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  287 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:148:16: note:   couldn’t deduce template parameter ‘Func2’
-  148 |         connect(actCopy, &QAction::triggered, this, &ColFM::onCopy);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const char*, const QObject*, const char*, Qt::ConnectionType)’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:79: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                                                   ~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const QMetaMethod&, const QObject*, const QMetaMethod&, Qt::ConnectionType)’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:86: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const QMetaMethod&’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                                                   ~~~~~~~~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:32: note: candidate: ‘QMetaObject::Connection QObject::connect(const QObject*, const char*, const char*, Qt::ConnectionType) const’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:85: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                                                         ~~~~~~~~~~~~^~~~~~~
-helpers/toolbars.h:154:16: error: no matching function for call to ‘ColFM::connect(QAction*&, void (QAction::*)(bool), ColFM*, <unresolved overloaded function type>)’
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note: candidate: ‘template<class Func1, class Func2> static QMetaObject::Connection QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const typename QtPrivate::FunctionPointer<Func2>::Object*, Func2, Qt::ConnectionType)’
-  201 |     static inline QMetaObject::Connection connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal,
+helpers/contextmenu.h:35:82: error: invalid use of ‘this’ in non-member function
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+      |                                                                                  ^~~~
+helpers/contextmenu.h:36:48: error: invalid use of ‘this’ in non-member function
+   36 |     connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+      |                                                ^~~~
+helpers/contextmenu.h:36:55: error: ‘ColFM’ has not been declared
+   36 |     connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+      |                                                       ^~~~~
+helpers/contextmenu.h:39:5: error: ‘actSoftlink’ was not declared in this scope
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |     ^~~~~~~~~~~
+helpers/contextmenu.h:39:42: error: ‘getIcon’ is not a member of ‘IconsData’
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |                                          ^~~~~~~
+helpers/contextmenu.h:39:84: error: invalid use of ‘this’ in non-member function
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |                                                                                    ^~~~
+helpers/contextmenu.h:40:47: error: invalid use of ‘this’ in non-member function
+   40 |     connect(actSoftlink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+      |                                               ^~~~
+helpers/contextmenu.h:40:54: error: ‘ColFM’ has not been declared
+   40 |     connect(actSoftlink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+      |                                                      ^~~~~
+helpers/contextmenu.h:44:55: error: ‘getIcon’ is not a member of ‘IconsData’
+   44 |     QMenu *editMenu = contextMenu->addMenu(IconsData::getIcon("cut.png"), "Edit");
+      |                                                       ^~~~~~~
+helpers/contextmenu.h:46:5: error: ‘actCut’ was not declared in this scope
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |     ^~~~~~
+helpers/contextmenu.h:46:37: error: ‘getIcon’ is not a member of ‘IconsData’
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |                                     ^~~~~~~
+helpers/contextmenu.h:46:64: error: invalid use of ‘this’ in non-member function
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |                                                                ^~~~
+helpers/contextmenu.h:47:42: error: invalid use of ‘this’ in non-member function
+   47 |     connect(actCut, &QAction::triggered, this, [this] {
+      |                                          ^~~~
+helpers/contextmenu.h:47:49: error: invalid use of ‘this’ in non-member function
+   47 |     connect(actCut, &QAction::triggered, this, [this] {
+      |                                                 ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:49:34: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   49 |         if (idx.isValid()) onCut(model->filePath(idx));
+      |                                  ^~~~~
+      |                                  modfl
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:53:5: error: ‘actCopy’ was not declared in this scope
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |     ^~~~~~~
+helpers/contextmenu.h:53:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:53:71: error: invalid use of ‘this’ in non-member function
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |                                                                       ^~~~
+helpers/contextmenu.h:54:43: error: invalid use of ‘this’ in non-member function
+   54 |     connect(actCopy, &QAction::triggered, this, [this] {
+      |                                           ^~~~
+helpers/contextmenu.h:54:50: error: invalid use of ‘this’ in non-member function
+   54 |     connect(actCopy, &QAction::triggered, this, [this] {
+      |                                                  ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:56:35: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   56 |         if (idx.isValid()) onCopy(model->filePath(idx));
+      |                                   ^~~~~
+      |                                   modfl
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:60:5: error: ‘actPaste’ was not declared in this scope
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:60:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:60:74: error: invalid use of ‘this’ in non-member function
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |                                                                          ^~~~
+helpers/contextmenu.h:61:44: error: invalid use of ‘this’ in non-member function
+   61 |     connect(actPaste, &QAction::triggered, this, [this] {
+      |                                            ^~~~
+helpers/contextmenu.h:61:51: error: invalid use of ‘this’ in non-member function
+   61 |     connect(actPaste, &QAction::triggered, this, [this] {
+      |                                                   ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:62:17: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   62 |         onPaste(model->filePath(currentRoot));
+      |                 ^~~~~
+      |                 modfl
+helpers/contextmenu.h:62:33: error: ‘currentRoot’ was not declared in this scope
+   62 |         onPaste(model->filePath(currentRoot));
+      |                                 ^~~~~~~~~~~
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:67:56: error: ‘getIcon’ is not a member of ‘IconsData’
+   67 |     QMenu *trashMenu = contextMenu->addMenu(IconsData::getIcon("open_trash.png"), "Trash");
+      |                                                        ^~~~~~~
+helpers/contextmenu.h:69:5: error: ‘actTrash’ was not declared in this scope
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:69:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:69:86: error: invalid use of ‘this’ in non-member function
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |                                                                                      ^~~~
+helpers/contextmenu.h:70:44: error: invalid use of ‘this’ in non-member function
+   70 |     connect(actTrash, &QAction::triggered, this, &ColFM::onMoveToTrash);
+      |                                            ^~~~
+helpers/contextmenu.h:70:51: error: ‘ColFM’ has not been declared
+   70 |     connect(actTrash, &QAction::triggered, this, &ColFM::onMoveToTrash);
+      |                                                   ^~~~~
+helpers/contextmenu.h:73:5: error: ‘actRestoreFromTrash’ was not declared in this scope; did you mean ‘onRestoreFromTrash’?
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |     ^~~~~~~~~~~~~~~~~~~
+      |     onRestoreFromTrash
+helpers/contextmenu.h:73:50: error: ‘getIcon’ is not a member of ‘IconsData’
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |                                                  ^~~~~~~
+helpers/contextmenu.h:73:103: error: invalid use of ‘this’ in non-member function
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |                                                                                                       ^~~~
+helpers/contextmenu.h:74:55: error: invalid use of ‘this’ in non-member function
+   74 |     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+      |                                                       ^~~~
+helpers/contextmenu.h:74:62: error: ‘ColFM’ has not been declared
+   74 |     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+      |                                                              ^~~~~
+helpers/contextmenu.h:77:5: error: ‘actEmptyTrash’ was not declared in this scope; did you mean ‘onEmptyTrash’?
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |     ^~~~~~~~~~~~~
+      |     onEmptyTrash
+helpers/contextmenu.h:77:44: error: ‘getIcon’ is not a member of ‘IconsData’
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |                                            ^~~~~~~
+helpers/contextmenu.h:77:87: error: invalid use of ‘this’ in non-member function
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |                                                                                       ^~~~
+helpers/contextmenu.h:78:49: error: invalid use of ‘this’ in non-member function
+   78 |     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+      |                                                 ^~~~
+helpers/contextmenu.h:78:56: error: ‘ColFM’ has not been declared
+   78 |     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+      |                                                        ^~~~~
+helpers/contextmenu.h:82:58: error: ‘getIcon’ is not a member of ‘IconsData’
+   82 |     QMenu *archiveMenu = contextMenu->addMenu(IconsData::getIcon("zip.png"), "Archiving");
+      |                                                          ^~~~~~~
+helpers/contextmenu.h:84:5: error: ‘actFolderize’ was not declared in this scope; did you mean ‘onFolderize’?
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+      |     ^~~~~~~~~~~~
+      |     onFolderize
+helpers/contextmenu.h:84:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
       |                                           ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:201:43: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:154:16: note:   couldn’t deduce template parameter ‘Func2’
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  233 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:233:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:154:16: note:   candidate expects 3 arguments, 4 provided
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<(((int)(QtPrivate::FunctionPointer<Func2>::ArgumentCount) >= 0) && (! QtPrivate::FunctionPointer<Func2>::IsPointerToMemberFunction)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  242 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:242:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:154:16: note:   couldn’t deduce template parameter ‘Func2’
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, Func2)’
-  276 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, Func2 slot)
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:276:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:154:16: note:   candidate expects 3 arguments, 4 provided
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note: candidate: ‘template<class Func1, class Func2> static typename std::enable_if<((QtPrivate::FunctionPointer<Func2>::ArgumentCount == -1) && (! is_convertible_v<Func2, const char*>)), QMetaObject::Connection>::type QObject::connect(const typename QtPrivate::FunctionPointer<Func>::Object*, Func1, const QObject*, Func2, Qt::ConnectionType)’
-  287 |             connect(const typename QtPrivate::FunctionPointer<Func1>::Object *sender, Func1 signal, const QObject *context, Func2 slot,
-      |             ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:287:13: note:   template argument deduction/substitution failed:
-helpers/toolbars.h:154:16: note:   couldn’t deduce template parameter ‘Func2’
-  154 |         connect(actPaste, &QAction::triggered, this, &ColFM::onPaste);
-      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const char*, const QObject*, const char*, Qt::ConnectionType)’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:181:79: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  181 |     static QMetaObject::Connection connect(const QObject *sender, const char *signal,
-      |                                                                   ~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:36: note: candidate: ‘static QMetaObject::Connection QObject::connect(const QObject*, const QMetaMethod&, const QObject*, const QMetaMethod&, Qt::ConnectionType)’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                    ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:184:86: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const QMetaMethod&’
-  184 |     static QMetaObject::Connection connect(const QObject *sender, const QMetaMethod &signal,
-      |                                                                   ~~~~~~~~~~~~~~~~~~~^~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:32: note: candidate: ‘QMetaObject::Connection QObject::connect(const QObject*, const char*, const char*, Qt::ConnectionType) const’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                ^~~~~~~
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h:432:85: note:   no known conversion for argument 2 from ‘void (QAction::*)(bool)’ to ‘const char*’
-  432 | inline QMetaObject::Connection QObject::connect(const QObject *asender, const char *asignal,
-      |                                                                         ~~~~~~~~~~~~^~~~~~~
-helpers/toolbars.h: At global scope:
-helpers/toolbars.h:454:8: error: expected constructor, destructor, or type conversion before ‘(’ token
-  454 | connect(actCut, &QAction::triggered, this, [this] {
-      |        ^
-helpers/toolbars.h:458:2: error: expected unqualified-id before ‘)’ token
-  458 | });
-      |  ^
-helpers/toolbars.h:460:8: error: expected constructor, destructor, or type conversion before ‘(’ token
-  460 | connect(actCopy, &QAction::triggered, this, [this] {
-      |        ^
-helpers/toolbars.h:464:2: error: expected unqualified-id before ‘)’ token
-  464 | });
-      |  ^
-helpers/toolbars.h:466:8: error: expected constructor, destructor, or type conversion before ‘(’ token
-  466 | connect(actPaste, &QAction::triggered, this, [this] {
-      |        ^
-helpers/toolbars.h:468:2: error: expected unqualified-id before ‘)’ token
-  468 | });
-      |  ^
-helpers/toolbars.h:470:8: error: expected constructor, destructor, or type conversion before ‘(’ token
-  470 | connect(actUndo, &QAction::triggered, this, [this] {
-      |        ^
-helpers/toolbars.h:472:2: error: expected unqualified-id before ‘)’ token
-  472 | });
-      |  ^
+helpers/contextmenu.h:84:82: error: invalid use of ‘this’ in non-member function
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+      |                                                                                  ^~~~
+helpers/contextmenu.h:85:48: error: invalid use of ‘this’ in non-member function
+   85 |     connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+      |                                                ^~~~
+helpers/contextmenu.h:85:55: error: ‘ColFM’ has not been declared
+   85 |     connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+      |                                                       ^~~~~
+helpers/contextmenu.h:88:5: error: ‘actZip’ was not declared in this scope
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |     ^~~~~~
+helpers/contextmenu.h:88:37: error: ‘getIcon’ is not a member of ‘IconsData’
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |                                     ^~~~~~~
+helpers/contextmenu.h:88:74: error: invalid use of ‘this’ in non-member function
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |                                                                          ^~~~
+helpers/contextmenu.h:89:42: error: invalid use of ‘this’ in non-member function
+   89 |     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+      |                                          ^~~~
+helpers/contextmenu.h:89:49: error: ‘ColFM’ has not been declared
+   89 |     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+      |                                                 ^~~~~
+helpers/contextmenu.h:92:5: error: ‘actUnZip’ was not declared in this scope
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:92:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:92:80: error: invalid use of ‘this’ in non-member function
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |                                                                                ^~~~
+helpers/contextmenu.h:93:44: error: invalid use of ‘this’ in non-member function
+   93 |     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+      |                                            ^~~~
+helpers/contextmenu.h:93:51: error: ‘ColFM’ has not been declared
+   93 |     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+      |                                                   ^~~~~
+helpers/contextmenu.h:97:56: error: ‘getIcon’ is not a member of ‘IconsData’
+   97 |     QMenu *propsMenu = contextMenu->addMenu(IconsData::getIcon("info.png"), "Properties");
+      |                                                        ^~~~~~~
+helpers/contextmenu.h:99:5: error: ‘actInfo’ was not declared in this scope; did you mean ‘atanf’?
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |     ^~~~~~~
+      |     atanf
+helpers/contextmenu.h:99:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:99:71: error: invalid use of ‘this’ in non-member function
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |                                                                       ^~~~
+helpers/contextmenu.h:100:43: error: invalid use of ‘this’ in non-member function
+  100 |     connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+      |                                           ^~~~
+helpers/contextmenu.h:100:50: error: ‘ColFM’ has not been declared
+  100 |     connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+      |                                                  ^~~~~
+helpers/contextmenu.h:104:45: error: ‘getIcon’ is not a member of ‘IconsData’
+  104 |     QMenu *labelMenu = new QMenu(IconsData::getIcon("label.png"), "Labels", propsMenu);
+      |                                             ^~~~~~~
+helpers/contextmenu.h:106:71: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+  106 |     waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+      |                                                                       ^~~~~
+      |                                                                       modfl
+helpers/contextmenu.h:106:79: error: invalid use of ‘this’ in non-member function
+  106 |     waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+      |                                                                               ^~~~
+helpers/contextmenu.h:111:5: error: ‘actNewTerminal’ was not declared in this scope; did you mean ‘onNewTerminal’?
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |     ^~~~~~~~~~~~~~
+      |     onNewTerminal
+helpers/contextmenu.h:111:45: error: ‘getIcon’ is not a member of ‘IconsData’
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |                                             ^~~~~~~
+helpers/contextmenu.h:111:92: error: invalid use of ‘this’ in non-member function
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |                                                                                            ^~~~
+helpers/contextmenu.h:112:50: error: invalid use of ‘this’ in non-member function
+  112 |     connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+      |                                                  ^~~~
+helpers/contextmenu.h:112:57: error: ‘ColFM’ has not been declared
+  112 |     connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+      |                                                         ^~~~~
+helpers/contextmenu.h:117:59: error: invalid use of ‘this’ in non-member function
+  117 |     connect(parent, &QWidget::customContextMenuRequested, this, [contextMenu](const QPoint &pos) {
+      |                                                           ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:117:93: warning: unused parameter ‘pos’ [-Wunused-parameter]
+  117 |     connect(parent, &QWidget::customContextMenuRequested, this, [contextMenu](const QPoint &pos) {
+      |                                                                               ~~~~~~~~~~~~~~^~~
+In file included from colfm.cpp:372:
+helpers/views.h: In lambda function:
+helpers/views.h:76:15: error: ‘::showContextMenu’ has not been declared; did you mean ‘setupContextMenu’?
+   76 |             ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
+      |               ^~~~~~~~~~~~~~~
+      |               setupContextMenu
+colfm.cpp: In member function ‘virtual void ColFM::contextMenuEvent(QContextMenuEvent*)’:
+colfm.cpp:531:7: error: ‘::showContextMenu’ has not been declared; did you mean ‘setupContextMenu’?
+  531 |     ::showContextMenu(currentView, idx, model, event->globalPos());
+      |       ^~~~~~~~~~~~~~~
+      |       setupContextMenu
+In file included from helpers/contextmenu.h:6,
+                 from colfm_desktop.cpp:4:
+helpers/new.h:16:13: error: ‘ColFM’ has not been declared
+   16 | inline void ColFM::onNewWindow() {
+      |             ^~~~~
+helpers/new.h: In function ‘void onNewWindow()’:
+helpers/new.h:26:37: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   26 |                 const QFileInfo sfi(model->filePath(idx));
+      |                                     ^~~~~
+      |                                     modfl
+helpers/new.h:34:15: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   34 |         dir = model->filePath(currentRoot);
+      |               ^~~~~
+      |               modfl
+helpers/new.h:34:31: error: ‘currentRoot’ was not declared in this scope
+   34 |         dir = model->filePath(currentRoot);
+      |                               ^~~~~~~~~~~
+helpers/new.h: At global scope:
+helpers/new.h:45:13: error: ‘ColFM’ has not been declared
+   45 | inline void ColFM::onNewFolder() {
+      |             ^~~~~
+helpers/new.h: In function ‘void onNewFolder()’:
+helpers/new.h:47:48: error: invalid use of ‘this’ in non-member function
+   47 |     QString folderName = QInputDialog::getText(this, "Create Folder", "New folder name:", QLineEdit::Normal, "new_folder", &ok);
+      |                                                ^~~~
+helpers/new.h:49:29: error: ‘ColFM’ has not been declared
+   49 |         const QString cwd = ColFM::getCWD();
+      |                             ^~~~~
+helpers/new.h:54:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   54 |         statusBar()->showMessage("Folder created: " + folderName, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/new.h:56:30: error: invalid use of ‘this’ in non-member function
+   56 |         QMessageBox::warning(this, "Error", "Could not create folder.");
+      |                              ^~~~
+In file included from helpers/contextmenu.h:7:
+helpers/rename.h: At global scope:
+helpers/rename.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onRename() {
+      |             ^~~~~
+helpers/rename.h: In function ‘void onRename()’:
+helpers/rename.h:10:23: error: ‘currentIndex’ was not declared in this scope
+   10 |     QModelIndex idx = currentIndex();
+      |                       ^~~~~~~~~~~~
+helpers/rename.h:11:27: error: ‘currentView’ was not declared in this scope
+   11 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+helpers/rename.h:17:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   17 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/rename.h:23:9: error: invalid use of ‘this’ in non-member function
+   23 |         this,
+      |         ^~~~
+helpers/rename.h:37:38: error: invalid use of ‘this’ in non-member function
+   37 |                 QMessageBox::warning(this, "Rename Failed", "A file or folder with that name already exists.");
+      |                                      ^~~~
+helpers/rename.h:43:39: error: invalid use of ‘this’ in non-member function
+   43 |                 QMessageBox::critical(this, "Rename Failed", "Unable to rename item.");
+      |                                       ^~~~
+helpers/rename.h:45:17: error: ‘onRefresh’ was not declared in this scope
+   45 |                 onRefresh();
+      |                 ^~~~~~~~~
+helpers/rename.h: At global scope:
+helpers/rename.h:52:6: error: ‘ColFM’ has not been declared
+   52 | void ColFM::onRenameSelected(const QString &path) {
+      |      ^~~~~
+helpers/rename.h: In function ‘void onRenameSelected(const QString&)’:
+helpers/rename.h:58:9: error: invalid use of ‘this’ in non-member function
+   58 |         this,
+      |         ^~~~
+helpers/rename.h:67:34: error: invalid use of ‘this’ in non-member function
+   67 |         QMessageBox::information(this, "Rename", "You entered: " + newName);
+      |                                  ^~~~
+In file included from helpers/contextmenu.h:8:
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:13:20: error: ‘ColFM’ has not been declared
+   13 | inline QModelIndex ColFM::currentIndex() const {
+      |                    ^~~~~
+helpers/handleopen.h:13:42: error: non-member function ‘QModelIndex currentIndex()’ cannot have cv-qualifier
+   13 | inline QModelIndex ColFM::currentIndex() const {
+      |                                          ^~~~~
+helpers/handleopen.h: In function ‘QModelIndex currentIndex()’:
+helpers/handleopen.h:14:10: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   14 |     if (!currentView) return QModelIndex();
+      |          ^~~~~~~~~~~
+      |          currentIndex
+helpers/handleopen.h:15:17: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   15 |     auto *sel = currentView->selectionModel();
+      |                 ^~~~~~~~~~~
+      |                 currentIndex
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:26:13: error: ‘ColFM’ has not been declared
+   26 | inline void ColFM::openApp(const QString &path) {
+      |             ^~~~~
+helpers/handleopen.h:31:13: error: ‘ColFM’ has not been declared
+   31 | inline void ColFM::openFile(const QModelIndex &idx) {
+      |             ^~~~~
+helpers/handleopen.h: In function ‘void openFile(const QModelIndex&)’:
+helpers/handleopen.h:34:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   34 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/handleopen.h:38:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   38 |         statusBar()->showMessage("File not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/handleopen.h:44:9: error: ‘currentRoot’ was not declared in this scope
+   44 |         currentRoot = idx;                  // remember where we are
+      |         ^~~~~~~~~~~
+helpers/handleopen.h:45:13: error: ‘crumbs’ was not declared in this scope
+   45 |         if (crumbs) crumbs->setPath(path);  // update breadcrumbs
+      |             ^~~~~~
+helpers/handleopen.h:46:21: error: ‘mode’ was not declared in this scope; did you mean ‘modf’?
+   46 |         setViewMode(mode);                  // rebuild view at new root
+      |                     ^~~~
+      |                     modf
+helpers/handleopen.h:46:9: error: ‘setViewMode’ was not declared in this scope
+   46 |         setViewMode(mode);                  // rebuild view at new root
+      |         ^~~~~~~~~~~
+helpers/handleopen.h:58:14: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   58 |     if (!ok) statusBar()->showMessage("Could not open", 2000);
+      |              ^~~~~~~~~
+      |              QStatusBar
+helpers/handleopen.h: At global scope:
+helpers/handleopen.h:62:13: error: ‘ColFM’ has not been declared
+   62 | inline void ColFM::openSelected() {
+      |             ^~~~~
+helpers/handleopen.h:67:13: error: ‘ColFM’ has not been declared
+   67 | inline void ColFM::openPath(const QString &absPath) {
+      |             ^~~~~
+helpers/handleopen.h: In function ‘void openPath(const QString&)’:
+helpers/handleopen.h:69:29: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   69 |     const QModelIndex idx = model->index(absPath);
+      |                             ^~~~~
+      |                             modfl
+In file included from helpers/contextmenu.h:9:
+helpers/duplicate.h: At global scope:
+helpers/duplicate.h:48:13: error: ‘ColFM’ has not been declared
+   48 | inline void ColFM::onDuplicate() {
+      |             ^~~~~
+helpers/duplicate.h: In function ‘void onDuplicate()’:
+helpers/duplicate.h:50:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   50 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/duplicate.h:56:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   56 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/duplicate.h:80:5: error: ‘readPrefs’ was not declared in this scope
+   80 |     readPrefs(thresholdMB, dummy1, dummy2);
+      |     ^~~~~~~~~
+helpers/duplicate.h:94:30: error: invalid use of ‘this’ in non-member function
+   94 |     QMessageBox::information(this, "Debug", "Folder size: " + QString::number(sz));
+      |                              ^~~~
+helpers/duplicate.h:103:69: error: invalid use of ‘this’ in non-member function
+  103 |         progress = new QProgressDialog("Copying...", nullptr, 0, 0, this);
+      |                                                                     ^~~~
+helpers/duplicate.h:118:9: error: invalid use of ‘this’ in non-member function
+  118 |         this,
+      |         ^~~~
+helpers/duplicate.h:130:35: error: invalid use of ‘this’ in non-member function
+  130 |             QMessageBox::critical(this, "Duplicate Failed", "Could not create destination folder.");
+      |                                   ^~~~
+helpers/duplicate.h:141:31: error: invalid use of ‘this’ in non-member function
+  141 |         QMessageBox::critical(this, "Duplicate Failed", "Could not complete copy.");
+      |                               ^~~~
+helpers/duplicate.h:143:9: error: ‘onRefresh’ was not declared in this scope
+  143 |         onRefresh();
+      |         ^~~~~~~~~
+In file included from helpers/contextmenu.h:10:
+helpers/link.h: At global scope:
+helpers/link.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onCreateSoftlink() {
+      |             ^~~~~
+helpers/link.h: In function ‘void onCreateSoftlink()’:
+helpers/link.h:11:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   11 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/link.h:17:26: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   17 |     const QString path = model->filePath(idx);
+      |                          ^~~~~
+      |                          modfl
+helpers/link.h:23:9: error: invalid use of ‘this’ in non-member function
+   23 |         this,
+      |         ^~~~
+helpers/link.h:39:31: error: invalid use of ‘this’ in non-member function
+   39 |         QMessageBox::critical(this, "Link Failed", "Could not create symbolic link.");
+      |                               ^~~~
+helpers/link.h:41:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   41 |         statusBar()->showMessage("Symbolic link created", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/link.h:42:9: error: ‘onRefresh’ was not declared in this scope
+   42 |         onRefresh();
+      |         ^~~~~~~~~
+In file included from helpers/contextmenu.h:11:
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onCut(const QString &path) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onCut(const QString&)’:
+helpers/editmenu.h:11:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   11 |     statusBar()->showMessage("Cut: " + path, 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:16:13: error: ‘ColFM’ has not been declared
+   16 | inline void ColFM::onCopy(const QString &path) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onCopy(const QString&)’:
+helpers/editmenu.h:18:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   18 |     statusBar()->showMessage("Copied: " + path, 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:22:13: error: ‘ColFM’ has not been declared
+   22 | inline void ColFM::onPaste(const QString &targetDir) {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onPaste(const QString&)’:
+helpers/editmenu.h:25:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   25 |         statusBar()->showMessage("Clipboard empty", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:31:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   31 |         statusBar()->showMessage("Paste failed: " + src, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:33:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   33 |         statusBar()->showMessage("Pasted into: " + targetDir, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/editmenu.h:36:5: error: ‘onRefresh’ was not declared in this scope
+   36 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/editmenu.h: At global scope:
+helpers/editmenu.h:40:13: error: ‘ColFM’ has not been declared
+   40 | inline void ColFM::onUndo() {
+      |             ^~~~~
+helpers/editmenu.h: In function ‘void onUndo()’:
+helpers/editmenu.h:41:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   41 |     statusBar()->showMessage("Undo not yet implemented", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+In file included from helpers/contextmenu.h:12:
+helpers/trash.h: At global scope:
+helpers/trash.h:6:13: error: ‘ColFM’ has not been declared
+    6 | inline void ColFM::onMoveToTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onMoveToTrash()’:
+helpers/trash.h:8:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+    8 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/trash.h:14:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   14 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/trash.h:19:30: error: invalid use of ‘this’ in non-member function
+   19 |         QMessageBox::warning(this, "Move to Trash", "Item already exists in Trash.");
+      |                              ^~~~
+helpers/trash.h:24:31: error: invalid use of ‘this’ in non-member function
+   24 |         QMessageBox::critical(this, "Move to Trash", "Failed to move item to Trash.");
+      |                               ^~~~
+helpers/trash.h:28:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   28 |     statusBar()->showMessage("Item moved to Trash", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/trash.h:29:5: error: ‘onRefresh’ was not declared in this scope
+   29 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:32:13: error: ‘ColFM’ has not been declared
+   32 | inline void ColFM::onRestoreFromTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onRestoreFromTrash()’:
+helpers/trash.h:34:27: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   34 |     if (!idx.isValid() && currentView) {
+      |                           ^~~~~~~~~~~
+      |                           currentIndex
+helpers/trash.h:40:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   40 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/trash.h:45:30: error: invalid use of ‘this’ in non-member function
+   45 |         QMessageBox::warning(this, "Restore from Trash", "Item already exists on Desktop.");
+      |                              ^~~~
+helpers/trash.h:50:31: error: invalid use of ‘this’ in non-member function
+   50 |         QMessageBox::critical(this, "Restore from Trash", "Failed to restore item.");
+      |                               ^~~~
+helpers/trash.h:54:30: error: invalid use of ‘this’ in non-member function
+   54 |     QMessageBox::information(this, "Restore", "Item restored to Desktop.");
+      |                              ^~~~
+helpers/trash.h:55:5: error: ‘onRefresh’ was not declared in this scope
+   55 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:58:13: error: ‘ColFM’ has not been declared
+   58 | inline void ColFM::onEmptyTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onEmptyTrash()’:
+helpers/trash.h:62:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   62 |         statusBar()->showMessage("Trash folder not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/trash.h:67:9: error: invalid use of ‘this’ in non-member function
+   67 |         this,
+      |         ^~~~
+helpers/trash.h:85:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   85 |     statusBar()->showMessage("Trash emptied", 2000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/trash.h:86:5: error: ‘onRefresh’ was not declared in this scope
+   86 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/trash.h: At global scope:
+helpers/trash.h:89:13: error: ‘ColFM’ has not been declared
+   89 | inline void ColFM::onOpenTrash() {
+      |             ^~~~~
+helpers/trash.h: In function ‘void onOpenTrash()’:
+helpers/trash.h:92:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   92 |         statusBar()->showMessage("Trash folder not found", 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/trash.h:95:5: error: ‘currentRoot’ was not declared in this scope
+   95 |     currentRoot = model->setRootPath(trash);        // used currently
+      |     ^~~~~~~~~~~
+helpers/trash.h:95:19: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   95 |     currentRoot = model->setRootPath(trash);        // used currently
+      |                   ^~~~~
+      |                   modfl
+helpers/trash.h:97:9: error: ‘crumbs’ was not declared in this scope
+   97 |     if (crumbs) crumbs->setPath(trash);
+      |         ^~~~~~
+helpers/trash.h:98:17: error: ‘mode’ was not declared in this scope; did you mean ‘modf’?
+   98 |     setViewMode(mode);
+      |                 ^~~~
+      |                 modf
+helpers/trash.h:98:5: error: ‘setViewMode’ was not declared in this scope
+   98 |     setViewMode(mode);
+      |     ^~~~~~~~~~~
+In file included from helpers/archivezip.h:10,
+                 from helpers/contextmenu.h:13:
+helpers/folderize.h: At global scope:
+helpers/folderize.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onFolderize() {
+      |             ^~~~~
+helpers/folderize.h: In function ‘void onFolderize()’:
+helpers/folderize.h:10:33: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   10 |     QModelIndexList selection = currentView->selectionModel()->selectedRows();
+      |                                 ^~~~~~~~~~~
+      |                                 currentIndex
+helpers/folderize.h:12:34: error: invalid use of ‘this’ in non-member function
+   12 |         QMessageBox::information(this, "No selection", "Please select one or more items to folderize.");
+      |                                  ^~~~
+helpers/folderize.h:17:48: error: invalid use of ‘this’ in non-member function
+   17 |     QString folderName = QInputDialog::getText(this, "Folderize",
+      |                                                ^~~~
+helpers/folderize.h:26:27: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   26 |     QString currentPath = model->filePath(index);
+      |                           ^~~~~
+      |                           modfl
+helpers/folderize.h:29:30: error: invalid use of ‘this’ in non-member function
+   29 |         QMessageBox::warning(this, "Error", "Current directory is not accessible.");
+      |                              ^~~~
+helpers/folderize.h:36:30: error: invalid use of ‘this’ in non-member function
+   36 |         QMessageBox::warning(this, "Error", "Could not create folder: " + newFolderPath);
+      |                              ^~~~
+helpers/folderize.h:48:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+   48 |     statusBar()->showMessage(QString("Moved %1 item(s) to %2").arg(selection.size()).arg(folderName), 3000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/folderize.h:49:5: error: ‘onRefresh’ was not declared in this scope
+   49 |     onRefresh();
+      |     ^~~~~~~~~
+In file included from helpers/archivezip.h:11:
+helpers/progress.h: At global scope:
+helpers/progress.h:9:13: error: ‘ColFM’ has not been declared
+    9 | inline void ColFM::onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel) {
+      |             ^~~~~
+helpers/progress.h: In function ‘void onProgress(QObject*, QColor, QColor, int, int, bool)’:
+helpers/progress.h:13:17: error: invalid use of ‘this’ in non-member function
+   13 |     QDialog dlg(this);
+      |                 ^~~~
+helpers/archivezip.h: At global scope:
+helpers/archivezip.h:20:13: error: ‘ColFM’ has not been declared
+   20 | inline void ColFM::onZip() {
+      |             ^~~~~
+helpers/archivezip.h: In function ‘void onZip()’:
+helpers/archivezip.h:21:18: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+   21 |     auto items = currentView->selectionModel()->selectedRows();
+      |                  ^~~~~~~~~~~
+      |                  currentIndex
+helpers/archivezip.h:23:30: error: invalid use of ‘this’ in non-member function
+   23 |         QMessageBox::warning(this, "Archive", "No files selected.");
+      |                              ^~~~
+helpers/archivezip.h:33:31: error: invalid use of ‘this’ in non-member function
+   33 |         QMessageBox::critical(this, "Error", "No supported compression tools found.");
+      |                               ^~~~
+helpers/archivezip.h:37:44: error: invalid use of ‘this’ in non-member function
+   37 |     QString format = QInputDialog::getItem(this, "Choose Format", "Archive format:", formats, 0, false);
+      |                                            ^~~~
+helpers/archivezip.h:40:19: error: ‘ColFM’ has not been declared
+   40 |     QString cwd = ColFM::getCWD();
+      |                   ^~~~~
+helpers/archivezip.h:61:24: error: invalid use of ‘this’ in non-member function
+   61 |             onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 240, 18, true);
+      |                        ^~~~
+helpers/archivezip.h:75:34: error: invalid use of ‘this’ in non-member function
+   75 |         QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
+      |                                  ^~~~
+helpers/archivezip.h:95:34: error: invalid use of ‘this’ in non-member function
+   95 |         QMessageBox::information(this, "Archive Result", "Command: " + archiveCommand + "\nExit Code: " + QString::number(result));
+      |                                  ^~~~
+helpers/archivezip.h:98:16: error: invalid use of ‘this’ in non-member function
+   98 |     onProgress(this, QColor("#46B5CE"), QColor("#EEEEEE"), 0, 0, false);
+      |                ^~~~
+helpers/archivezip.h:99:5: error: ‘onRefresh’ was not declared in this scope
+   99 |     onRefresh();
+      |     ^~~~~~~~~
+helpers/archivezip.h:100:5: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+  100 |     statusBar()->showMessage("Archive created: " + archiveTarget, 3000);
+      |     ^~~~~~~~~
+      |     QStatusBar
+helpers/archivezip.h: At global scope:
+helpers/archivezip.h:103:13: error: ‘ColFM’ has not been declared
+  103 | inline void ColFM::onUnZip() {
+      |             ^~~~~
+helpers/archivezip.h: In function ‘void onUnZip()’:
+helpers/archivezip.h:104:18: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+  104 |     auto items = currentView->selectionModel()->selectedRows();
+      |                  ^~~~~~~~~~~
+      |                  currentIndex
+helpers/archivezip.h:106:30: error: invalid use of ‘this’ in non-member function
+  106 |         QMessageBox::warning(this, "Extract", "No archive selected.");
+      |                              ^~~~
+helpers/archivezip.h:110:19: error: ‘ColFM’ has not been declared
+  110 |     QString cwd = ColFM::getCWD();
+      |                   ^~~~~
+helpers/archivezip.h:130:34: error: invalid use of ‘this’ in non-member function
+  130 |             QMessageBox::warning(this, "Unknown Format", "Cannot extract: " + src);
+      |                                  ^~~~
+helpers/archivezip.h:135:9: error: ‘statusBar’ was not declared in this scope; did you mean ‘QStatusBar’?
+  135 |         statusBar()->showMessage("Extracted to " + dest, 2000);
+      |         ^~~~~~~~~
+      |         QStatusBar
+helpers/archivezip.h:138:5: error: ‘onRefresh’ was not declared in this scope
+  138 |     onRefresh();
+      |     ^~~~~~~~~
+In file included from helpers/contextmenu.h:15:
+helpers/new_terminal.h: At global scope:
+helpers/new_terminal.h:7:13: error: ‘ColFM’ has not been declared
+    7 | inline void ColFM::onNewTerminal() {
+      |             ^~~~~
+helpers/new_terminal.h: In function ‘void onNewTerminal()’:
+helpers/new_terminal.h:8:23: error: ‘currentView’ was not declared in this scope; did you mean ‘currentIndex’?
+    8 |     QModelIndex idx = currentView ? currentView->rootIndex() : QModelIndex();
+      |                       ^~~~~~~~~~~
+      |                       currentIndex
+helpers/new_terminal.h:9:20: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+    9 |     QString path = model->filePath(idx);
+      |                    ^~~~~
+      |                    modfl
+helpers/new_terminal.h:15:31: error: invalid use of ‘this’ in non-member function
+   15 |         QMessageBox::critical(this, "Error", "Could not launch gnome-terminal.");
+      |                               ^~~~
+helpers/contextmenu.h: At global scope:
+helpers/contextmenu.h:17:13: error: ‘ColFM’ has not been declared
+   17 | inline void ColFM::setupContextMenu(QWidget *parent) {
+      |             ^~~~~
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:22:55: error: ‘getIcon’ is not a member of ‘IconsData’
+   22 |     QMenu *fileMenu = contextMenu->addMenu(IconsData::getIcon("newfolder.png"), "File");
+      |                                                       ^~~~~~~
+helpers/contextmenu.h:23:5: error: ‘actNewFolder’ was not declared in this scope; did you mean ‘onNewFolder’?
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+      |     ^~~~~~~~~~~~
+      |     onNewFolder
+helpers/contextmenu.h:23:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+      |                                           ^~~~~~~
+helpers/contextmenu.h:23:83: error: invalid use of ‘this’ in non-member function
+   23 |     actNewFolder = new QAction(IconsData::getIcon("newfolder.png"), "New Folder", this);
+      |                                                                                   ^~~~
+helpers/contextmenu.h:24:48: error: invalid use of ‘this’ in non-member function
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |                                                ^~~~
+helpers/contextmenu.h:24:55: error: invalid use of ‘this’ in non-member function
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |                                                       ^~~~
+helpers/contextmenu.h:24:5: error: ‘connect’ was not declared in this scope; did you mean ‘QtFuture::connect’?
+   24 |     connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
+      |     ^~~~~~~
+      |     QtFuture::connect
+In file included from /usr/include/x86_64-linux-gnu/qt6/QtCore/qfuture.h:13,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtCore/QtCore:98,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QtWidgetsDepends:3,
+                 from /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QtWidgets:3,
+                 from colfm_desktop.cpp:1:
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qfuture_impl.h:895:34: note: ‘QtFuture::connect’ declared here
+  895 | static QFuture<ArgsType<Signal>> connect(Sender *sender, Signal signal)
+      |                                  ^~~~~~~
+helpers/contextmenu.h:27:5: error: ‘actOpen’ was not declared in this scope
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |     ^~~~~~~
+helpers/contextmenu.h:27:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:27:67: error: invalid use of ‘this’ in non-member function
+   27 |     actOpen = new QAction(IconsData::getIcon("open.png"), "Open", this);
+      |                                                                   ^~~~
+helpers/contextmenu.h:28:43: error: invalid use of ‘this’ in non-member function
+   28 |     connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+      |                                           ^~~~
+helpers/contextmenu.h:28:50: error: ‘ColFM’ has not been declared
+   28 |     connect(actOpen, &QAction::triggered, this, &ColFM::onOpen);
+      |                                                  ^~~~~
+helpers/contextmenu.h:31:5: error: ‘actRename’ was not declared in this scope; did you mean ‘onRename’?
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |     ^~~~~~~~~
+      |     onRename
+helpers/contextmenu.h:31:40: error: ‘getIcon’ is not a member of ‘IconsData’
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |                                        ^~~~~~~
+helpers/contextmenu.h:31:73: error: invalid use of ‘this’ in non-member function
+   31 |     actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);
+      |                                                                         ^~~~
+helpers/contextmenu.h:32:45: error: invalid use of ‘this’ in non-member function
+   32 |     connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+      |                                             ^~~~
+helpers/contextmenu.h:32:52: error: ‘ColFM’ has not been declared
+   32 |     connect(actRename, &QAction::triggered, this, &ColFM::onRename);
+      |                                                    ^~~~~
+helpers/contextmenu.h:35:5: error: ‘actDuplicate’ was not declared in this scope; did you mean ‘onDuplicate’?
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+      |     ^~~~~~~~~~~~
+      |     onDuplicate
+helpers/contextmenu.h:35:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+      |                                           ^~~~~~~
+helpers/contextmenu.h:35:82: error: invalid use of ‘this’ in non-member function
+   35 |     actDuplicate = new QAction(IconsData::getIcon("duplicate.png"), "Duplicate", this);
+      |                                                                                  ^~~~
+helpers/contextmenu.h:36:48: error: invalid use of ‘this’ in non-member function
+   36 |     connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+      |                                                ^~~~
+helpers/contextmenu.h:36:55: error: ‘ColFM’ has not been declared
+   36 |     connect(actDuplicate, &QAction::triggered, this, &ColFM::onDuplicate);
+      |                                                       ^~~~~
+helpers/contextmenu.h:39:5: error: ‘actSoftlink’ was not declared in this scope
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |     ^~~~~~~~~~~
+helpers/contextmenu.h:39:42: error: ‘getIcon’ is not a member of ‘IconsData’
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |                                          ^~~~~~~
+helpers/contextmenu.h:39:84: error: invalid use of ‘this’ in non-member function
+   39 |     actSoftlink = new QAction(IconsData::getIcon("softlink.png"), "Make Linkfile", this);
+      |                                                                                    ^~~~
+helpers/contextmenu.h:40:47: error: invalid use of ‘this’ in non-member function
+   40 |     connect(actSoftlink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+      |                                               ^~~~
+helpers/contextmenu.h:40:54: error: ‘ColFM’ has not been declared
+   40 |     connect(actSoftlink, &QAction::triggered, this, &ColFM::onCreateSoftlink);
+      |                                                      ^~~~~
+helpers/contextmenu.h:44:55: error: ‘getIcon’ is not a member of ‘IconsData’
+   44 |     QMenu *editMenu = contextMenu->addMenu(IconsData::getIcon("cut.png"), "Edit");
+      |                                                       ^~~~~~~
+helpers/contextmenu.h:46:5: error: ‘actCut’ was not declared in this scope
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |     ^~~~~~
+helpers/contextmenu.h:46:37: error: ‘getIcon’ is not a member of ‘IconsData’
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |                                     ^~~~~~~
+helpers/contextmenu.h:46:64: error: invalid use of ‘this’ in non-member function
+   46 |     actCut = new QAction(IconsData::getIcon("cut.png"), "Cut", this);
+      |                                                                ^~~~
+helpers/contextmenu.h:47:42: error: invalid use of ‘this’ in non-member function
+   47 |     connect(actCut, &QAction::triggered, this, [this] {
+      |                                          ^~~~
+helpers/contextmenu.h:47:49: error: invalid use of ‘this’ in non-member function
+   47 |     connect(actCut, &QAction::triggered, this, [this] {
+      |                                                 ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:49:34: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   49 |         if (idx.isValid()) onCut(model->filePath(idx));
+      |                                  ^~~~~
+      |                                  modfl
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:53:5: error: ‘actCopy’ was not declared in this scope
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |     ^~~~~~~
+helpers/contextmenu.h:53:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:53:71: error: invalid use of ‘this’ in non-member function
+   53 |     actCopy = new QAction(IconsData::getIcon("textcopy.png"), "Copy", this);
+      |                                                                       ^~~~
+helpers/contextmenu.h:54:43: error: invalid use of ‘this’ in non-member function
+   54 |     connect(actCopy, &QAction::triggered, this, [this] {
+      |                                           ^~~~
+helpers/contextmenu.h:54:50: error: invalid use of ‘this’ in non-member function
+   54 |     connect(actCopy, &QAction::triggered, this, [this] {
+      |                                                  ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:56:35: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   56 |         if (idx.isValid()) onCopy(model->filePath(idx));
+      |                                   ^~~~~
+      |                                   modfl
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:60:5: error: ‘actPaste’ was not declared in this scope
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:60:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:60:74: error: invalid use of ‘this’ in non-member function
+   60 |     actPaste = new QAction(IconsData::getIcon("clipboard.png"), "Paste", this);
+      |                                                                          ^~~~
+helpers/contextmenu.h:61:44: error: invalid use of ‘this’ in non-member function
+   61 |     connect(actPaste, &QAction::triggered, this, [this] {
+      |                                            ^~~~
+helpers/contextmenu.h:61:51: error: invalid use of ‘this’ in non-member function
+   61 |     connect(actPaste, &QAction::triggered, this, [this] {
+      |                                                   ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:62:17: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+   62 |         onPaste(model->filePath(currentRoot));
+      |                 ^~~~~
+      |                 modfl
+helpers/contextmenu.h:62:33: error: ‘currentRoot’ was not declared in this scope
+   62 |         onPaste(model->filePath(currentRoot));
+      |                                 ^~~~~~~~~~~
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:67:56: error: ‘getIcon’ is not a member of ‘IconsData’
+   67 |     QMenu *trashMenu = contextMenu->addMenu(IconsData::getIcon("open_trash.png"), "Trash");
+      |                                                        ^~~~~~~
+helpers/contextmenu.h:69:5: error: ‘actTrash’ was not declared in this scope
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:69:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:69:86: error: invalid use of ‘this’ in non-member function
+   69 |     actTrash = new QAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", this);
+      |                                                                                      ^~~~
+helpers/contextmenu.h:70:44: error: invalid use of ‘this’ in non-member function
+   70 |     connect(actTrash, &QAction::triggered, this, &ColFM::onMoveToTrash);
+      |                                            ^~~~
+helpers/contextmenu.h:70:51: error: ‘ColFM’ has not been declared
+   70 |     connect(actTrash, &QAction::triggered, this, &ColFM::onMoveToTrash);
+      |                                                   ^~~~~
+helpers/contextmenu.h:73:5: error: ‘actRestoreFromTrash’ was not declared in this scope; did you mean ‘onRestoreFromTrash’?
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |     ^~~~~~~~~~~~~~~~~~~
+      |     onRestoreFromTrash
+helpers/contextmenu.h:73:50: error: ‘getIcon’ is not a member of ‘IconsData’
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |                                                  ^~~~~~~
+helpers/contextmenu.h:73:103: error: invalid use of ‘this’ in non-member function
+   73 |     actRestoreFromTrash = new QAction(IconsData::getIcon("move_out_trash.png"), "Restore From Trash", this);
+      |                                                                                                       ^~~~
+helpers/contextmenu.h:74:55: error: invalid use of ‘this’ in non-member function
+   74 |     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+      |                                                       ^~~~
+helpers/contextmenu.h:74:62: error: ‘ColFM’ has not been declared
+   74 |     connect(actRestoreFromTrash, &QAction::triggered, this, &ColFM::onRestoreFromTrash);
+      |                                                              ^~~~~
+helpers/contextmenu.h:77:5: error: ‘actEmptyTrash’ was not declared in this scope; did you mean ‘onEmptyTrash’?
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |     ^~~~~~~~~~~~~
+      |     onEmptyTrash
+helpers/contextmenu.h:77:44: error: ‘getIcon’ is not a member of ‘IconsData’
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |                                            ^~~~~~~
+helpers/contextmenu.h:77:87: error: invalid use of ‘this’ in non-member function
+   77 |     actEmptyTrash = new QAction(IconsData::getIcon("empty_trash.png"), "Empty Trash", this);
+      |                                                                                       ^~~~
+helpers/contextmenu.h:78:49: error: invalid use of ‘this’ in non-member function
+   78 |     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+      |                                                 ^~~~
+helpers/contextmenu.h:78:56: error: ‘ColFM’ has not been declared
+   78 |     connect(actEmptyTrash, &QAction::triggered, this, &ColFM::onEmptyTrash);
+      |                                                        ^~~~~
+helpers/contextmenu.h:82:58: error: ‘getIcon’ is not a member of ‘IconsData’
+   82 |     QMenu *archiveMenu = contextMenu->addMenu(IconsData::getIcon("zip.png"), "Archiving");
+      |                                                          ^~~~~~~
+helpers/contextmenu.h:84:5: error: ‘actFolderize’ was not declared in this scope; did you mean ‘onFolderize’?
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+      |     ^~~~~~~~~~~~
+      |     onFolderize
+helpers/contextmenu.h:84:43: error: ‘getIcon’ is not a member of ‘IconsData’
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+      |                                           ^~~~~~~
+helpers/contextmenu.h:84:82: error: invalid use of ‘this’ in non-member function
+   84 |     actFolderize = new QAction(IconsData::getIcon("folderize.png"), "Folderize", this);
+      |                                                                                  ^~~~
+helpers/contextmenu.h:85:48: error: invalid use of ‘this’ in non-member function
+   85 |     connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+      |                                                ^~~~
+helpers/contextmenu.h:85:55: error: ‘ColFM’ has not been declared
+   85 |     connect(actFolderize, &QAction::triggered, this, &ColFM::onFolderize);
+      |                                                       ^~~~~
+helpers/contextmenu.h:88:5: error: ‘actZip’ was not declared in this scope
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |     ^~~~~~
+helpers/contextmenu.h:88:37: error: ‘getIcon’ is not a member of ‘IconsData’
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |                                     ^~~~~~~
+helpers/contextmenu.h:88:74: error: invalid use of ‘this’ in non-member function
+   88 |     actZip = new QAction(IconsData::getIcon("zip.png"), "Archive (Zip)", this);
+      |                                                                          ^~~~
+helpers/contextmenu.h:89:42: error: invalid use of ‘this’ in non-member function
+   89 |     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+      |                                          ^~~~
+helpers/contextmenu.h:89:49: error: ‘ColFM’ has not been declared
+   89 |     connect(actZip, &QAction::triggered, this, &ColFM::onZip);
+      |                                                 ^~~~~
+helpers/contextmenu.h:92:5: error: ‘actUnZip’ was not declared in this scope
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |     ^~~~~~~~
+helpers/contextmenu.h:92:39: error: ‘getIcon’ is not a member of ‘IconsData’
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |                                       ^~~~~~~
+helpers/contextmenu.h:92:80: error: invalid use of ‘this’ in non-member function
+   92 |     actUnZip = new QAction(IconsData::getIcon("unzip.png"), "Extract (Unzip)", this);
+      |                                                                                ^~~~
+helpers/contextmenu.h:93:44: error: invalid use of ‘this’ in non-member function
+   93 |     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+      |                                            ^~~~
+helpers/contextmenu.h:93:51: error: ‘ColFM’ has not been declared
+   93 |     connect(actUnZip, &QAction::triggered, this, &ColFM::onUnZip);
+      |                                                   ^~~~~
+helpers/contextmenu.h:97:56: error: ‘getIcon’ is not a member of ‘IconsData’
+   97 |     QMenu *propsMenu = contextMenu->addMenu(IconsData::getIcon("info.png"), "Properties");
+      |                                                        ^~~~~~~
+helpers/contextmenu.h:99:5: error: ‘actInfo’ was not declared in this scope; did you mean ‘atanf’?
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |     ^~~~~~~
+      |     atanf
+helpers/contextmenu.h:99:38: error: ‘getIcon’ is not a member of ‘IconsData’
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |                                      ^~~~~~~
+helpers/contextmenu.h:99:71: error: invalid use of ‘this’ in non-member function
+   99 |     actInfo = new QAction(IconsData::getIcon("info.png"), "Get Info", this);
+      |                                                                       ^~~~
+helpers/contextmenu.h:100:43: error: invalid use of ‘this’ in non-member function
+  100 |     connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+      |                                           ^~~~
+helpers/contextmenu.h:100:50: error: ‘ColFM’ has not been declared
+  100 |     connect(actInfo, &QAction::triggered, this, &ColFM::onInfo);
+      |                                                  ^~~~~
+helpers/contextmenu.h:104:45: error: ‘getIcon’ is not a member of ‘IconsData’
+  104 |     QMenu *labelMenu = new QMenu(IconsData::getIcon("label.png"), "Labels", propsMenu);
+      |                                             ^~~~~~~
+helpers/contextmenu.h:106:71: error: ‘model’ was not declared in this scope; did you mean ‘modfl’?
+  106 |     waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+      |                                                                       ^~~~~
+      |                                                                       modfl
+helpers/contextmenu.h:106:79: error: invalid use of ‘this’ in non-member function
+  106 |     waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+      |                                                                               ^~~~
+helpers/contextmenu.h: In lambda function:
+helpers/contextmenu.h:106:95: error: ‘getCWD’ was not declared in this scope
+  106 |     waLabel->setDefaultWidget(LabelManager::buildSwatchRow(propsMenu, model, [this](){ return getCWD(); }));
+      |                                                                                               ^~~~~~
+helpers/contextmenu.h: In function ‘void setupContextMenu(QWidget*)’:
+helpers/contextmenu.h:111:5: error: ‘actNewTerminal’ was not declared in this scope; did you mean ‘onNewTerminal’?
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |     ^~~~~~~~~~~~~~
+      |     onNewTerminal
+helpers/contextmenu.h:111:45: error: ‘getIcon’ is not a member of ‘IconsData’
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |                                             ^~~~~~~
+helpers/contextmenu.h:111:92: error: invalid use of ‘this’ in non-member function
+  111 |     actNewTerminal = new QAction(IconsData::getIcon("terminal.png"), "Open Terminal Here", this);
+      |                                                                                            ^~~~
+helpers/contextmenu.h:112:50: error: invalid use of ‘this’ in non-member function
+  112 |     connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+      |                                                  ^~~~
+helpers/contextmenu.h:112:57: error: ‘ColFM’ has not been declared
+  112 |     connect(actNewTerminal, &QAction::triggered, this, &ColFM::onNewTerminal);
+      |                                                         ^~~~~
+helpers/contextmenu.h:117:59: error: invalid use of ‘this’ in non-member function
+  117 |     connect(parent, &QWidget::customContextMenuRequested, this, [contextMenu](const QPoint &pos) {
+      |                                                           ^~~~
+colfm_desktop.cpp: In lambda function:
+colfm_desktop.cpp:325:9: error: ‘showContextMenu’ was not declared in this scope; did you mean ‘setupContextMenu’?
+  325 |         showContextMenu(view, idx, model, view->viewport()->mapToGlobal(pos));
+      |         ^~~~~~~~~~~~~~~
+      |         setupContextMenu

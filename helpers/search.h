@@ -17,7 +17,6 @@
 
 
 // External helpers (must exist in your project somewhere)
-
 namespace Search {
 
 inline QStringList runPlocateDialogAndSearch(QWidget *parent,

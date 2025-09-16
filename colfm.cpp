@@ -263,13 +263,16 @@ void onPaste(const QString &targetDir);
 
     void onOpen();
     void openWith(const QString &filePath);
-    void onInfo();
+    //void onInfo();
     void onGetInfo();
-    void onMove();
+    //void onMove();
     void onMoveButton();
 
-	void onBack();
-	void onGoDesktop();
+	void onBack() {
+    statusBar()->showMessage("TODO: Back", 2000);
+}
+
+void onGoDesktop();
 	void onGoDocuments();
 	void onGoDownloads();
 	void onGoPictures();
@@ -286,7 +289,6 @@ void onPaste(const QString &targetDir);
     void onZip();
     void onUnZip();
 
-    void onToggleHidden();
     void onSettings(); 
     void writePrefs(int folderMB, int iconSize, int viewMode);
     void readPrefs(int &folderMB, int &iconSize, int &viewMode);
@@ -294,9 +296,28 @@ void onPaste(const QString &targetDir);
     void onRename(); void onRenameSelected(const QString &path);
 
 
-    void onViewTree();
-    void onViewColumn();
-    void onViewIcon();
+    //void onViewTree();
+    //void onViewColumn();
+    //void onViewIcon();
+    void onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
+void onViewTree()   { setViewMode(ViewMode::Tree); }
+void onViewColumn() { setViewMode(ViewMode::Column); }
+void onViewIcon()   { setViewMode(ViewMode::Icon); }
+
+void onToggleHidden() {
+    showHidden = !showHidden;
+    QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
+    if (showHidden) {
+        f |= QDir::Hidden;
+        toggleHiddenBtn->setIcon(IconsData::getIcon("eye.png"));
+    } else {
+        toggleHiddenBtn->setIcon(IconsData::getIcon("eye-slash.png"));
+    }
+    model->setFilter(f);
+    setViewMode(mode);
+}
+
+
     void doSearch();
 
     QModelIndex currentIndex() const;
@@ -359,8 +380,20 @@ void onPaste(const QString &targetDir);
 
     /* ---------------------- Sidebar Builder (single column) ---------------------- */
     #include "helpers/sidebar.h"
-    
-    void setViewMode(ViewMode m) {
+   
+    // in colfm.cpp, inside ColFM
+inline void onInfo() {
+    QModelIndex idx = currentIndex();
+    if (!idx.isValid() && currentView) {
+        QPoint vp = currentView->viewport()->mapFromGlobal(QCursor::pos());
+        idx = currentView->indexAt(vp);
+    }
+    if (!idx.isValid()) return;
+    const QString path = model->filePath(idx);
+    colfm::showInfoDialog(this, path);
+}
+
+void setViewMode(ViewMode m) {
         mode = m;
         infoPanel = nullptr;
 

@@ -15,8 +15,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QLocalServer>
-#include <QLocalSocket>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QStandardPaths>
@@ -24,6 +22,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QtNetwork/QLocalServer>
+#include <QtNetwork/QLocalSocket>
 
 // ==== STL ====
 #include <functional>

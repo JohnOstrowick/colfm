@@ -62,10 +62,9 @@
 #include "helpers/drag.h"
 
 #define COLFM_MAIN 1
-#include "helpers/contextmenu.h"
 #include <unistd.h>   // at top of file for getuid()
 #include "helpers/icons_qicon.h"
-
+/* ============================================================================================ */
 static QString __appCWD = QDir::currentPath();
 
 QString getCWD() {
@@ -75,7 +74,7 @@ QString getCWD() {
 void setCWD(const QString &p) {
     __appCWD = p;
 }
-
+/* ============================================================================================ */
 /* -------- Settings -------- */
 static const QSize kIconSize(32, 32);
 
@@ -165,7 +164,7 @@ public:
         return QIcon(boxIcon(pix, kIconSize.width()));              // <— was QFileIconProvider::icon(info)
     }
 };
-
+/* ============================================================================================ */
 class FixedFSModel : public QFileSystemModel {
 public:
     using QFileSystemModel::QFileSystemModel;
@@ -188,12 +187,12 @@ public:
         }
         return QFileSystemModel::data(index, role);
     }
-private:
+public:
     QSize iconSz = kIconSize; 
 };
 
 QString getCWD();
-
+/* ============================================================================================ */
 class ColFM : public QMainWindow {
 public:
     ColFM(QWidget *parent=nullptr) : QMainWindow(parent) {
@@ -203,7 +202,7 @@ public:
         currentRoot = model->setRootPath(::getCWD());
 
         crumbs = new Breadcrumbs("Path", this);
-	crumbs->setFocusPolicy(Qt::NoFocus);
+        crumbs->setFocusPolicy(Qt::NoFocus);
         crumbs->setOnPathChosen([this](const QString &p){
             if (QDir(p).exists()) { pushHistory(); currentRoot = model->index(p); setViewMode(mode); }
             else statusBar()->showMessage("Path not found", 2000);
@@ -213,74 +212,60 @@ public:
         tb = new QToolBar("Main Toolbar", this);
         tb->setMovable(false);
         addToolBar(Qt::TopToolBarArea, tb);
-
+        // draw the main window
+        // add the menubar
         drawButtons();
         addToolBar(Qt::TopToolBarArea, crumbs);
-
-        setViewMode(ViewMode::Tree);
+        // default to columns
+        setViewMode(ViewMode::Column);
         setWindowTitle("ColFM — Multi-View File Manager");
-	this->installEventFilter(this);
-	QTimer::singleShot(0, this, [this]{
-	    if (auto v = findChild<QAbstractItemView*>())
-		v->setFocus(Qt::OtherFocusReason);
-	});
+        this->installEventFilter(this);
+        QTimer::singleShot(0, this, [this]{
+            if (auto v = findChild<QAbstractItemView*>())
+            v->setFocus(Qt::OtherFocusReason);
+        });
 
-	new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, []{
-	    if (auto w = QApplication::activeModalWidget())
-		w->close();
-	});
+        // make control Q or W close the app
+        new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, []{
+            if (auto w = QApplication::activeModalWidget())
+            w->close();
+        });
+// set the dimensions
         resize(1400, 800);
         LabelManager::refreshHook = [this]{ onRefresh(); };
     }
-
+/* ============================================================================================ */
 public:
     QStringList selectItems();
     void drawButtons();
     void onAppIcon(const QString &msg);
     void onFolderize();
     void onRefresh();
-
-	// app icon defintions/declarations
 	void shutdownNow(); 
 	void rebootNow(); 
 	void forceQuitApp(); 
 	void openProcessManager(); 
 	void lockSession(); 
-
     void onMoveToTrash();
     void onEmptyTrash();
     void onOpenTrash();
     void onRestoreFromTrash();
-
-
-void onCut(const QString &path);
-void onCopy(const QString &path);
-void onPaste(const QString &targetDir);
-//void onUndo();
-
     void onUp();
     void onChDir(const QString&);
-
     void onOpen();
     void openWith(const QString &filePath);
-    //void onInfo();
     void onGetInfo();
-    //void onMove();
     void onMoveButton();
-
-	void onBack() {
-    statusBar()->showMessage("TODO: Back", 2000);
-}
-
-void onGoDesktop();
+	
+    void onGoDesktop();
 	void onGoDocuments();
 	void onGoDownloads();
 	void onGoPictures();
 	void onGoMedia();
 
-	void onCut();
-	void onCopy();
-	void onPaste();
+	void onCut(const QString &path);
+    void onCopy(const QString &path);
+    void onPaste(const QString &targetDir);
 	void onUndo();
 
     void onDuplicate();
@@ -293,31 +278,15 @@ void onGoDesktop();
     void writePrefs(int folderMB, int iconSize, int viewMode);
     void readPrefs(int &folderMB, int &iconSize, int &viewMode);
     void onProgress(QObject *target, QColor colour, QColor background, int width, int height, bool bevel);
-    void onRename(); void onRenameSelected(const QString &path);
+    void onRename(); 
+    void onRenameSelected(const QString &path);
 
-
-    //void onViewTree();
-    //void onViewColumn();
-    //void onViewIcon();
     void onMove()                   { statusBar()->showMessage("TODO: Move", 2000); }
-void onViewTree()   { setViewMode(ViewMode::Tree); }
-void onViewColumn() { setViewMode(ViewMode::Column); }
-void onViewIcon()   { setViewMode(ViewMode::Icon); }
+    void onViewTree()   { setViewMode(ViewMode::Tree); }
+    void onViewColumn() { setViewMode(ViewMode::Column); }
+    void onViewIcon()   { setViewMode(ViewMode::Icon); }
 
-void onToggleHidden() {
-    showHidden = !showHidden;
-    QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
-    if (showHidden) {
-        f |= QDir::Hidden;
-        toggleHiddenBtn->setIcon(IconsData::getIcon("eye.png"));
-    } else {
-        toggleHiddenBtn->setIcon(IconsData::getIcon("eye-slash.png"));
-    }
-    model->setFilter(f);
-    setViewMode(mode);
-}
-
-
+    void drawDesktopWindow();
     void doSearch();
 
     QModelIndex currentIndex() const;
@@ -326,16 +295,16 @@ void onToggleHidden() {
     void openApp(const QString &path);
     void openSelected();
     void openPath(const QString &absPath);
-    void contextMenuEvent(QContextMenuEvent *event) override;
-    void showContextMenu(QContextMenuEvent *event);
+    //void contextMenuEvent(QContextMenuEvent *event) override;
+    //void showContextMenu(QContextMenuEvent *event);
 
     void onNewFolder();
     void onNewWindow();
+void enableContextMenuOn(QAbstractItemView *v);
     void onNewTerminal();
 
     bool eventFilter(QObject *obj, QEvent *ev) override;
 
-//private:
     QFileSystemModel *model{};
     ViewMode mode = ViewMode::Tree;
     QModelIndex currentRoot;
@@ -343,7 +312,7 @@ void onToggleHidden() {
     bool showHidden = false;
 
     colfm::InfoWidget *infoPanel{};
-
+/* ============================================================================================ */
     Breadcrumbs *crumbs{};
     QToolBar *tb{};
     QAction *actAppIcon{}, *actTrash{}, *actRefresh{}, *actOpenTrash{}, *actUp{}, *actBack{};
@@ -362,8 +331,12 @@ void onToggleHidden() {
     QAction *actSearch{}, *actSettings{};
     // these are declared in their own header files
     //QAction *addIconSizePopup{};
-   //QToolButton *labelBtn{};
+    //QToolButton *labelBtn{};
+    //void onInfo();
+    //void onMove();
     QAbstractItemView *currentView{};
+    /* ---------------------- Sidebar Builder (single column) ---------------------- */
+    #include "helpers/sidebar.h"
 
     /* added: sidebar + simple back history */
     QTreeWidget *sidebar{};                     /* added */
@@ -377,11 +350,24 @@ void onToggleHidden() {
         backStack.prepend(model->filePath(currentRoot));
         if (backStack.size() > 50) backStack.removeLast();
     }
+    void onBack() {
+        statusBar()->showMessage("TODO: Back", 2000);
+    }
+/* ============================================================================================ */
+       
+inline void onToggleHidden() {
+        showHidden = !showHidden;
+        QDir::Filters f = QDir::AllEntries | QDir::NoDotAndDotDot;
+        if (showHidden) {
+            f |= QDir::Hidden;
+            toggleHiddenBtn->setIcon(IconsData::getIcon("eye.png"));
+        } else {
+            toggleHiddenBtn->setIcon(IconsData::getIcon("eye-slash.png"));
+        }
+        model->setFilter(f);
+        setViewMode(mode);
+    }
 
-    /* ---------------------- Sidebar Builder (single column) ---------------------- */
-    #include "helpers/sidebar.h"
-   
-    // in colfm.cpp, inside ColFM
 inline void onInfo() {
     QModelIndex idx = currentIndex();
     if (!idx.isValid() && currentView) {
@@ -478,8 +464,6 @@ QStringList ColFM::selectItems() {
     return paths;
 }
 
-
-
 // function to return our CWD anywhere
 QString ColFM::getCWD() {
     QModelIndex idx = currentIndex();
@@ -505,6 +489,7 @@ void ColFM::previewFile(const QModelIndex &idx) {
 }
 
 void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previewFile(idx); }
+/* ============================================================================================ */
 
 #include "helpers/rename.h"
 #include "helpers/duplicate.h"
@@ -522,14 +507,19 @@ void ColFM::onGetInfo(){ QModelIndex idx=currentIndex(); if(idx.isValid()) previ
 #include "helpers/archivezip.h"
 #include "helpers/search.h"
 #include "helpers/appicon.h"
-
+#include "helpers/contextmenu.h"
+#include "helpers/desktop.h"
+/* ============================================================================================ */
+/*
 void ColFM::contextMenuEvent(QContextMenuEvent *event) {
     if (!currentView || !model) return;
     const QPoint viewPos = currentView->viewport()->mapFromGlobal(event->globalPos());
     const QModelIndex idx = currentView->indexAt(viewPos);
     if (!idx.isValid()) return;
-    ::showContextMenu(currentView, idx, model, event->globalPos());
+    //::showContextMenu(currentView, idx, model, event->globalPos());
+    ::showContextMenu(currentView, idx, static_cast<QAbstractItemModel*>(model), event->globalPos());
 }
+*/
 
 bool ColFM::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {
@@ -555,6 +545,22 @@ inline QString resolveStartPath(const QStringList &args) {
     }
     return path;
 }
+void ColFM::onMoveButton() {
+    Move::promptAndMove(selectItems(), this);
+}
+
+void ColFM::enableContextMenuOn(QAbstractItemView *v) {
+    v->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(v, &QWidget::customContextMenuRequested, this, [this,v](const QPoint &pos){
+        const QModelIndex idx = v->indexAt(pos);
+        if (!idx.isValid()) return;
+        //extern void showContextMenu(QAbstractItemView*, const QModelIndex&, QFileSystemModel*, QPoint);
+        //showContextMenu(v, idx, model, v->viewport()->mapToGlobal(pos));
+        ::showContextMenu(v, idx, static_cast<QAbstractItemModel*>(model), v->viewport()->mapToGlobal(pos));
+    });
+}
+
+/* ============================================================================================ */
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
@@ -565,16 +571,13 @@ int main(int argc, char *argv[]) {
     const QString startPath = resolveStartPath(app.arguments());
     setCWD(startPath);                      // <- tells UI which folder to show
 
-    ColFM w;
+    //ColFM w;
+    ColFM w(nullptr);
     w.show();   // disabled for smoke test
-
-    const QString desktopExe = QCoreApplication::applicationDirPath() + "/colfm_desktop";
-    int running = QProcess::execute("pgrep", {"-u", QString::number(getuid()), "colfm_desktop"});
-    if (running != 0) QProcess::startDetached(desktopExe, {});
+//   if (QProcess::execute("pgrep -u " + QString::number(getuid()) + " colfm") == 1) {
+        w.drawDesktopWindow();  // only draw desktop if this is the first colfm instance
+ //   }
     return app.exec();
 }
 
-// Step 2 — free helper to invoke the Move… dialog without adding class members
-void ColFM::onMoveButton() {
-    Move::promptAndMove(selectItems(), this);
-}
+

@@ -92,6 +92,8 @@ inline void ColFM::drawButtons() {
 	actNewFolder->setToolTip("Create a new folder");
 	connect(actNewFolder, &QAction::triggered, this, [this]{ onNewFolder(); });
 	fileMenu->addAction(actNewFolder);
+// new folder
+
 
 	// Rename
 	actRename = new QAction(IconsData::getIcon("rename.png"), "Rename", this);

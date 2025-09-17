@@ -71,22 +71,15 @@ inline void launchAppOnPath(const QString &app, const QString &path) {
     else                                   QProcess::startDetached(app, { path });
 }
 
+// Trigger a toolbar action on the parent window by its displayed text.
 inline void triggerWindowActionByText(QWidget *parent, const QString &text) {
     if (!parent) return;
     if (QWidget *w = parent->window()) {
         const auto acts = w->findChildren<QAction*>();
-        QStringList found;
         for (QAction *a : acts) {
             if (!a) continue;
-            found << a->text();
-            if (a->text() == text) {
-                QMessageBox::information(nullptr, "Trigger Found", "Matched and triggering: " + text);
-                a->trigger();
-                return;
-            }
+            if (a->text() == text) { a->trigger(); return; }
         }
-        QMessageBox::warning(nullptr, "Trigger Failed",
-            "No matching QAction found for: " + text + "\n\nFound actions:\n" + found.join("\n"));
     }
 }
 
@@ -108,66 +101,82 @@ inline void showContextMenu(QWidget *parent,
     QMenu menu(parent);
 
     // ===== Toolbar parity (except icon size & view) =====
-    #include "new.h"
-    menu.addAction(IconsData::getIcon("refresh.png"), "Refresh", [parent] {
-        static_cast<ColFM *>(parent->window())->onRefresh();
-    });
-    
-    menu.addAction(IconsData::getIcon("newfolder.png"), "New Folder", [parent] {
-        static_cast<ColFM *>(parent->window())->onNewFolder();
-    });
-//
-    menu.addAction(IconsData::getIcon("newwindow.png"), "Open New Window", [parent] {
-        static_cast<ColFM *>(parent->window())->onNewWindow();
-    });
-   
-    menu.addAction(IconsData::getIcon("terminal.png"), "New Terminal", [parent] {
-        static_cast<ColFM *>(parent->window())->onNewTerminal();
-    });
+    QAction *actRefresh   = menu.addAction(QObject::tr("Refresh"));
+    QObject::connect(actRefresh, &QAction::triggered, [=]{ triggerWindowActionByText(parent, QObject::tr("Refresh")); });
+
+    QAction *actUp        = menu.addAction(QObject::tr("Up"));
+    QObject::connect(actUp, &QAction::triggered,      [=]{ triggerWindowActionByText(parent, QObject::tr("Up")); });
+
+    QAction *actGoHome    = menu.addAction(QObject::tr("Home"));
+    QObject::connect(actGoHome, &QAction::triggered,  [=]{ triggerWindowActionByText(parent, QObject::tr("Home")); });
+
+    QAction *actNewFolder = menu.addAction(QObject::tr("New Folder"));
+    QObject::connect(actNewFolder, &QAction::triggered,[=]{ triggerWindowActionByText(parent, QObject::tr("New Folder")); });
+
+    QAction *actNewWin    = menu.addAction(QObject::tr("New Window"));
+    QObject::connect(actNewWin, &QAction::triggered,  [=]{ triggerWindowActionByText(parent, QObject::tr("New Window")); });
+
+    QAction *actNewTerm   = menu.addAction(QObject::tr("New Terminal"));
+    QObject::connect(actNewTerm, &QAction::triggered, [=]{ triggerWindowActionByText(parent, QObject::tr("New Terminal")); });
+
+    QAction *actSearch    = menu.addAction(QObject::tr("Search"));
+    QObject::connect(actSearch, &QAction::triggered,  [=]{ triggerWindowActionByText(parent, QObject::tr("Search")); });
+
+    QAction *actSettings  = menu.addAction(QObject::tr("Settings"));
+    QObject::connect(actSettings, &QAction::triggered,[=]{ triggerWindowActionByText(parent, QObject::tr("Settings")); });
 
     menu.addSeparator();
 
-    menu.addAction(IconsData::getIcon("move_to_trash.png"), "Move to Trash", [parent] {
-        static_cast<ColFM *>(parent->window())->onMoveToTrash();
-    });
+    if (path == QStringLiteral("trash://") || kind == QStringLiteral("Trash")) {
+        QAction *actOpenTrash  = menu.addAction(QObject::tr("Open Trash"));
+        QObject::connect(actOpenTrash,  &QAction::triggered, [=]{ triggerWindowActionByText(parent, QObject::tr("Open Trash")); });
 
-    menu.addAction(IconsData::getIcon("move_out_trash.png"), "Restore from Trash", [parent] {
-        static_cast<ColFM *>(parent->window())->onRestoreFromTrash();
-    });
+        QAction *actEmptyTrash = menu.addAction(QObject::tr("Empty Trash"));
+        QObject::connect(actEmptyTrash, &QAction::triggered, [=]{ triggerWindowActionByText(parent, QObject::tr("Empty Trash")); });
+
+        // --- Swatches from LabelManager at the end ---
+        QWidgetAction *wa = new QWidgetAction(&menu);
+        wa->setDefaultWidget(LabelManager::buildSwatchRow(&menu, model, [dir]{ return dir; }));
+        menu.addSeparator();
+        menu.addAction(wa);
+
+        menu.exec(globalPos);
+        return;
+    }
+
+    // File/Folder specific actions (match toolbar set)
+    QAction *actMoveToTrash = menu.addAction(QObject::tr("Move to Trash"));
+    QObject::connect(actMoveToTrash, &QAction::triggered, [=]{ triggerWindowActionByText(parent, QObject::tr("Move to Trash")); });
+
+    QAction *actRestore     = menu.addAction(QObject::tr("Restore from Trash"));
+    QObject::connect(actRestore, &QAction::triggered,     [=]{ triggerWindowActionByText(parent, QObject::tr("Restore from Trash")); });
 
     menu.addSeparator();
 
-    menu.addAction(IconsData::getIcon("info.png"), "Get Info", [parent] {
-        static_cast<ColFM *>(parent->window())->onGetInfo();
-    });
+    QAction *actInfo      = menu.addAction(QObject::tr("Get Info"));
+    QObject::connect(actInfo, &QAction::triggered,        [=]{ triggerWindowActionByText(parent, QObject::tr("Get Info")); });
 
-    menu.addAction(IconsData::getIcon("rename.png"), "Rename", [parent] {
-        static_cast<ColFM *>(parent->window())->onRename();
-    });
+    QAction *actRename    = menu.addAction(QObject::tr("Rename"));
+    QObject::connect(actRename, &QAction::triggered,      [=]{ triggerWindowActionByText(parent, QObject::tr("Rename")); });
 
-    menu.addAction(IconsData::getIcon("move.png"), "Move", [parent] {
-        static_cast<ColFM *>(parent->window())->onMoveButton();
-    });
+    QAction *actMove      = menu.addAction(QObject::tr("Move"));
+    QObject::connect(actMove, &QAction::triggered,        [=]{ triggerWindowActionByText(parent, QObject::tr("Move")); });
 
-    menu.addAction(IconsData::getIcon("folderize.png"), "Folderize", [parent] {
-        static_cast<ColFM *>(parent->window())->onFolderize();
-    });
+    QAction *actFolderize = menu.addAction(QObject::tr("Folderize"));
+    QObject::connect(actFolderize, &QAction::triggered,   [=]{ triggerWindowActionByText(parent, QObject::tr("Folderize")); });
 
-    menu.addAction(IconsData::getIcon("duplicate.png"), "Duplicate", [parent] {
-        static_cast<ColFM *>(parent->window())->onDuplicate();
-    });
+    QAction *actDuplicate = menu.addAction(QObject::tr("Duplicate"));
+    QObject::connect(actDuplicate, &QAction::triggered,   [=]{ triggerWindowActionByText(parent, QObject::tr("Duplicate")); });
 
-    menu.addAction(IconsData::getIcon("softlink.png"), "Create Link", [parent] {
-        static_cast<ColFM *>(parent->window())->onCreateSoftlink();
-    });
+    QAction *actLink      = menu.addAction(QObject::tr("Create Link"));
+    QObject::connect(actLink, &QAction::triggered,        [=]{ triggerWindowActionByText(parent, QObject::tr("Create Link")); });
 
-    menu.addAction(IconsData::getIcon("zip.png"), "Archive", [parent] {
-        static_cast<ColFM *>(parent->window())->onZip();
-    });
+    QAction *actZip       = menu.addAction(QObject::tr("Archive"));
+    QObject::connect(actZip, &QAction::triggered,         [=]{ triggerWindowActionByText(parent, QObject::tr("Archive")); });
 
-    menu.addAction(IconsData::getIcon("unzip.png"), "Extract", [parent] {
-        static_cast<ColFM *>(parent->window())->onUnZip();
-    });
+    QAction *actUnZip     = menu.addAction(QObject::tr("Extract"));
+    QObject::connect(actUnZip, &QAction::triggered,       [=]{ triggerWindowActionByText(parent, QObject::tr("Extract")); });
+
     // Open With…
     QMenu *openWithMenu = menu.addMenu(QObject::tr("Open With…"));
     const QString mt = mimeForFilePath(path);

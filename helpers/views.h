@@ -24,6 +24,7 @@ inline QModelIndex ensureRootIndex(const QModelIndex &root) {
 inline QWidget* buildTreeWidget(const QModelIndex &rootIdx) {
     auto *view = new QTreeView();
     Drag::enableOn(view);
+    enableContextMenuOn(view);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection); 
 
     view->setModel(model);
@@ -68,17 +69,22 @@ protected:
             v->setIconSize(kIconSize);
             v->setItemDelegate(new FixedIconDelegate(v));
             v->setContextMenuPolicy(Qt::CustomContextMenu);
-	    Drag::enableOn(v);
-           QObject::connect(v, &QWidget::customContextMenuRequested, v,
-                         [v](const QPoint &pos) {
-            const QModelIndex idx = v->indexAt(pos);
-            if (!idx.isValid()) return;
-            ::showContextMenu(v, idx, v->model(), v->viewport()->mapToGlobal(pos));
-        });
+            Drag::enableOn(v);
+            QObject::connect(v, &QWidget::customContextMenuRequested, v,
+                [v](const QPoint &pos) {
+                    const QModelIndex idx = v->indexAt(pos); 
+                    if (!idx.isValid()) return;
+                }
+            );
+            //
+		// requiers Q_OBJECT and moc ColFM *win = qobject_cast<ColFM *>(v->window());
+		ColFM *win = static_cast<ColFM *>(v->window());
+            if (win) win->enableContextMenuOn(v);
         }
         return v;
     }
 };
+
 
 /* ------------------------------ Column view ------------------------------ */
 inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
@@ -131,7 +137,7 @@ inline QWidget* buildColumnWidget(const QModelIndex &rootIdx) {
 /* ------------------------------ Icon (grid) view ------------------------------ */
 inline QWidget* buildIconWidget(const QModelIndex &rootIdx) {
     auto *view = new QListView();
-view->setViewMode(QListView::IconMode);
+    view->setViewMode(QListView::IconMode);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     view->setViewMode(QListView::IconMode);
@@ -139,9 +145,9 @@ view->setViewMode(QListView::IconMode);
     view->setMovement(QListView::Static);
     view->setUniformItemSizes(false);
     view->setSelectionBehavior(QAbstractItemView::SelectItems);
-view->setSelectionMode(QAbstractItemView::ExtendedSelection);
-view->setDragEnabled(true);
-Drag::enableOn(view);
+    view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    view->setDragEnabled(true);
+    Drag::enableOn(view);
 
     view->setModel(model);
     const QModelIndex root = ensureRootIndex(rootIdx);            /* added */
@@ -187,5 +193,6 @@ inline QListView* makeIconView(QWidget *parent, QAbstractItemModel *model) {
     view->setSpacing(8);
     view->setUniformItemSizes(false);
     Drag::enableOn(view);
+    enableContextMenuOn(view);
     return view;
 }

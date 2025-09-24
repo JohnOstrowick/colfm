@@ -7,11 +7,12 @@ ColFM is a Qt6-based file manager prototype with three switchable view modes:
 - **Icon View** — grid of file/folder icons.
 
 ## Features
-- Switch views instantly via toolbar buttons.
-- Dark-grey preview pane in Column View.
-- Basic toolbar actions (placeholders for now).
-- Go-up-a-level button works in all views.
+- Full file manager menubar on each window including all typical commands such as copy, link, move, rename, move to trash, move out of trash, folderize, archive, unzip, etc., etc.
+- Mac OS X style columns and label menu to colour code items (useful when sorting photos to mark which ones you have processed or printed etc)
+- Per-folder icon size, label colour, grid/column/icon view preferences
+- Dark-grey preview pane in Column View / full get info screen (in column view the get info panel is the preview panel); spacebar = get info preview.
 - Built using C++17 and Qt6.
+- Desktop screen that inherits the desktop pattern from gnome session desktop wallpaper
 
 ## Build Instructions
 
@@ -26,12 +27,15 @@ git clone https://github.com/JohnOstrowick/colfm.git
 cd colfm
 
 # Build
-g++ -std=c++17 colfm.cpp -o colfm `pkg-config --cflags --libs Qt6Widgets`
+./make
 
 # Run
 ./colfm
 
-colfm app sub-launches colfm_desktop app which handles desktop icons.
+# installation
+cp colfm /usr/local/bin
+bash scripts/install_desktop_icon.sh
+```
 
 ## If you enjoy this
 

@@ -6,7 +6,7 @@ void onSampleButton();
 QAction *actSampleButton{};
 
 // toolbars.h where buttons are added:
-actSampleButton = tb->addAction(QIcon("icons/sample.png"), "Sample Button");
+actSampleButton = tb->addAction(getIcon("sample.png"), "Sample Button");
 actSampleButton->setToolTip("Click me for something");
 
 // toolbars.h where connects are added:
@@ -26,4 +26,10 @@ inline void ColFM::onSampleButton() {
 
 // colfm.cpp after class definition:
 #include "sample.h"
+
+Newer code embeds the icon in the code itself. When you compile you have to use that otherwise the app depends on finding ./icons/ with the icons in it. Suggest you use that incantation instead. 
+
+viewMenu->addAction(IconsData::getIcon("eye.png"), "Show Hidden Files", [this] {
+	    onToggleHidden();
+	});
 </code></pre>

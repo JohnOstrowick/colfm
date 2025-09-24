@@ -10,7 +10,7 @@ inline QListView* makeIconView(QWidget *parent, QAbstractItemModel *model) {
     view->setLayoutDirection(Qt::LeftToRight);
     view->setSelectionBehavior(QAbstractItemView::SelectItems);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    view->setIconSize(QSize(48,48));
+    view->setIconSize(QSize(148,148));
     view->setWordWrap(true);
     view->setTextElideMode(Qt::ElideNone);
     // columnised label under icon (~3 lines)

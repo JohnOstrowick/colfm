@@ -80,19 +80,6 @@ static const QSize kIconSize(32, 32);
 
 enum class ViewMode { Tree, Column, Icon };
 
-/* Force app-wide 32 px icon metrics */
-class ForceIconStyle : public QProxyStyle {
-public:
-    using QProxyStyle::QProxyStyle;
-    int pixelMetric(PixelMetric m, const QStyleOption *opt, const QWidget *wid) const override {
-        if (m == QStyle::PM_SmallIconSize ||
-            m == QStyle::PM_ListViewIconSize ||
-            m == QStyle::PM_IconViewIconSize ||
-            m == QStyle::PM_ToolBarIconSize) return 32;
-        return QProxyStyle::pixelMetric(m, opt, wid);
-    }
-};
-
 /* Fixed decoration size */
 class FixedIconDelegate : public QStyledItemDelegate {
 public:
@@ -556,7 +543,7 @@ void ColFM::enableContextMenuOn(QAbstractItemView *v) {
         if (!idx.isValid()) return;
         //extern void showContextMenu(QAbstractItemView*, const QModelIndex&, QFileSystemModel*, QPoint);
         //showContextMenu(v, idx, model, v->viewport()->mapToGlobal(pos));
-        ::showContextMenu(v, idx, static_cast<QAbstractItemModel*>(model), v->viewport()->mapToGlobal(pos));
+        ::showContextMenu(this, idx, static_cast<QAbstractItemModel*>(model), v->viewport()->mapToGlobal(pos));
     });
 }
 
@@ -564,8 +551,6 @@ void ColFM::enableContextMenuOn(QAbstractItemView *v) {
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    app.setStyle(new ForceIconStyle(app.style()));
-    //app.setWindowIcon(QIcon("icons/app_icon.png"));
     app.setWindowIcon(IconsData::getIcon("app_icon.png"));
 
     const QString startPath = resolveStartPath(app.arguments());
@@ -574,9 +559,7 @@ int main(int argc, char *argv[]) {
     //ColFM w;
     ColFM w(nullptr);
     w.show();   // disabled for smoke test
-//   if (QProcess::execute("pgrep -u " + QString::number(getuid()) + " colfm") == 1) {
         w.drawDesktopWindow();  // only draw desktop if this is the first colfm instance
- //   }
     return app.exec();
 }
 

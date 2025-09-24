@@ -26,6 +26,7 @@
 #include "labels.h"
 #include "drag.h"
 #include "contextmenu.h"
+#include "views.h"
 
 #ifdef HAVE_X11
 #include <X11/Xlib.h>
@@ -154,7 +155,7 @@ public:
         }
 
         QImage trashImg;
-        trashImg.loadFromData(IconsData::bytesMap().value("trash.png"), "PNG");
+        trashImg.loadFromData(IconsData::bytesMap().value("open-trash.png"), "PNG");
         if (!trashImg.isNull()) {
             auto *trash = new QStandardItem(boxedIconFromImage(trashImg, 48), "Trash");
             trash->setEditable(false);
@@ -221,6 +222,9 @@ inline void ColFM::drawDesktopWindow() {
     view->setViewMode(QListView::IconMode);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
     view->setIconSize(QSize(48, 48));
+    
+    enableContextMenuOn(view);
+
     view->setWordWrap(true);
     view->setTextElideMode(Qt::ElideNone);
     view->setGridSize(QSize(108, 108));
@@ -228,6 +232,7 @@ inline void ColFM::drawDesktopWindow() {
     view->setMovement(QListView::Static);
     view->setSpacing(8);
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    
     Drag::enableOn(view);
     view->setFlow(QListView::TopToBottom);
     view->setStyleSheet("QListView{background:transparent;} QScrollBar{background:transparent;}");
@@ -256,13 +261,18 @@ inline void ColFM::drawDesktopWindow() {
             QDesktopServices::openUrl(QUrl::fromLocalFile(path));
         }
     });
-
+/*
     view->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(view, &QWidget::customContextMenuRequested, view, [view,model](const QPoint &pos){
         const QModelIndex idx = view->indexAt(pos);
         if (!idx.isValid()) return;
         showContextMenu(view, idx, model, view->viewport()->mapToGlobal(pos));
     });
+
+*/
+enableContextMenuOn(view);
+
 }
+
 
 #endif // DESKTOP_H

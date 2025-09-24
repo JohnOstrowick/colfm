@@ -1,24 +1,147 @@
 #include <QtWidgets>
 #include <QtCore>
 #include <QtGui>
-#include "contextmenu.h"
-#include "drag.h"
-#include "viewwidgets.h"
+#include <QtNetwork/QLocalServer>
+#include <QtNetwork/QLocalSocket>
+
+#include "helpers/drag.h"
+#include "helpers/iconview_factory.h"
+#include "helpers/icons_qicon.h"
 #if __has_include(<X11/Xlib.h>)
   #define HAVE_X11 1
   #include <X11/Xlib.h>
   #include <X11/Xatom.h>
 #endif
 
+#include <QApplication>
+#include <QAbstractItemView>
+#include <QItemSelectionModel>
+#include <QAbstractItemModel>
+#include <QColumnView>
+#include <QListView>
+#include <QMainWindow>
+#include <QToolBar>
+#include <QAction>
+#include <QFileSystemModel>
+#include <QFileIconProvider>
+#include <QTreeView>
+#include <QColumnView>
+#include <QSplitter>
+#include <QDir>
+#include <QIcon>
+#include <QDebug>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QCursor>
+#include <QPixmap>
+#include <QImage>
+#include <QColor>
+#include <QStyledItemDelegate>
+#include <QProxyStyle>
+#include <QStyle>
+#include <QStatusBar>
+#include <QLineEdit>
+#include <QWidgetAction>
+#include <QSizePolicy>
+#include <QEvent>
+#include <QMessageBox>
+#include <QTextBrowser>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QToolButton>
+#include <QMenu>
+#include <functional>
+#include <QKeyEvent>
+#include <QTimer>
+#include <QShortcut>
+#include <QSaveFile>
+#include <QTextStream>
+#include <QApplication>
+#include <QItemSelectionModel>
+#include <QMap>
+#include <QPainter>
+#include <QFileInfo>
+#include <QString>
+#include <QDrag>
+#include <QMimeData>
+#include <QPixmap>
+
+#include <unistd.h>   // at top of file for getuid()
+#include "helpers/colfm_fwd.h"
+#include "helpers/icons_qicon.h"
+#include "helpers/contextmenu.h"
+
+
 // ---------- helpers ----------
+
+static QString detectWallpaperFromOS() {
+    // Try GNOME via gsettings
+    QProcess p;
+    p.start("gsettings", {"get", "org.gnome.desktop.background", "picture-uri"});
+    if (p.waitForFinished(200) && p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0) {
+        QString out = QString::fromUtf8(p.readAllStandardOutput()).trimmed();
+        // Example: 'file:///home/john/Pictures/wall.jpg' or '""'
+        out.remove('\'').remove('\"');
+        if (out.startsWith("file://")) out = QUrl(out).toLocalFile();
+        if (QFile::exists(out)) return out;
+
+        // GNOME dark variant fallback
+        p.start("gsettings", {"get", "org.gnome.desktop.background", "picture-uri-dark"});
+        if (p.waitForFinished(200) && p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0) {
+            out = QString::fromUtf8(p.readAllStandardOutput()).trimmed();
+            out.remove('\'').remove('\"');
+            if (out.startsWith("file://")) out = QUrl(out).toLocalFile();
+            if (QFile::exists(out)) return out;
+        }
+    }
+
+    // Try KDE Plasma config
+    const QString plasmaCfg = QDir::homePath() + "/.config/plasma-org.kde.plasma.desktop-appletsrc";
+    if (QFile::exists(plasmaCfg)) {
+        QFile f(plasmaCfg);
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            const QString cfg = QString::fromUtf8(f.readAll());
+            // Prefer the last Image= entry (active containment)
+            QRegularExpression re(R"(Image=(.+))");
+            QRegularExpressionMatchIterator it = re.globalMatch(cfg);
+            QString imagePath;
+            while (it.hasNext()) {
+                const auto m = it.next();
+                imagePath = m.captured(1).trimmed();
+            }
+            if (!imagePath.isEmpty()) {
+                if (imagePath.startsWith("file://")) imagePath = QUrl(imagePath).toLocalFile();
+                if (QFile::exists(imagePath)) return imagePath;
+            }
+        }
+    }
+
+    return QString(); // unknown
+}
+
+static QPixmap loadBackground(const QRect &screen) {
+    // Ask the OS/compositor for the configured wallpaper file, not a screenshot.
+    const QString wall = detectWallpaperFromOS();
+    QPixmap pm(screen.size());
+    pm.fill(Qt::black); // fallback
+
+    if (!wall.isEmpty() && QFile::exists(wall)) {
+        QImage img(wall);
+        if (!img.isNull()) {
+            // Scale to fill, centre-cropped, like most desktop environments
+            QImage scaled = img.scaled(screen.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+            QPainter p(&pm);
+            const int dx = (pm.width()  - scaled.width())  / 2;
+            const int dy = (pm.height() - scaled.height()) / 2;
+            p.drawImage(dx, dy, scaled);
+        }
+    }
+    return pm;
+}
+
 static inline QString desktopDir() {
-    //QString p = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    //QFileInfo fi(p);
-    //if (fi.isSymLink()) {
-    //    const QString t = fi.symLinkTarget();
-    //    if (!t.isEmpty()) return QDir::cleanPath(t);
-    //}
-    //return p;
     return QDir::homePath() + "/Desktop";
 }
 
@@ -26,7 +149,7 @@ static inline QString trashDir() {
     return QDir::homePath() + "/.local/share/Trash/files";
 }
 
-#include "labels.h"
+#include "helpers/labels.h"
 
 static QPixmap boxIcon(const QPixmap &src, int box) {
     QPixmap out(box, box);
@@ -66,37 +189,24 @@ static QIcon tintedIconFor(const QFileInfo &fi, int box /*48, 32, ...*/) {
                     c.setRgb((c.red()+0)/2, (c.green()+180)/2, (c.blue()+180)/2, c.alpha());
                 img.setPixelColor(x,y,c);
             }
-        return boxedIconFromImage(img, box);
     }
 
-    // Executable (non-dir): subtle green buff
-    if (fi.isExecutable() && !fi.isDir()) {
-        for (int y=0; y<img.height(); ++y)
-            for (int x=0; x<img.width(); ++x) {
-                QColor c = img.pixelColor(x,y);
-                if (c.alpha() > 0)
-                    c.setRgb((c.red()+128)/2, (c.green()+255)/2, (c.blue()+128)/2, c.alpha());
-                img.setPixelColor(x,y,c);
-            }
-        return boxedIconFromImage(img, box);
+    // Label tint (hex from .labelcolor)
+    QString lab = LabelManager::getLabel(fi.fileName());
+    if (!lab.isEmpty()) {
+        QColor qc(lab);
+        if (qc.isValid()) {
+            for (int y=0; y<img.height(); ++y)
+                for (int x=0; x<img.width(); ++x) {
+                    QColor c = img.pixelColor(x,y);
+                    if (c.alpha() > 0)
+                        c.setRgb((c.red()+qc.red())/2, (c.green()+qc.green())/2, (c.blue()+qc.blue())/2, c.alpha());
+                    img.setPixelColor(x,y,c);
+                }
+        }
     }
 
-    // No tint → just box to exact size
-    return QIcon(boxIcon(QPixmap::fromImage(img), box));
-}
-
-
-static QPixmap loadBackground(const QRect &screenGeom) {
-    QString p = QCoreApplication::applicationDirPath() + "/wallpapers/default.jpg";
-    QPixmap pm;
-    if (QFileInfo::exists(p)) pm.load(p);
-    if (pm.isNull()) pm.load("/usr/share/backgrounds/warty-final-ubuntu.png");
-    if (pm.isNull()) {
-        pm = QPixmap(screenGeom.size());
-        pm.fill(QColor("#2b2b2b"));
-        return pm;
-    }
-    return pm.scaled(screenGeom.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+    return boxedIconFromImage(img, box);
 }
 
 // ---------- simple model ----------
@@ -140,30 +250,30 @@ public:
             it->setToolTip(fi.absoluteFilePath());
             it->setData(fi.absoluteFilePath(), PathRole);
             it->setData(fi.isDir() ? "dir" : "file", KindRole);
-            it->setTextAlignment(Qt::AlignHCenter | Qt::AlignTop);
             rows << it;
         }
 
-        std::sort(rows.begin(), rows.end(), [](QStandardItem* a, QStandardItem* b){
-            return QString::localeAwareCompare(a->text(), b->text()) < 0;
-        });
-        for (auto *it : rows) appendRow(it);
+        // Trash pseudo-item
+        //QImage trashImg(":/icons/trash.png");
+        QImage trashImg;
+trashImg.loadFromData(IconsData::bytesMap().value("trash.png"), "PNG");
+        if (!trashImg.isNull()) {
+            auto *trash = new QStandardItem(boxedIconFromImage(trashImg, 48), "Trash");
+            trash->setEditable(false);
+            trash->setToolTip(trashDir());
+            trash->setData(trashDir(), PathRole);
+            trash->setData(QStringLiteral("trash"), KindRole);
+            rows << trash;
+        }
 
-        QIcon trashIc = QIcon::fromTheme("user-trash");
-        if (trashIc.isNull()) trashIc = QIcon::fromTheme("edit-delete");
-        if (trashIc.isNull()) trashIc = QApplication::style()->standardIcon(QStyle::SP_TrashIcon);
-        auto *trash = new QStandardItem(trashIc, QStringLiteral("Trash"));
-        trash->setEditable(false);
-        trash->setToolTip(trashDir());
-        trash->setData(trashDir(), PathRole);
-        trash->setData(QStringLiteral("trash"), KindRole);
-        trash->setTextAlignment(Qt::AlignHCenter | Qt::AlignTop);
-        appendRow(trash);
+        for (QStandardItem *it : rows) appendRow(it);
     }
 };
 
-// main app
-int main(int argc, char *argv[]) {
+
+// ---------- main ----------
+
+int main(int argc, char **argv) {
     QApplication app(argc, argv);
 
     QWidget w;
@@ -175,17 +285,19 @@ int main(int argc, char *argv[]) {
 
     const QRect g = QGuiApplication::primaryScreen()->geometry();
     QPalette pal = w.palette();
-    pal.setBrush(QPalette::Window, QBrush(loadBackground(g)));
+pal.setBrush(QPalette::Window, QBrush(::loadBackground(g)));
     w.setPalette(pal);
 
     const QRect work = QGuiApplication::primaryScreen()->availableGeometry();
     w.setGeometry(work);
     w.show();
+    //w.raise();
 
 #if HAVE_X11
-    Display *d = nullptr;
-    if (QGuiApplication::platformName() == "xcb" && (d = XOpenDisplay(nullptr))) {
-        Window xw = w.winId();
+    // Make window behave like a desktop layer (skip taskbar, always behind)
+    Display *d = XOpenDisplay(nullptr);
+    if (d) {
+        WId xw = w.winId();
         Atom net_wm_state = XInternAtom(d, "_NET_WM_STATE", False);
         Atom skip_taskbar = XInternAtom(d, "_NET_WM_STATE_SKIP_TASKBAR", False);
         Atom below        = XInternAtom(d, "_NET_WM_STATE_BELOW", False);
@@ -200,6 +312,7 @@ int main(int argc, char *argv[]) {
         e.xclient.data.l[2] = below;
         e.xclient.data.l[3] = 1;
         e.xclient.data.l[4] = 0;
+
         XSendEvent(d, DefaultRootWindow(d), False,
                    SubstructureRedirectMask | SubstructureNotifyMask, &e);
         XFlush(d);
@@ -213,34 +326,47 @@ int main(int argc, char *argv[]) {
     model->rebuild();
 
     auto *view = new QListView(&w);
-view->setModel(model);
-view->setViewMode(QListView::IconMode);
-view->setIconSize(QSize(48,48));
-view->setWordWrap(true);
-view->setTextElideMode(Qt::ElideNone);
-// width ≈ icon + padding, height allows for ~2 lines of text
-view->setGridSize(QSize(view->iconSize().width() + 80,
-                        view->iconSize().height() + view->fontMetrics().lineSpacing()*2 + 40));
-view->setResizeMode(QListView::Adjust);
-view->setMovement(QListView::Static);
-view->setWrapping(true);
-view->setSpacing(8);
-view->setUniformItemSizes(false);//untidy but shows full filename
-view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	Drag::enableOn(view);
+    view->setModel(model);
+    view->setViewMode(QListView::IconMode);
+    view->setLayoutDirection(Qt::LeftToRight);
+    view->setSelectionBehavior(QAbstractItemView::SelectItems);
+    view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    view->setIconSize(QSize(48,48));
+    view->setWordWrap(true);
+    view->setTextElideMode(Qt::ElideNone);
+    // grid: columnised label beneath icon; allow ~3 lines
+    const int textLines = 3;
+    const int padW = 60;
+    const int padH = 24;
+    view->setGridSize(QSize(view->iconSize().width() + padW,
+                            view->iconSize().height() + view->fontMetrics().lineSpacing()*textLines + padH));
+    view->setResizeMode(QListView::Adjust);
+    view->setMovement(QListView::Static);
+    view->setWrapping(true);
+    view->setSpacing(8);
+    view->setUniformItemSizes(false);
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    Drag::enableOn(view);
 
     view->setFlow(QListView::TopToBottom);
-    view->setLayoutDirection(Qt::RightToLeft);
-
-    view->setStyleSheet("QListView{background:transparent;} QScrollBar{background:transparent;}");
+    view->setLayoutDirection(Qt::LeftToRight);
     view->viewport()->setAutoFillBackground(false);
+    view->setStyleSheet("QListView{background:transparent;} QScrollBar{background:transparent;}");
 
-    view->setGeometry(w.rect().adjusted(16,16,-40,-16));
-    view->show();
+    // position to fill the work area with a small inset
+    view->setGeometry(w.rect().adjusted(16,16,-80,-16)); // leave space for dock on the right (~64-80px)
+view->show();
+view->raise();
 
+    // keep background reactive to screen resize (multi-monitor, dock changes, etc.)
     auto *tick = new QTimer(&w);
-    tick->setInterval(2000);
-    QObject::connect(tick, &QTimer::timeout, model, [model]{ model->rebuild(); });
+    tick->setInterval(5000);
+    QObject::connect(tick, &QTimer::timeout, &w, [&w](){
+        const QRect g = QGuiApplication::primaryScreen()->geometry();
+        QPalette pal = w.palette();
+        pal.setBrush(QPalette::Window, QBrush(::loadBackground(g)));
+        w.setPalette(pal);
+    });
     tick->start();
 
     QObject::connect(view, &QListView::doubleClicked, view, [model](const QModelIndex &idx){
@@ -259,7 +385,7 @@ view->setEditTriggers(QAbstractItemView::NoEditTriggers);
     QObject::connect(view, &QWidget::customContextMenuRequested, view, [view,model](const QPoint &pos){
         const QModelIndex idx = view->indexAt(pos);
         if (!idx.isValid()) return;
-        showContextMenu(view, idx, model, view->viewport()->mapToGlobal(pos));
+     //   showContextMenu(view, idx, model, view->viewport()->mapToGlobal(pos));
     });
 
     return app.exec();
